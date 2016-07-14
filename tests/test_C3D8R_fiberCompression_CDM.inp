@@ -1,0 +1,150 @@
+*Heading
+ Single element test for fiber compression CDM
+**
+*Parameter
+l = 0.5
+t = 0.5
+stepDuration = 0.1
+**
+** PARTS
+**
+*Part, name=Part-1
+*Node
+      1,  <l>,          <l>,          <t>
+      2,  <l>,           0.,          <t>
+      3,  <l>,          <l>,           0.
+      4,  <l>,           0.,           0.
+      5,  0.,           <l>,          <t>
+      6,  0.,            0.,          <t>
+      7,  0.,           <l>,           0.
+      8,  0.,            0.,           0.
+*Element, type=C3D8R
+1, 3, 4, 2, 1, 7, 8, 6, 5
+*Nset, nset=loadApp
+ 4,
+*Nset, nset=loadFollowers
+ 1, 2, 3
+*Nset, nset=pin
+ 8,
+*Nset, nset=pinx
+ 5, 6, 7
+*Nset, nset=all, generate
+ 1,  8,  1
+*Elset, elset=all
+ 1,
+*Orientation, name=Ori-1
+          1.,           0.,           0.,          0.,           1.,           0.
+3, 0.
+** Section: Section-1
+*Solid Section, elset=all, orientation=Ori-1, material=IM7-8552, controls=SectionCtrl-1
+,
+*End Part
+**
+**
+** ASSEMBLY
+**
+*Assembly, name=Assembly
+**
+*Instance, name=Part-1-1, part=Part-1
+*End Instance
+**
+** Constraint: LoadApp
+*Equation
+2
+Part-1-1.loadFollowers, 1, -1.
+Part-1-1.loadApp, 1, 1.
+*End Assembly
+**
+*Section controls, name=SectionCtrl-1, distortion control=YES
+**
+*Amplitude, name=Amp-1, definition=SMOOTH STEP
+             0.,              0.,    <stepDuration>,              1.
+**
+** MATERIALS
+**
+*Material, name=IM7-8552
+*Density
+1.57e-09,
+*User material, constants=4
+** 1              2                  3          4
+** feature flags, , thickness, 4, 5, 6, 7, 8
+          101100, ,       <t>,  ,  ,  ,  ,  ,
+*Depvar
+  19,
+  1, CDM_d2
+  2, CDM_Fb1
+  3, CDM_Fb2
+  4, CDM_Fb3
+  5, CDM_B
+  6, CDM_Lc
+  7, CDM_FIfT
+  8, CDM_d1
+  9, CDM_FImT
+ 10, CDM_alpha
+ 11, CDM_STATUS
+ 12, CDM_Plas12
+ 13, CDM_Inel12
+ 14, CDM_mCompInit
+ 15, CDM_slide1
+ 16, CDM_slide2
+ 17, CDM_FIfC
+ 18, CDM_d1T
+ 19, CDM_d1C
+**
+** INITIAL CONDITIONS
+**
+*Initial Conditions, Type=Solution
+Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+               0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
+               0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+** ----------------------------------------------------------------
+**
+** STEP: Step-1
+**
+*Step, name=Step-1, nlgeom=YES
+*Dynamic, Explicit
+, <stepDuration>
+*Bulk Viscosity
+0.06, 1.2
+** Mass Scaling: Semi-Automatic
+**               Whole Model
+*Fixed Mass Scaling, factor=5000.
+**
+** BOUNDARY CONDITIONS
+**
+** Applied displacement end
+*Boundary, amplitude=Amp-1
+Part-1-1.loadApp, 1, 1, -0.3
+Part-1-1.loadApp, 2, 2
+Part-1-1.loadApp, 3, 3
+*Boundary, amplitude=Amp-1
+Part-1-1.2, 2, 2
+Part-1-1.3, 3, 3
+** Fixed end
+*Boundary, amplitude=Amp-1
+Part-1-1.pin, 1, 1
+Part-1-1.pin, 2, 2
+Part-1-1.pin, 3, 3
+*Boundary, amplitude=Amp-1
+Part-1-1.pinx, 1, 1
+Part-1-1.7, 3, 3
+Part-1-1.6, 2, 2
+**
+** OUTPUT REQUESTS
+**
+*Output, field, number interval=100
+*Node Output
+U, RF
+*Element Output
+S, LE, SDV
+**
+** HISTORY OUTPUT: H-Output-1
+**
+*Output, history, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*Node Output, nset=Part-1-1.loadApp
+RF1, U1
+*Element Output, elset=Part-1-1.all
+S11, LE11, SDV
+*End Step

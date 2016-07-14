@@ -1,0 +1,50 @@
+//
+// CompDam Subroutine Parameters
+//
+// README
+// This is a comment line, it is ignored. Each uncommented line should
+// contain one subroutine parameter in the form [NAME] = [VALUE]
+//
+// This file optional, and is not required to execute the CompDam subroutine.
+// When used, this file must be placed in the Abaqus output directory, which is
+// the directory where the job is executed. If this file is not found, or
+// cannot be accessed, CompDam will use default values.
+
+
+// logger level of verbosity, Integer
+logLevel = 2 // Default value: 2
+
+// logger format (1=log file, 2=csv)
+logFormat = 1
+
+// penalty stiffness multiplier, K/(E/thickness) = penStiffMult, Double precision
+penStiffMult = 1.d4 // Default value: 1.d+4
+
+
+// increment for which the matrix failure criterion is evaluated [degrees], Integer
+alpha_inc = 10 // Default value: 10
+
+
+// maximum number of cut-backs in the DGD equilibrium convergence loop, Integer
+cutbacks_max = 2 // Default value: 4
+// amount by which to reduce the rate of change of F_bulk, Double precision
+cutback_amount = 0.1d0 // Default value: 0.5d0
+// DGD equilibrium convergence tolerance factor: tol_DGD_f = tol_{DGD}/YT, Double precision
+tol_DGD_f = 1.d-4 // Default value: 1.d-4
+
+
+// minimum amount of fracture energy dissipated per MD increment, Double precision
+dGdGc_min = 1.d-12 // Default value: 1.d-12
+// maximum number of damage increments per solution increment, Integer
+MD_max = 100000 // Default value: 100000
+
+
+// minimum acceptable determinant of F_bulk, Double precision
+compLimit = 0.25d0 // Default value: 0.25d0
+
+
+// Tolerance for divergence of internal Newton Raphson loop. Triggers divergence logic if (err - err_old)/err_old > tol_divergence
+tol_divergence = 1.d-6 // Default value: 0.1d0
+
+
+// End of file (Do not remove me)

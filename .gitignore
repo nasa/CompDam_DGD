@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Compiled Fortran files and modules
+build/
+*.obj
+*.dll
+*.o
+*.so
+
+# Abaqus output files
+*.abq
+*.com
+*.dat
+*.log
+*.mdl
+*.msg
+*.odb
+*.pac
+*.par
+*.pes
+*.pmg
+*.prt
+*.res
+*.sel
+*.sim
+*.sta
+*.stt
+
+# Abaqus cae files
+*.cae
+*.jnl
+*.rec
+*.deps
+*.rpy*
+
+# Sublime text
+*.sublime-project
+*.sublime-workspace
