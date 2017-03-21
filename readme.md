@@ -38,9 +38,9 @@ The user subroutine source code is located in the `for` directory. The main entr
 [Intel Fortran Compiler](https://software.intel.com/en-us/fortran-compilers) version 11.1 or newer is required to compile the code. It is recommended that Abaqus 6.14-1 or newer is used with this code.
 
 ### Abaqus environment file settings
-The `abaqus_v6.env` file must have [`/fpp`](https://software.intel.com/en-us/node/579498), [`/Qmkl:sequential`](https://software.intel.com/en-us/node/579338), and [`/free`](https://software.intel.com/en-us/node/579524) in the `ifort` command where the format for Windows is used. The corresponding Linux format is: `-fpp`, `-free`, and `-mkl`. The `/fpp` option enables the Fortran preprocessor, which is required for the code to compile correctly. The `/free` option sets the compiler to free-formatting for the source code files. The `/Qmkl:sequential` enables the [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/intel-mkl), which provides optimized and verified functions for many mathematical operations. The MKL is used in this code for calculating eigenvalues and eigenvectors.
+The `abaqus_v6.env` file must have [`/fpp`](https://software.intel.com/en-us/node/579498), [`/Qmkl:sequential`](https://software.intel.com/en-us/node/579338), and [`/free`](https://software.intel.com/en-us/node/579524) in the `ifort` command where the format for Windows is used. The corresponding Linux format is: `-fpp`, `-free`, and `-mkl=sequential`. The `/fpp` option enables the Fortran preprocessor, which is required for the code to compile correctly. The `/free` option sets the compiler to free-formatting for the source code files. The `/Qmkl:sequential` enables the [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/intel-mkl), which provides optimized and verified functions for many mathematical operations. The MKL is used in this code for calculating eigenvalues and eigenvectors.
 
-A sample environment file using the Abaqus 2016 environment file format is provided in the `tests` directory for Windows systems. For older versions of Abaqus, copy your system environment file (in `SIMULIA\Abaqus\6.14-1\SMA\site`) to your working directory and make sure that the `ifort` arguments are set as specified above.
+A sample environment file is provided in the `tests` directory for Windows and Linux systems.
 
 ### Submitting a job
 This code is an Abaqus/Explicit VUMAT. Please refer to the Abaqus documentation for the general instructions on how to submit finite element analyses using user subroutines. Please see the [example input file statements](#example-input-file-statements) for details on how to interface with this particular VUMAT subroutine.
@@ -49,9 +49,8 @@ Analyses with this code **must** be run in double precision. Some of the code ha
 
 For example, run the test model `test_C3D8R_elastic_fiberTension` in the `tests` directory with the following command:
 ```
-tests $   abaqus job=test_C3D8R_elastic_fiberTension user=../for/CompDam_DGD.for double=both
+abaqus job=test_C3D8R_elastic_fiberTension user=../for/CompDam_DGD.for double=both
 ```
-On Linux systems, `CompDam_DGD.for` must be replaced with `CompDam_DGD.f` and the sample environment file needs to be changed to the linux format.
 
 ### Example input file statements
 Example 1, using an [external material properties file](#defining-the-material-properties-in-a-props-file):
@@ -139,11 +138,11 @@ Example 2, using an [input deck command](#defining-the-material-properties-in-th
     171420.0, 9080.0,   5290.0,   0.32,     0.52,     62.3,     92.30,    0.277,
 **
 **  17        18        19        20        21        22        23        24
-**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,     
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
     0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
 **
 **  25        26        27        28        29        30        31        32
-**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,     
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
     -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.2,      133.3,    0.5,
 **
 **  33        34        35        36        37        38        39        40
@@ -166,12 +165,12 @@ Test cases are available in the `tests` directory. The tests are useful for demo
 ### Building a shared library
 CompDam_DGD can be built into a shared library file. Follow these steps:
 1. Place a copy of the Abaqus environment file (with the compiler flags specified) in the `for` directory
-2. From the `for` directory, on Windows, run:
+2. In Linux, and when using Abaqus versions prior to 2017, rename `CompDam_DGD.for` to `CompDam_DGD.f`
+3. From the `for` directory, run:
 ```
-for $  abaqus make library=CompDam_DGD.for
+abaqus make library=CompDam_DGD
 ```
-On Linux systems, `CompDam_DGD.for` must be replaced with `CompDam_DGD.f`.
-This command will create executable files for the operating system it is executed on (`.dll` for Windows and `.so` for Linux).
+This command will create shared libraries for the operating system it is executed on (`.dll` for Windows and `.so` for Linux).
 
 When using a pre-compiled shared library, it is only necessary to specify the location of the shared library files in the environment file (the compiler options are not required). To run an analysis using a shared library, add `usub_lib_dir = <full path to shared library file>` to the Abaqus environment file in the Abaqus working directory.
 
@@ -360,7 +359,7 @@ Several statements for debugging need to be uncommented in the environment file.
 
 Run the job with the `-debug` and `-explicit` arguments. For example:
 ```
-tests $ abaqus -j test_C3D8R_fiberTension -user ../for/CompDam_DGD.for -double both -debug -explicit
+abaqus -j test_C3D8R_fiberTension -user ../for/CompDam_DGD.for -double both -debug -explicit
 ```
 
 This command should open the [Visual Studio debugging software](https://msdn.microsoft.com/en-us/library/sc65sadd.aspx) automatically. Open the source file(s) to debug. At a minimum, open the file with the subroutine entry point `for/CompDam_DGD.for`. Set a break point by clicking in the shaded column on the left edge of the viewer. The break point will halt execution. Press <kbd>F5</kbd> to start the solver. When the break point is reached, a yellow arrow will appear and code execution will pause. Press <kbd>F5</kbd> to continue to the next break point, press <kbd>F11</kbd> to execute the next line of code following execution into function calls (Step Into), or press <kbd>F10</kbd> to execute the next line of code but not follow execution into function calls (Step Over).
