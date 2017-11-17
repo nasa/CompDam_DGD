@@ -1,5 +1,5 @@
-
-Module CLT_Mod
+Module stress_Mod
+  ! Module for building stiffness tensors, tensor transformations, and converting different definitions of stress
 
 Contains
 
@@ -175,4 +175,4 @@ Contains
     Return
   End Function Hooke
 
-End Module CLT_Mod
+End Module stress_Mod

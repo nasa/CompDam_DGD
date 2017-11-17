@@ -1,0 +1,109 @@
+*Parameter
+l = 0.1
+t = 0.1
+stepDuration = 0.1
+loadRatio = 0.8
+matrixStrength = -199
+SL = 92.3
+shearTraction = loadRatio*(SL*2)
+normalTraction = (1-loadRatio)*(matrixStrength*2)
+**
+*Node, nset=all
+      3,  <l>,          <l>,           0.
+      4,  <l>,           0.,           0.
+      7,  0.,           <l>,           0.
+      8,  0.,            0.,           0.
+*Element, type=S4R, elset=all
+ 1, 8, 4, 3, 7
+*Nset, nset=loadSurface
+ 3, 7
+*Nset, nset=pin
+ 8
+*Nset, nset=piny
+ 4
+*Orientation, name=Ori-1
+ 1., 0., 0., 0., 1., 0.
+ 3, 0.
+*Shell Section, elset=all, material=IM7-8552, thickness modulus=9080.d0, poisson=0.32d0
+ <t>, 3
+*Transverse Shear Stiffness
+ 5290.d0, 2987.d0, 0.d0
+**
+*Amplitude, name=Amp-1, definition=SMOOTH STEP
+ 0., 0., <stepDuration>, 1.
+**
+*Material, name=IM7-8552
+*Density
+ 1.57e-09,
+*User material, constants=5
+ 101101, , <t>,  ,  ,  ,  ,  ,
+*Depvar
+  19,
+  1, CDM_d2
+  2, CDM_Fb1
+  3, CDM_Fb2
+  4, CDM_Fb3
+  5, CDM_B
+  6, CDM_Lc1
+  7, CDM_Lc2
+  8, CDM_Lc3
+  9, CDM_FIm
+ 10, CDM_alpha
+ 11, CDM_STATUS
+ 12, CDM_Plas12
+ 13, CDM_Inel12
+ 14, CDM_FIfT
+ 15, CDM_slide1
+ 16, CDM_slide2
+ 17, CDM_FIfC
+ 18, CDM_d1T
+ 19, CDM_d1C
+*Characteristic Length, definition=USER, components=3
+**
+*Initial Conditions, Type=Solution
+all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+      0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
+      0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+**
+*Boundary
+ pin,  1, 2
+ piny, 2, 2
+ all,  3, 3
+**
+*Equation
+ 2
+ 7, 2, 1., 3, 2, -1.
+ 3
+ 7, 1, 1., 4, 1, 1., 3, 1, -1.
+**
+*Filter, name=haltOnFailure, operator=Max, limit=1.0, HALT
+** ----------------------------------------------------------------
+*Step, nlgeom=YES
+*Dynamic, Explicit
+, <stepDuration>
+**
+*Fixed Mass Scaling, factor=5000.
+**
+*Dload, Amplitude=Amp-1, Constant resultant=Yes, follower=No
+ 1, EDLD3, <shearTraction>,  1.0, 0.0, 0.0
+ 1, EDLD1, <shearTraction>, -1.0, 0.0, 0.0
+ 1, EDLD3, <normalTraction>, 0.0, 1.0, 0.0
+**
+*Output, field, number interval=50
+*Node Output
+ U, RF
+*Element Output
+ S, LE, SDV
+**
+*Output, history, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+**
+*Element Output, elset=all
+ S, LE, SDV
+**
+*Output, history, frequency=1, filter=haltOnFailure
+*Element Output, elset=all
+ SDV9
+**
+*End Step

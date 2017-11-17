@@ -3,7 +3,7 @@
 **
 *Parameter
  length = 0.1
- displacement = 0.1
+ displacement = 0.02
 **
 ** NODES
 **
@@ -43,10 +43,26 @@
 *Material, name=IM7-8552
 *Density
  1.59d-05,
-*User material, constants=4
+*User material, constants=39
 ** 1              2                  3          4
 ** feature flags, , thickness, 4, 5, 6, 7, 8
           100000, ,  <length>,  ,  ,  ,  ,  ,
+**
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+    171420.0, 9080.0,   5290.0,   0.32,     0.52,     50,     92.30,    0.277,
+**
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+    0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
+**
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+    -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.2,      133.3,    0.5,
+**
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
+    1200.1,      ,         ,          ,     0.2618,   0.1,      0.038,    0
 **
 *Depvar, delete=11
   19,
@@ -55,20 +71,21 @@
   3, CDM_Fb2
   4, CDM_Fb3
   5, CDM_B
-  6, CDM_Lc
-  7, CDM_FIfT
-  8, CDM_d1
-  9, CDM_FImT
+  6, CDM_Lc1
+  7, CDM_Lc2
+  8, CDM_Lc3
+  9, CDM_FIm
  10, CDM_alpha
  11, CDM_STATUS
  12, CDM_Plas12
  13, CDM_Inel12
- 14, CDM_mCompInit
+ 14, CDM_FIfT
  15, CDM_slide1
  16, CDM_slide2
  17, CDM_FIfC
  18, CDM_d1T
  19, CDM_d1C
+*Characteristic Length, definition=USER, components=3
 **
 ** INITIAL CONDITIONS
 **

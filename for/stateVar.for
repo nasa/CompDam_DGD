@@ -1,28 +1,34 @@
-
 Module stateVar_Mod
+  ! Module for loading and validating internal state variables
 
   ! Stores the state variables
   Type stateVars
+
+    Integer :: nstatev                ! Number of state variables
 
     ! Always stored
     Double Precision :: d2            ! Cohesive surface damage variable
     Double Precision :: Fb1           ! Fb = deformation gradient of the bulk material; 1,2,3 are the columns of Fb
     Double Precision :: Fb2
     Double Precision :: Fb3
+    Double Precision :: Fm1
+    Double Precision :: Fm2
+    Double Precision :: Fm3
     Double Precision :: B             ! Mode mixity
-    Double Precision :: Lc1
-    Double Precision :: rfT           ! Fiber damage threshold
-    Double Precision :: d1            ! Fiber damage variable (d1 is used for stiffness reduction; d1T and d1C are tracked for reference)
-    Double Precision :: FImT          ! Failure index for matrix tension
+    Double Precision :: Lc(3)         ! Characteristic element lengths
+    Double Precision :: rfT           ! Fiber tension damage threshold
+    Double Precision :: FIm           ! Failure index for matrix
     Integer :: alpha                  ! The cohesive surface normal [degrees, integer]. Only modified in this subroutine if matrix failure criteria is satisfied.
-    Integer :: STATUS                 ! Element deletion
-    Double Precision :: Plas12        ! Shear strains
-    Double Precision :: Inel12
-    Double Precision :: mCompInit     ! cohesive normal displacement at initiation (zero if crack is in tension)
-    Double Precision :: slide(2)
-    Double Precision :: rfC
-    Double Precision :: d1T
-    Double Precision :: d1C
+    Integer :: STATUS                 ! Element deletion flag (0 := delete element)
+    Double Precision :: Plas12        ! Plastic shear strain
+    Double Precision :: Inel12        ! Inelastic shear strain
+    Double Precision :: slide(2)      ! Slip on a cohesive crack, in the fiber and transverse directions
+    Double Precision :: rfC           ! Fiber compression damage threshold
+    Double Precision :: d1T           ! Fiber tension damage
+    Double Precision :: d1C           ! Fiber compression damage
+    Double Precision :: phi0
+    Double Precision :: gamma
+    Double Precision :: Sr            ! Schapery micro-damage state variable, reduced
 
     ! Stored for debugging only
     Double Precision :: d_eps12
@@ -31,12 +37,15 @@ Module stateVar_Mod
 
 Contains
 
-  Pure Function loadStateVars(nstatev, stateOld) result(sv)
+  Pure Function loadStateVars(nstatev, stateOld, m) result(sv)
     ! Loads state variables into named fields
+
+    Use matProp_Mod
 
     ! Arguments
     Integer, intent(IN) :: nstatev
     Double Precision, intent(IN) :: stateOld(nstatev)
+    Type(matProps), intent(IN) :: m
 
     ! Output
     Type(stateVars) :: sv
@@ -44,6 +53,8 @@ Contains
     ! Parameters
     Double Precision, parameter :: zero=0.d0, one=1.d0
     ! -------------------------------------------------------------------- !
+
+    sv%nstatev = nstatev
 
     ! Global variable (not returned to abaqus)
     sv%d_eps12 = zero
@@ -53,34 +64,63 @@ Contains
     sv%Fb2 = stateOld(3)
     sv%Fb3 = stateOld(4)
     sv%B   = stateOld(5)
-    sv%Lc1 = stateOld(6)
-    sv%rfT = MAX(one, stateOld(7))
-    sv%FImT = zero   ! State variable 9
+    sv%Lc(1) = stateOld(6)
+    sv%Lc(2) = stateOld(7)
+    sv%Lc(3) = stateOld(8)
+    sv%FIm = zero   ! State variable 9
     sv%alpha  = stateOld(10)
     sv%STATUS = stateOld(11)
-    sv%Plas12 = stateOld(12)
-    sv%Inel12 = stateOld(13)
-    sv%mCompInit = stateOld(14)  ! the crack-normal cohesive displacement at initiation (zero if positive)
+
+    If (m%shearNonlinearity) Then
+      sv%Plas12 = stateOld(12)
+      sv%Inel12 = stateOld(13)
+      sv%Sr = one
+    Else If (m%schapery) Then
+      sv%Plas12 = zero
+      sv%Inel12 = zero
+      sv%Sr = stateOld(12)
+    Else
+      sv%Plas12 = zero
+      sv%Inel12 = zero
+      sv%Sr = one
+    End If
+
+    sv%rfT = MAX(one, stateOld(14))
     sv%slide(1) = stateOld(15)
     sv%slide(2) = stateOld(16)
-    sv%rfC = MAX(one, stateOld(17))
+    sv%rfC =stateOld(17)
+    IF (m%fiberCompDamBL) Then
+      sv%rfC = MAX(one, sv%rfC)
+    End If
     sv%d1T = MAX(zero, stateOld(18))
     sv%d1C = zero
-    If (nstatev .EQ. 18) Return ! Fiber compression disabled
 
-    ! State variables required only for fiber compression
-    sv%d1C = MAX(zero, stateOld(19))
+    ! These state variables are required only for fiber compression
+    If (m%fiberCompDamBL .OR. m%fiberCompDamFKT) Then
+      sv%d1C = MAX(zero, stateOld(19))
+      ! DGD-based fiber compression
+      If (m%fiberCompDamFKT) Then
+        sv%phi0 = stateOld(20)  ! State variable 20
+        sv%gamma = zero  ! State variable 21
+        sv%Fm1 = stateOld(22)
+        sv%Fm2 = stateOld(23)
+        sv%Fm3 = stateOld(24)
+      End If
+    End If
 
     Return
   End Function loadStateVars
 
 
-  Pure Function storeStateVars(sv, nstatev) result(stateNew)
+  Pure Function storeStateVars(sv, nstatev, m) result(stateNew)
     ! Returns an array of state variables (calling code should be stateNew = store(nstatev))
+
+    Use matProp_Mod
 
     ! Arguments
     Type(stateVars), intent(IN) :: sv
     Integer, intent(IN) :: nstatev
+    Type(matProps), intent(IN) :: m
 
     ! Output
     Double Precision :: stateNew(nstatev)
@@ -94,24 +134,47 @@ Contains
     stateNew(3) = sv%Fb2
     stateNew(4) = sv%Fb3
     stateNew(5) = sv%B
-    stateNew(6) = sv%Lc1
-    stateNew(7) = sv%rfT
-    stateNew(8) = sv%d1
-    stateNew(9) = sv%FImT
+    stateNew(6) = sv%Lc(1)
+    stateNew(7) = sv%Lc(2)
+    stateNew(8) = sv%Lc(3)
+    stateNew(9) = sv%FIm
     stateNew(10) = sv%alpha
     stateNew(11) = sv%STATUS
-    stateNew(12) = sv%Plas12
-    stateNew(13) = sv%Inel12
-    stateNew(14) = sv%mCompInit
+
+    If (m%shearNonlinearity) Then
+      stateNew(12) = sv%Plas12
+      stateNew(13) = sv%Inel12
+    Else If (m%schapery) Then
+      stateNew(12) = sv%Sr
+      stateNew(13) = zero
+    Else
+      stateNew(12) = zero
+      stateNew(13) = zero
+    End If
+
+    stateNew(14) = sv%rfT
     stateNew(15) = sv%slide(1)
     stateNew(16) = sv%slide(2)
     stateNew(17) = sv%rfC
     stateNew(18) = sv%d1T
-    If (nstatev .EQ. 18) Return ! Fiber compression disabled
-    stateNew(19) = sv%d1C
+
+    ! Fiber compression enabled
+    If (m%fiberCompDamBL .OR. m%fiberCompDamFKT) Then
+      stateNew(19) = sv%d1C
+      ! DGD based fiber compression enabled
+      If (m%fiberCompDamFKT) Then
+        stateNew(20) = sv%phi0
+        stateNew(21) = sv%gamma
+        stateNew(22) = sv%Fm1
+        stateNew(23) = sv%Fm2
+        stateNew(24) = sv%Fm3
+      End If
+    Else
+      stateNew(19) = zero
+    End If
 
     Return
   End Function storeStateVars
 
 
-End Module
+End Module stateVar_Mod

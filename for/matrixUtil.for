@@ -1,3 +1,4 @@
+#define type(x) TYPE(x), target
 
 Module matrixAlgUtil_Mod
   ! Generic utilities for manipulating vectors and matrices
@@ -152,7 +153,7 @@ Contains
     Return
   End Function MInverse
 
-
+#ifndef PYEXT
   Function MInverse6x6(mat)
     ! Finds the inverse of a 6x6 matrix
     ! Requires LAPACK
@@ -213,7 +214,7 @@ Contains
 
     Return
   End Function MInverse6x6
-
+#endif
 
   Pure Function MDet(mat)
     ! Finds the determinant of a 3x3 matrix
@@ -325,113 +326,3 @@ Contains
 
 
 End Module
-
-
-
-
-  ! The following commented out code is here for reference
-  ! TO DO: implement into the module above
-
-  ! Subroutine polarDecomp(DFGRD,stretch,rotation)
-  !   ! This subroutine returns the stretch and rotation tensors when given
-  !   ! a deformation gradient.
-  !   ! Meant for use with abaqus implicit
-  !   ! Requires LAPACK
-
-  !   include 'vaba_param.inc'
-
-  !   ! -------------------------------------------------------------------- !
-  !   ! Arguments
-  !   Dimension DFGRD(3,3), stretch(3,3), rotation(3,3)
-
-  !   ! -------------------------------------------------------------------- !
-  !   ! Locals
-  !   Double precision :: stretchSqrd(3,3), eigVec(3,3), eigVal(3), work(1000), eigDiag(3,3)
-
-  !   Dimension INTV(1),REALV(1)  ! For abaqus warning messages
-  !   Character*80 Charv,Message       ! For Abaqus warning messages
-
-  !   Integer ipiv(3),info,lwork
-
-  !   PARAMETER (ZERO = 0.D0)
-
-  !   INTERFACE
-  !     Function MInverse(M)
-  !       Double Precision, intent(IN) :: M(3,3)
-  !       Double Precision :: MInverse(3,3)
-  !     end Function
-  !   end INTERFACE
-  !   ! -------------------------------------------------------------------- !
-
-  !   ! Get the stretch squared (U^2)
-  !   stretchSqrd = zero
-  !   stretchSqrd = MATMUL(transpose(DFGRD),DFGRD)
-
-  !   ! Get the eigenvalues and eigenvectors of stretch squared
-  !   ! DSYEV is a LAPACK function; doc: http://www.netlib.org/lapack/double/dsyev.f
-  !   eigVec = stretchSqrd  ! prevent overwrite
-  !   ! Setup workspace
-  !   LWORK = -1
-  !   Call DSYEV( 'V', 'U', 3, eigVec, 3, eigVal, WORK, LWORK, INFO )
-  !   LWORK = MIN( 1000, INT( WORK( 1 ) ) )
-  !   ! Solve the eigenvalue problem
-  !   Call DSYEV( 'V', 'U', 3, eigVec, 3, eigVal, WORK, LWORK, INFO )
-  !   if (info .NE. 0) then
-  !     ! Message = 'Failed to compute eigenvalues of U^2. DSYEV Error.'
-  !     ! Call STDB_ABQERR(-3,Message,intv,realv,charv)
-  !     print *, 'WARNING'
-  !     print *, 'Failed to compute eigenvalues of U^2. DSYEV Error.'
-  !   end if
-
-  !   ! Format sqrt of eigenvalues as a square matrix
-  !   eigDiag = zero
-  !   eigDiag(1,1) = sqrt(eigVal(1))
-  !   eigDiag(2,2) = sqrt(eigVal(2))
-  !   eigDiag(3,3) = sqrt(eigVal(3))
-
-  !   ! Get the stretch
-  !   stretch = MATMUL(eigVec, MATMUL(eigDiag, TRANSPOSE(eigVec)))
-
-  !   ! Get the rotation (R=F*Inv(U))
-  !   rotation = MATMUL(DFGRD,MInverse(stretch))
-
-  !   RETURN
-  ! End Subroutine
-
-
-  ! Subroutine polarDecompExp(defgrad,F,R,U,ndir,nshr)
-  !   ! Wrapper for polarDecomp for use in Abaqus implicit
-  !   ! defgrad is formated as 1x9 vector
-  !   ! Requires LAPACK
-
-  !   include 'vaba_param.inc'
-
-  !   ! -------------------------------------------------------------------- !
-  !   ! Arguments
-  !   Double Precision, intent(IN) :: defgrad(ndir+nshr+nshr)
-  !   Double Precision, intent(OUT) :: F(3,3), U(3,3), R(3,3)
-  !   Integer, intent(IN) :: ndir, nshr
-
-  !   ! -------------------------------------------------------------------- !
-
-  !   ! Convert F to 3 x 3 format
-  !   F = zero
-  !   F(1,1) = defgrad(1)
-  !   F(2,2) = defgrad(2)
-  !   F(1,2) = defgrad(4)
-  !   if (nshr .GT. 1) then
-  !     F(3,3) = defgrad(3)
-  !     F(2,3) = defgrad(5)
-  !     F(3,1) = defgrad(6)
-  !     F(2,1) = defgrad(7)
-  !     F(3,2) = defgrad(8)
-  !     F(1,3) = defgrad(9)
-  !   else
-  !     F(3,3) = one
-  !     F(2,1) = defgrad(5)
-  !   end if
-
-  !   Call polarDecomp(F,U,R)
-
-  !   Return
-  ! End Subroutine

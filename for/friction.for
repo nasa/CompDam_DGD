@@ -3,7 +3,7 @@ Module friction_mod
 
 Contains
 
-  Pure Subroutine ALFANO(delta, Pen, slide_old, slide, mu_L, mu_T, dmg, AdAe, stress, Sliding)
+  Pure Subroutine crack_traction_and_slip(delta, Pen, slide_old, slide, mu_L, mu_T, dmg, AdAe, stress, Sliding)
     ! Returns the traction on the crack and the amount of slip between the crack surfaces
 
     Include 'vaba_param.inc'
@@ -71,10 +71,10 @@ Contains
     End If
 
     Return
-  End Subroutine ALFANO
+  End Subroutine crack_traction_and_slip
 
 
-  Pure Function ALFANO_SLIP(delta, Pen, slide, mu_L, mu_T) result(Sliding)
+  Pure Function crack_is_sliding(delta, Pen, slide, mu_L, mu_T) result(Sliding)
     ! Determines whether the crack surfaces are sliding or sticking
 
     Include 'vaba_param.inc'
@@ -126,6 +126,6 @@ Contains
     End If
 
     Return
-  End Function ALFANO_SLIP
+  End Function crack_is_sliding
 
 End Module friction_mod

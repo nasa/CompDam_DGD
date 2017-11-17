@@ -1,0 +1,6 @@
+#!/bin/sh
+# 
+# This hook updates the file for/version.for
+#
+
+python etc/git_version.py

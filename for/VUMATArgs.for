@@ -1,6 +1,5 @@
-
 Module VUMATArg_Mod
-
+  ! Module to load and store the general VUMAT parameters for passing of information to user modules
 
   Type VUMATArg
 
@@ -14,8 +13,10 @@ Module VUMATArg_Mod
     ! Double Precision :: stateOld(nblock,nstatev)
     ! Double Precision :: enerInternOld(nblock)
     ! Double Precision :: enerInelasOld(nblock)
+    Integer :: nElement, nMatPoint, nLayer, nSecPoint
   Contains
     procedure :: init => VUMATArg_init
+    procedure :: update
 
   End Type VUMATArg
 
@@ -37,6 +38,20 @@ Contains
     a%dt = dt
 
   End Subroutine VUMATArg_init
+
+
+  Pure Subroutine update(a, nElement, nMatPoint, nLayer, nSecPoint)
+
+    ! Arguments
+    Class(VUMATArg), intent(INOUT) :: a
+    Integer, intent(IN) :: nElement, nMatPoint, nLayer, nSecPoint
+
+    a%nElement = nElement
+    a%nMatPoint = nMatPoint
+    a%nLayer = nLayer
+    a%nSecPoint = nSecPoint
+
+  End Subroutine update
 
 
 End Module VUMATArg_Mod

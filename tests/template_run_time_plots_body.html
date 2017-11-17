@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+  <html>
+    <head>
+      <!--Import Google Icon Font-->
+      <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <!--Import materialize.css-->
+      <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/css/materialize.min.css"  media="screen,projection"/>
+
+      <style>
+      .table-of-contents .nav {{
+        display: none;
+      }}
+      .subsection_heading a, .subsection_heading a.active, .subsection_heading a:hover {{
+        padding-left: 40px;
+      }}
+      </style>
+
+      <!--Let browser know website is optimized for mobile-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    </head>
+
+    <body>
+      <!--Import jQuery before materialize.js-->
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/js/materialize.min.js"></script>
+
+      <nav>
+        <div class="nav-wrapper">
+          <a href="#" class="brand-logo right" style="margin-right: 50px;">CompDam</a>
+          <ul id="nav-mobile" class="left" style="margin-left: 50px;">
+            <li><a href="sass.html">Test Results</a></li>
+            <li><a href="badges.html">Run Times</a></li>
+          </ul>
+        </div>
+      </nav>
+
+      <main>
+        <div class="row">
+
+          <div class="col m8">
+            <!-- Main page contents -->
+            {plots}
+          </div>
+
+          <div class="col m4">
+            <!-- Side bar content  -->
+            <div class="toc-wrapper">
+              <ul class="section table-of-contents">
+                {toc}
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      <script>
+      $(document).ready(function(){{
+        $('.toc-wrapper').pushpin({{ top: 64 }});
+        $('.scrollspy').scrollSpy();
+
+        // Listen DOM changes
+        // create an observer instance
+        var observer = new MutationObserver(function(mutations) {{
+          mutations.forEach(function(mutation) {{
+            // do stuff when
+            // `childList`, `subtree` of `#myTable` modified
+            if (mutation.type == 'attributes') {{
+              var target = $(mutation.target)
+              if (target.hasClass('active')) {{
+                if (target.parents('ul.nav').length) {{
+                  target.parents('ul.nav').siblings('a').addClass('active')
+                  target.parents('ul.nav').css('display', 'block')
+                }}
+              }} else if (target.is('a')) {{
+                if (target.parents('ul.nav').length) {{
+                  target.parents('ul.nav').siblings('a').removeClass('active')
+                  target.parents('ul.nav').css('display', 'none')
+                }}
+              }}
+              
+            }}
+          }});    
+        }});
+
+        // configuration of the observer:
+        var target = $(".toc-wrapper")[0];
+        var config = {{ childList: true, attributes: true, subtree:true, characterData: true }};
+
+        // pass in the target node, as well as the observer options
+        observer.observe(target, config);
+      }});
+
+      </script>
+
+    </body>
+  </html>

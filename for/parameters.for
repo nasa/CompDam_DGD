@@ -1,3 +1,4 @@
+#define type(x) TYPE(x), target
 
 Module parameters_Mod
   ! Module for loading and validating DGD solution parameters
@@ -12,6 +13,7 @@ Module parameters_Mod
     Integer :: logFormat                                          ! 1=default (to log file), 2=csv
     Integer :: cutbacks_max                                       ! maximum number of cut-backs
     Integer :: MD_max                                             ! maximum number of damage increments per solution increment
+    Integer :: EQ_max                                             ! maximum number of equilibrium iterations
     Integer :: alpha_inc                                          ! increment, in degrees, for which the matrix failure criterion is evaluated
     Double Precision :: tol_DGD_f                                 ! tol_DGD_f = tol_DGD/YT
     Double Precision :: dGdGc_min                                 ! minimum amount of damage dissipated per MD increment
@@ -19,12 +21,15 @@ Module parameters_Mod
     Double Precision :: penStiffMult                              ! penalty stiffness multipler
     Double Precision :: cutback_amount                            ! artificially slow rate of change of F_bulk
     Double Precision :: tol_divergence                            ! Tolerance for divergence of internal Newton Raphson loop
+    Double Precision :: gamma_max                                 ! Maximum shear strain; when this value is exceeded, the element is deleted
+    Double Precision :: kb_decompose_thres                        ! Ratio of kink band size to element length at which to decompose the element
 
     ! min and max values for acceptable range
     Integer, private :: logLevel_min, logLevel_max
     Integer, private :: logFormat_min, logFormat_max
     Integer, private :: cutbacks_max_min, cutbacks_max_max
     Integer, private :: MD_max_min, MD_max_max
+    Integer, private :: EQ_max_min, EQ_max_max
     Integer, private :: alpha_inc_min, alpha_inc_max
     Double Precision, private :: tol_DGD_f_min, tol_DGD_f_max
     Double Precision, private :: dGdGc_min_min, dGdGc_min_max
@@ -32,6 +37,8 @@ Module parameters_Mod
     Double Precision, private :: penStiffMult_min, penStiffMult_max
     Double Precision, private :: cutback_amount_min, cutback_amount_max
     Double Precision, private :: tol_divergence_min, tol_divergence_max
+    Double Precision, private :: gamma_max_min, gamma_max_max
+    Double Precision, private :: kb_decompose_thres_min, kb_decompose_thres_max
 
   End Type parameters
 
@@ -40,7 +47,7 @@ Module parameters_Mod
   Public :: loadParameters
 
   ! Reference to object for singleton
-  Type(parameters), Save :: p
+  type(parameters), Save :: p
 
 Contains
 
@@ -60,12 +67,16 @@ Contains
     ! Initializations
     Call initializeParameters()
 
+#ifndef PYEXT
     ! Get the output directory (location to search for CompDam.parameters file)
     Call VGETOUTDIR(outputDir, lenOutputDir)
 
     ! Look to see if a parameters file exists
     ! First look for: CompDam.parameters
     fileName = trim(outputDir) // '/CompDam.parameters'
+#else
+    fileName = 'CompDam.parameters'
+#endif
     Inquire(FILE=fileName, EXIST=fileExists)
 
     ! If the file is present, load parameters from file
@@ -149,6 +160,9 @@ Contains
           Case ('MD_max')
             Call verifyAndSaveProperty_int(trim(key), value, p%MD_max_min, p%MD_max_max, p%MD_max)
 
+          Case ('EQ_max')
+            Call verifyAndSaveProperty_int(trim(key), value, p%EQ_max_min, p%EQ_max_max, p%EQ_max)
+
           Case ('alpha_inc')
             Call verifyAndSaveProperty_int(trim(key), value, p%alpha_inc_min, p%alpha_inc_max, p%alpha_inc)
 
@@ -169,6 +183,12 @@ Contains
 
           Case ('tol_divergence')
             Call verifyAndSaveProperty_dbl(trim(key), value, p%tol_divergence_min, p%tol_divergence_max, p%tol_divergence)
+
+          Case ('gamma_max')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%gamma_max_min, p%gamma_max_max, p%gamma_max)
+
+          Case ('kb_decompose_thres')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%kb_decompose_thres_min, p%kb_decompose_thres_max, p%kb_decompose_thres)
 
           Case Default
             Call log%error("loadParameters: Parameter not recognized: " // trim(key))
@@ -193,7 +213,8 @@ Contains
     p%logLevel       = 2
     p%logFormat      = 1
     p%cutbacks_max   = 4
-    p%MD_max         = 100000
+    p%MD_max         = 1000
+    p%EQ_max         = 1000
     p%alpha_inc      = 10
     p%tol_DGD_f      = 1.d-4
     p%dGdGc_min      = 1.d-12
@@ -201,6 +222,8 @@ Contains
     p%penStiffMult   = 1.d4
     p%cutback_amount = 0.5d0
     p%tol_divergence = 0.1d0
+    p%gamma_max      = 4.d0
+    p%kb_decompose_thres = 0.99d0
 
 
     ! Maximum and minimum values for parameters to be read from CompDam.parameters file
@@ -214,7 +237,10 @@ Contains
     p%cutbacks_max_max = 10
 
     p%MD_max_min = 0
-    p%MD_max_max = 1000000
+    p%MD_max_max = 100000
+
+    p%EQ_max_min = 0
+    p%EQ_max_max = 100000
 
     p%alpha_inc_min = 1
     p%alpha_inc_max = 90
@@ -236,6 +262,12 @@ Contains
 
     p%tol_divergence_min = zero
     p%tol_divergence_max = 100
+
+    p%gamma_max_min = zero
+    p%gamma_max_max = 100
+
+    p%kb_decompose_thres_min = zero
+    p%kb_decompose_thres_max = one
 
     Return
   End Subroutine initializeParameters

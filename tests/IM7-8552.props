@@ -76,8 +76,6 @@ SL = 92.30
 // Transverse compressive strength [MPa]; Ref 1.
 YC = 199.8
 
-
-
 // Fracture Toughness
 // ------------------------------------------------------------
 
@@ -101,6 +99,29 @@ GSL = 0.7880
 
 // BK exponent for mode-mixity; Ref 2.
 eta_BK = 1.634
+
+
+
+// DGD fiber compression damage model
+// ------------------------------------------------------------
+
+// Kink-band width [mm]
+w_kb = 0.1
+
+
+
+// Schapery micro-damage
+// ------------------------------------------------------------
+
+es0 =  1.d0
+es1 =  0.d0
+es2 =  0.d0
+es3 =  0.d0
+
+gs0 =  1.33d0
+gs1 = -1.47d0
+gs2 =  5.05d-1
+gs3 = -1.18d-2
 
 
 

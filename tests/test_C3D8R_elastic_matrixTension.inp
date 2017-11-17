@@ -56,20 +56,21 @@
   3, CDM_Fb2
   4, CDM_Fb3
   5, CDM_B
-  6, CDM_Lc
-  7, CDM_FIfT
-  8, CDM_d1
-  9, CDM_FImT
+  6, CDM_Lc1
+  7, CDM_Lc2
+  8, CDM_Lc3
+  9, CDM_FIm
  10, CDM_alpha
  11, CDM_STATUS
  12, CDM_Plas12
  13, CDM_Inel12
- 14, CDM_mCompInit
+ 14, CDM_FIfT
  15, CDM_slide1
  16, CDM_slide2
  17, CDM_FIfC
  18, CDM_d1T
  19, CDM_d1C
+*Characteristic Length, definition=USER, components=3
 **
 ** INITIAL CONDITIONS
 **
