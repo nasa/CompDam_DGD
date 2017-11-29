@@ -73,7 +73,7 @@ Contains
 
     ! Fiber nonlinearity
     If (present(E1)) Then
-      E1 = m%E1*(1+m%gammaf*eps(1,1))
+      E1 = m%E1*(1+m%cl*eps(1,1))
     End If
 
     Return

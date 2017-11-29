@@ -231,7 +231,7 @@ class ParametricKinkBandWidth_twoElement(av.TestCase):
     __metaclass__ = av.ParametricMetaClass
 
     # Refers to the template input file name
-    baseName = "test_C3D8R_twoElement_fiberCompression_DGD"
+    baseName = "test_C3D8R_twoElement_fiberCompression_FKT"
 
     # Use python script instead of input file
     pythonScriptForModel = True
@@ -257,7 +257,7 @@ class ParametricKinkBandWidth_singleElement(av.TestCase):
     __metaclass__ = av.ParametricMetaClass
 
     # Refers to the template input file name
-    baseName = "test_C3D8R_fiberCompression_DGD"
+    baseName = "test_C3D8R_fiberCompression_FKT"
 
     # Range of parameters to test; all combinations are tested
     parameters = {'wkbToTotal': [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
@@ -306,19 +306,19 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_fiberTension")
 
 
-    def test_C3D8R_fiberCompression_DGD(self):
-        """ Fiber compression: DGD based model, solid element """
-        self.runTest("test_C3D8R_fiberCompression_DGD")
+    def test_C3D8R_fiberCompression_FKT(self):
+        """ Fiber compression: Fiber kinking theory based model, solid element """
+        self.runTest("test_C3D8R_fiberCompression_FKT")
 
 
-    def test_C3D8R_fiberCompression_DGD_FN(self):
-        """ Fiber compression: DGD based model, solid element, fiber nonlinearity """
-        self.runTest("test_C3D8R_fiberCompression_DGD_FN")
+    def test_C3D8R_fiberCompression_FKT_FN(self):
+        """ Fiber compression: Fiber kinking theory based model, solid element, fiber nonlinearity """
+        self.runTest("test_C3D8R_fiberCompression_FKT_FN")
 
 
-    def test_C3D8R_fiberCompression_CDM(self):
-        """ Fiber compression: CDM based model, solid element """
-        self.runTest("test_C3D8R_fiberCompression_CDM")
+    def test_C3D8R_fiberCompression_BL(self):
+        """ Fiber compression: Bilinear softening based model, solid element """
+        self.runTest("test_C3D8R_fiberCompression_BL")
 
 
     def test_C3D8R_fiberLoadReversal(self):
@@ -396,9 +396,9 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_S4R_fiberTension")
 
 
-    def test_S4R_fiberCompression_CDM(self):
-        """ Fiber compression: CDM based model, shell element """
-        self.runTest("test_S4R_fiberCompression_CDM")
+    def test_S4R_fiberCompression_BL(self):
+        """ Fiber compression: Bilinear softening based model, shell element """
+        self.runTest("test_S4R_fiberCompression_BL")
 
 
     def test_S4R_fiberLoadReversal(self):

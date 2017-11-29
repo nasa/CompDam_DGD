@@ -160,7 +160,7 @@ Example 2, using an [input deck command](#defining-the-material-properties-in-th
     -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.2,      133.3,    0.5,
 **
 **  33        34        35        36        37        38        39        40
-**  XC,       fXC,      GXC,      fGXC,   gammaf,     w_kb,     None,     mu
+**  XC,       fXC,      GXC,      fGXC,       cf,     w_kb,     None,     mu
     1200.1,      ,         ,          ,         ,     0.1,          ,     0.3
 **
 *Initial Conditions, type=SOLUTION
@@ -337,7 +337,7 @@ Material properties can be defined in the input deck. Any optional material prop
 | 35 | *G<sub>XC</sub>*       | GXC      | Long. compression fracture toughness          | F/L                                            | 0 < *G<sub>XC</sub>* < &infin;           |                 |
 | 36 | *f<sub>GXC</sub>*      | fGXC     | Long. compression fracture toughness ratio    | -                                              | 0 &le; *f<sub>GXC</sub>* &le; 1          |                 |
 |    | ------                 |          |                                               |                                                |                                          |                 |
-| 37 | *&gamma*<sub>f</sub>*  | gamma_f  | Fiber nonlinearity coefficient                | -                                              | 0 &le; *&gamma<sub>f</sub>* 1000         |                 |
+| 37 | *c<sub>l</sub>*        | cl       | Fiber nonlinearity coefficient                | -                                              | 0 &le; *c<sub>l</sub>* 1000              |                 |
 | 38 | *w<sub>kb</sub>*       | w_kb     | Width of the kink band                        | L                                              | 0 &le; *w<sub>kb</sub>* &infin;          |                 |
 | 40 | *&mu;*                 | mu       | Coefficient of friction                       | -                                              | 0 &le; *&mu;* &le; 1                     |                 ||
 

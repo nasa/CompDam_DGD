@@ -1178,7 +1178,7 @@ Contains
       ! -------------------------------------------------------------------- !
       epsm = GLStrain(Fm,ndir)
       epsm = MATMUL(TRANSPOSE(R_phi0), MATMUL(epsm, R_phi0))
-      E1 = m%E1*(1+m%gammaf*epsm(1,1))
+      E1 = m%E1*(1+m%cl*epsm(1,1))
       Stiff = StiffFunc(ndir+nshr, E1, m%E2, m%E3, m%G12, m%G13, m%G23, m%v12, m%v13, m%v23, zero, zero, zero)
       pk2_fiberDirm = Hooke(Stiff, epsm, nshr) ! 2PK
       stressm = MATMUL(R_phi0, MATMUL(pk2_fiberDirm, TRANSPOSE(R_phi0)))  ! 2PK rotated back to the reference direction

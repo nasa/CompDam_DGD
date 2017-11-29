@@ -21,7 +21,7 @@ Module matProp_Mod
     Double Precision :: XT, fXT, GXT, fGXT                               ! Opt. Longitudinal tensile damage (max strain failure criterion, bilinear softening)
     Double Precision :: XC, fXC, GXC, fGXC                               ! Opt. Longitudinal compressive damage (max strain failure criterion, bilinear softening)
     Double Precision :: w_kb                                             ! Opt. LaRC15 kink band model (Also requires XC, shear nonlinearity).
-    Double Precision :: gammaf                                           ! Opt. fiber nonlinearity (defaults to zero, which is no fiber nonlinearity)
+    Double Precision :: cl                                           ! Opt. fiber nonlinearity (defaults to zero, which is no fiber nonlinearity)
     Double Precision :: mu                                               ! Opt. Friction. Defaults to zero
     Double Precision :: es(4), gs(4)
 
@@ -34,7 +34,7 @@ Module matProp_Mod
     Double Precision, private :: cte_min, cte_max
     Double Precision, private :: aPL_min, aPL_max, nPL_min, nPL_max
     Double Precision, private :: w_kb_min, w_kb_max
-    Double Precision, private :: gammaf_min, gammaf_max
+    Double Precision, private :: cl_min, cl_max
     Double Precision, private :: alpha0_min, alpha0_max
     Double Precision, private :: mu_min, mu_max
     Double Precision, private :: schapery_min, schapery_max
@@ -48,7 +48,7 @@ Module matProp_Mod
     Logical, private :: XT_def, fXT_def, GXT_def, fGXT_def
     Logical, private :: XC_def, fXC_def, GXC_def, fGXC_def
     Logical, private :: YC_def, w_kb_def, alpha0_def
-    Logical, private :: gammaf_def
+    Logical, private :: cl_def
     Logical, private :: mu_def
     Logical, private :: es_def(4), gs_def(4)
 
@@ -320,8 +320,8 @@ Contains
           Case ('w_kb')
             Call verifyAndSaveProperty_str(trim(key), value, m%w_kb_min, m%w_kb_max, m%w_kb, m%w_kb_def)
 
-          Case ('gammaf')
-            Call verifyAndSaveProperty_str(trim(key), value, m%gammaf_min, m%gammaf_max, m%gammaf, m%gammaf_def)
+          Case ('cl')
+            Call verifyAndSaveProperty_str(trim(key), value, m%cl_min, m%cl_max, m%cl, m%cl_def)
 
           Case ('alpha0')
             Call verifyAndSaveProperty_str(trim(key), value, m%alpha0_min, m%alpha0_max, m%alpha0, m%alpha0_def)
@@ -577,7 +577,7 @@ Contains
           Call verifyAndSaveProperty_double('fGXC', props(i), zero, one, m%fGXC, m%fGXC_def)
 
         Case (37)
-          Call verifyAndSaveProperty_double('gammaf', props(i), m%gammaf_min, m%gammaf_max, m%gammaf, m%gammaf_def)
+          Call verifyAndSaveProperty_double('cl', props(i), m%cl_min, m%cl_max, m%cl, m%cl_def)
 
         Case (38)
           Call verifyAndSaveProperty_double('w_kb', props(i), m%w_kb_min, m%w_kb_max, m%w_kb, m%w_kb_def)
@@ -634,8 +634,8 @@ Contains
     m%w_kb_min = Tiny(zero)
     m%w_kb_max = Huge(zero)
 
-    m%gammaf_min = zero
-    m%gammaf_max = 1000.d0
+    m%cl_min = zero
+    m%cl_max = 1000.d0
 
     m%alpha0_min = zero
     m%alpha0_max = pi/two
@@ -870,10 +870,10 @@ Contains
     End If
 
     ! check if fiber nonlinearity has been defined
-    If (m%gammaf_def) Then
+    If (m%cl_def) Then
       Call log%info('PROPERTY: fiber nonlinearity has been defined')
     Else
-      m%gammaf = zero
+      m%cl = zero
     End If
 
     Return
