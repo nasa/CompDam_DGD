@@ -6,8 +6,6 @@ Contains
   Pure Subroutine crack_traction_and_slip(delta, Pen, slide_old, slide, mu_L, mu_T, dmg, AdAe, stress, Sliding)
     ! Returns the traction on the crack and the amount of slip between the crack surfaces
 
-    Include 'vaba_param.inc'
-
     ! Arguments
     Double Precision, intent(IN) :: delta(3)      ! cohesive displacement-jump [length]
     Double Precision, intent(IN) :: slide_old(2)  ! previous amount of displacement slip [length]
@@ -25,7 +23,7 @@ Contains
     Double Precision, parameter :: zero=0.d0, one=1.d0
     ! -------------------------------------------------------------------- !
 
-    If (delta(2) .LT. zero) Then  ! Closed crack
+    If (delta(2) < zero) Then  ! Closed crack
 
       ! Tractions using the old slip displacements
       stress_old(1) = Pen(1)*(delta(1) - slide_old(1))
@@ -77,8 +75,6 @@ Contains
   Pure Function crack_is_sliding(delta, Pen, slide, mu_L, mu_T) result(Sliding)
     ! Determines whether the crack surfaces are sliding or sticking
 
-    Include 'vaba_param.inc'
-
     ! Input
     Double Precision, intent(IN) :: delta(3)      ! cohesive displacement-jump [length]
     Double Precision, intent(IN) :: slide(2)      ! previous amount of displacement slip [length]
@@ -93,7 +89,7 @@ Contains
     Double Precision, parameter :: zero=0.d0
     ! -------------------------------------------------------------------- !
 
-    If (delta(2) .LT. zero) Then  ! Closed crack
+    If (delta(2) < zero) Then  ! Closed crack
 
       ! Stresses using the old slip displacements
       stress_old(1) = Pen(1)*(delta(1) - slide(1))
@@ -103,11 +99,11 @@ Contains
       ! Shear stress on the crack (squared), using the old slip displacements
       shear_squared = stress_old(1)**2 + stress_old(3)**2
 
-      If (shear_squared .GT. zero) Then
+      If (shear_squared > zero) Then
         mu = (mu_L*stress_old(1)**2 + mu_T*stress_old(3)**2)/shear_squared  ! Combined coefficient of friction
 
         ! If the friction traction is greater than the shear traction,
-        If ((mu*stress_old(2))**2 .GE. shear_squared) Then
+        If ((mu*stress_old(2))**2 >= shear_squared) Then
           ! the crack surfaces are sticking.
           Sliding = .False.
         Else

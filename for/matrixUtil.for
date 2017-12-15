@@ -8,8 +8,6 @@ Contains
   Pure Function Vec2Matrix(vector)
     ! Converts tensors stored in vector format to a matrix format
 
-    Include 'vaba_param.inc'
-
     ! Arguments
     Double Precision, intent(IN) :: vector(:)
 
@@ -27,11 +25,11 @@ Contains
     Vec2Matrix(1,2) = vector(4)
 
     ! 2D or 3D
-    If (size(vector) .GT. 5) Then ! 3D
+    If (size(vector) > 5) Then ! 3D
       Vec2Matrix(2,3) = vector(5)
 
       ! Symmetric or nonsymmetric
-      If (size(vector) .EQ. 6) Then ! 3D, Symmetric
+      If (size(vector) == 6) Then ! 3D, Symmetric
         Vec2Matrix(1,3) = vector(6)
 
         Vec2Matrix(2,1) = Vec2Matrix(1,2)
@@ -46,7 +44,7 @@ Contains
       End If
 
     Else ! 2D
-      If (size(vector) .EQ. 5) Then  ! 2D, Nonsymmetric
+      If (size(vector) == 5) Then  ! 2D, Nonsymmetric
         Vec2Matrix(2,1) = vector(5)
       Else                           ! 2D, Symmetric
         Vec2Matrix(2,1) = Vec2Matrix(1,2)
@@ -59,8 +57,6 @@ Contains
 
   Pure Function Matrix2Vec(mat, nshr)
     ! Converts a symmetric tensor stored in matrix format (3,3) to a vector
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: mat(3,3)
@@ -80,7 +76,7 @@ Contains
     Matrix2Vec(4) = mat(1,2)
 
     ! 3D
-    If (nshr .GT. 1) Then
+    If (nshr > 1) Then
       Matrix2Vec(5) = mat(2,3)
       Matrix2Vec(6) = mat(3,1)
     End If
@@ -103,12 +99,12 @@ Contains
     Double Precision, parameter :: eps=1.d-30
     ! -------------------------------------------------------------------- !
 
-    If(size(vec1) .NE. size(vec2)) Then
+    If(size(vec1) /= size(vec2)) Then
       VCmp = .FALSE.
       Return
     Else
       Do I=1, size(vec1)
-        If(abs(vec1(I) - vec2(I)) .GT. eps) Then
+        If(abs(vec1(I) - vec2(I)) > eps) Then
           VCmp = .FALSE.
           Return
         End If
@@ -123,8 +119,6 @@ Contains
 
   Pure Function MInverse(mat)
     ! Finds the inverse of a 3x3 matrix
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: mat(3,3)
@@ -160,8 +154,6 @@ Contains
     ! From: http://fortranwiki.org/fortran/show/inv
 
     Use forlog_Mod
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: mat(:,:)
@@ -219,8 +211,6 @@ Contains
   Pure Function MDet(mat)
     ! Finds the determinant of a 3x3 matrix
 
-    Include 'vaba_param.inc'
-
     ! Arguments
     Double Precision, intent(IN) :: mat(3,3)
 
@@ -234,10 +224,8 @@ Contains
   End Function MDet
 
 
-  Pure Function OuterProduct(u,v)
+  Pure Function OuterProduct(u, v)
     ! Calculates the outer product of two vectors
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: u(:), v(:)
@@ -256,10 +244,8 @@ Contains
   End Function OuterProduct
 
 
-  Pure Function CrossProduct(a,b)
+  Pure Function CrossProduct(a, b)
     ! Calculates the cross product of two vectors with length 3
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: a(3), b(3)
@@ -278,8 +264,6 @@ Contains
 
   Pure Function Norm(u)
     ! Normalizes a vector
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: u(:)
@@ -303,8 +287,6 @@ Contains
 
   Pure Function Length(u)
     ! Calculates the length of a vector
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: u(:)

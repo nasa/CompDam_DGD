@@ -3,7 +3,7 @@ Module strain_mod
 
 Contains
 
-  Subroutine Strains(F,m,U,DT,ndir,eps,Plas12,Inel12,d_eps12_sign,status,gamma_max,E1,R_phi0)
+  Subroutine Strains(F, m, U, DT, ndir, eps, Plas12, Inel12, d_eps12_sign, status, gamma_max, E1, R_phi0)
     ! The purpose of this subroutine is to calculate the strains (eps, plas12, inel12)
     ! for the given deformation gradient and temperature.
     !
@@ -11,8 +11,6 @@ Contains
 
     Use matProp_Mod
     Use forlog_Mod
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Type(matProps), intent(IN) :: m
@@ -35,13 +33,13 @@ Contains
     eps = zero
 
     ! Calculate the specified definition of strain
-    If (m%strainDef .EQ. 1) Then  ! Log strain
+    If (m%strainDef == 1) Then  ! Log strain
 #ifndef PYEXT
       eps = LogStrain(U,ndir)
 #endif
-    Else If (m%strainDef .EQ. 2) Then  ! GL strain
+    Else If (m%strainDef == 2) Then  ! GL strain
       eps = GLStrain(F,ndir)
-    Else If (m%strainDef .EQ. 3) Then  ! Biot strain
+    Else If (m%strainDef == 3) Then  ! Biot strain
       eps = BiotStrain(U,ndir)
     End If
 
@@ -51,14 +49,14 @@ Contains
     End If
 
     ! Account for thermal strains
-    If (DT .NE. zero) Then
+    If (DT /= zero) Then
       eps(1,1) = eps(1,1) - m%cte(1)*DT
       eps(2,2) = eps(2,2) - m%cte(2)*DT
       eps(3,3) = eps(3,3) - m%cte(3)*DT
     End If
 
     ! Excessive shear strain
-    If (two*abs(eps(1,2)) .GT. gamma_max) Then
+    If (two*abs(eps(1,2)) > gamma_max) Then
       Call log%warn("Excessive shear strain.")
       status = 0
       Return
@@ -80,10 +78,8 @@ Contains
   End Subroutine Strains
 
 #ifndef PYEXT
-  Function LogStrain(U,ndir)
+  Function LogStrain(U, ndir)
     ! Computes the log strain from the stretch
-
-    Include 'vaba_param.inc'
 
     ! Input
     Double Precision, intent(IN) :: U(3,3)
@@ -107,7 +103,7 @@ Contains
     LWORK = MIN( 1000, INT( WORK( 1 ) ) )
     ! Solve the eigenvalue problem
     Call DSYEV( 'V', 'U', 3, eigVec, 3, eigVal, WORK, LWORK, INFO )
-    If (info .NE. 0) Then
+    If (info /= 0) Then
       print *, 'WARNING'
       print *, 'Failed to compute eigenvalues of U^2. DSYEV Error.'
     End If
@@ -125,10 +121,8 @@ Contains
   End Function LogStrain
 #endif
 
-  Pure Function GLStrain(F,ndir)
+  Pure Function GLStrain(F, ndir)
     ! Computes the green lagrange strain from the deformation gradient
-
-    Include 'vaba_param.inc'
 
     ! Input
     Double Precision, intent(IN) :: F(3,3)
@@ -151,10 +145,8 @@ Contains
   End Function GLStrain
 
 
-  Pure Function BiotStrain(U,ndir)
+  Pure Function BiotStrain(U, ndir)
     ! Computes the biot strain from the stetch
-
-    Include 'vaba_param.inc'
 
     ! Input
     Double Precision, intent(IN) :: U(3,3)
@@ -177,13 +169,11 @@ Contains
   End Function BiotStrain
 
 
-  Subroutine NLSHEAR(strain,d_strain_sign,Modulus,aPL,nPL,Plas,Inel)
+  Subroutine NLSHEAR(strain, d_strain_sign, Modulus, aPL, nPL, Plas, Inel)
     ! The purpose of this subroutine is to calculate the plastic and inelastic strains
     ! for the given total strain state and nonlinear stress-strain curve.
 
     Use forlog_Mod
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: Modulus                 ! Elastic modulus (eg G12)
@@ -205,14 +195,14 @@ Contains
     E_max = 1000 ! maximum epsPL loop iterations
     epsPL: Do E = 0,E_max
       ff0 = tau + SIGN(one, tau)*aPL*ABS(tau)**nPL - Modulus*epsEff ! ff0 = 0, solve for tau
-      If (ABS(ff0)/Modulus .LE. tol) EXIT epsPL
-      If (E .EQ. E_max) Call log%error("epsPL loop in NLSHEAR failed to converge: " // trim(str(Plas)) // ', ' // trim(str(Inel)) // ', ' // trim(str(strain)))
+      If (ABS(ff0)/Modulus <= tol) EXIT epsPL
+      If (E == E_max) Call log%error("epsPL loop in NLSHEAR failed to converge: " // trim(str(Plas)) // ', ' // trim(str(Inel)) // ', ' // trim(str(strain)))
       ff1 = one + aPL*nPL*ABS(tau)**(nPL - one) ! derivative of ff0 w.r.t. tau
       tau = tau - ff0/ff1 ! Newton-Raphson equation
     End Do epsPL
 
     Inel_trial = epsEff - tau/Modulus
-    If (Inel_trial .GT. Inel) Then
+    If (Inel_trial > Inel) Then
       Plas = Plas + (Inel_trial - Inel)*d_strain_sign
       Inel = Inel_trial
     End If
@@ -224,8 +214,6 @@ Contains
     ! Find shear stress corresponding to strain following RO law
 
     Use forlog_Mod
-
-    Include 'vaba_param.inc'
 
     ! Input
     Double Precision, intent(IN) :: strain        ! engineering shear strain
@@ -248,13 +236,13 @@ Contains
     E_max = 1000 ! maximum epsPL loop iterations
     epsPL: Do E = 0,E_max
       ff0 = tau + SIGN(one, tau)*aPL*ABS(tau)**nPL - Modulus*epsEff ! ff0 = 0, solve for tau
-      If (ABS(ff0)/Modulus .LE. tol) EXIT epsPL
-      If (E .EQ. E_max) Call log%error("epsPL loop in NLSHEAR failed to converge: " // trim(str(strain)))
+      If (ABS(ff0)/Modulus <= tol) EXIT epsPL
+      If (E == E_max) Call log%error("epsPL loop in NLSHEAR failed to converge: " // trim(str(strain)))
       ff1 = one + aPL*nPL*ABS(tau)**(nPL - one) ! derivative of ff0 w.r.t. tau
       tau = tau - ff0/ff1 ! Newton-Raphson equation
     End Do epsPL
 
-  End Function
+  End Function ramberg_osgood
 
 
 End Module strain_mod

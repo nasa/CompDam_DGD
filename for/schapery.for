@@ -8,8 +8,6 @@ Contains
 
     Use matProp_Mod
 
-    Include 'vaba_param.inc'
-
     ! Arguments
     Type(matProps), intent(IN) :: m
     Double Precision, intent(IN) :: eps(3,3)            ! strain tensor
@@ -35,8 +33,6 @@ Contains
 
   Function Schapery_reduction(Sr, c) result(reduction)
     ! Calculates the stiffness reduction according to Schapery theory.
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: Sr           ! Reduced Schapery damage state variable

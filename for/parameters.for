@@ -56,8 +56,6 @@ Contains
 
     Use forlog_Mod
 
-    Include 'vaba_param.inc'
-
     ! Locals
     Character(len=256) :: outputDir, fileName
     Integer :: lenOutputDir
@@ -94,8 +92,6 @@ Contains
 
     Use forlog_Mod
 
-    Include 'vaba_param.inc'
-
     ! Arguments
     Character(len=*), intent(IN) :: fileName
 
@@ -110,36 +106,36 @@ Contains
 
     ! Try to load CompDam parameters from a '.parameters' file
     Open(UNIT=unit, FILE=fileName, STATUS='old', ACTION='read', position='rewind', IOSTAT=iostat)
-    If (iostat .NE. 0) Call log%error("loadParameters: Unable to access the .parameters file")
+    If (iostat /= 0) Call log%error("loadParameters: Unable to access the .parameters file")
     ReadLines: Do
 
       ! Read the next line in the file
       Read(unit,'(A255)',IOSTAT=iostat) line
 
-      If (iostat .GT. 0) Then
+      If (iostat > 0) Then
         Call log%error("loadParameters: Unknown error reading file")
         Exit
 
-      Else If (iostat .LT. 0) Then
+      Else If (iostat < 0) Then
         Exit
 
       Else  ! Parse the line in the file
         ! Skip blank lines
-        If (Len(Trim(line)) .EQ. 0) Cycle ReadLines
+        If (Len(Trim(line)) == 0) Cycle ReadLines
 
         ! Ignore comment lines (token: //)
         commentTokenPos = Index(line, '//')
-        If (commentTokenPos .EQ. 1) Then
+        If (commentTokenPos == 1) Then
           Cycle ReadLines
 
-        Else If (commentTokenPos .GT. 1) Then
+        Else If (commentTokenPos > 1) Then
           ! This line has a trailing comment, retain everything before the comment
           line = line(1:commentTokenPos-1)
         End If
 
         ! Split the line into a key and value
         equalTokenPos = Index(line, '=')
-        If (equalTokenPos .EQ. 0) Call log%error("loadParameters: Expected [name] = [value] format not found. Line image: " // trim(line))
+        If (equalTokenPos == 0) Call log%error("loadParameters: Expected [name] = [value] format not found. Line image: " // trim(line))
 
         ! Parse key and value from the line
         key = line(1:equalTokenPos-1)
@@ -292,10 +288,10 @@ Contains
     Read(value,*) valueDbl
 
     ! Verify that the value is within the specified bounds
-    If (valueDbl .LT. min) Then
+    If (valueDbl < min) Then
       Call log%error(" PARAMETER ERROR " // trim(key) // " cannot be less than " // trim(str(min)) // ". Found value: " // trim(str(valueDbl)))
 
-    Else If (valueDbl .GT. max) Then
+    Else If (valueDbl > max) Then
       Call log%error(" PARAMETER ERROR " // trim(key) // " cannot be greater than " // trim(str(max)) // ". Found value: " // trim(str(valueDbl)))
 
     End If
@@ -325,10 +321,10 @@ Contains
     Read(value,*) valueInt
 
     ! Verify that the value is within the specified bounds
-    If (valueInt .LT. min) Then
+    If (valueInt < min) Then
       Call log%error(" PARAMETER ERROR " // trim(key) // " cannot be less than " // trim(str(min)) // ". Found value: " // trim(str(valueInt)))
 
-    Else If (valueInt .GT. max) Then
+    Else If (valueInt > max) Then
       Call log%error(" PARAMETER ERROR " // trim(key) // " cannot be greater than " // trim(str(max)) // ". Found value: " // trim(str(valueInt)))
 
     End If

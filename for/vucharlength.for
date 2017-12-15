@@ -8,7 +8,8 @@ Subroutine vucharlength(                                    &
   ! Write only (modifiable) variables:
   charLength )
 
-  Include 'vaba_param.inc'
+  Implicit Double Precision (a-h, o-z)
+  Integer, parameter :: j_sys_Dimension = 2, n_vec_Length = 136, maxblk = n_vec_Length
 
   Dimension jElType(3), jElem(nblock), coordMp(nblock,ndim),  &
     coordNode(nblock,nnode,ndim),                             &
@@ -16,7 +17,7 @@ Subroutine vucharlength(                                    &
     stateOld(nblock,nstatev), charLength(nblock,ncomp),       &
     field(nblock, nfieldv)
 
-  Character*80 cmname
+  Character(len=80) :: cmname
 
   Double Precision :: center(ndim)
 
@@ -46,7 +47,7 @@ Subroutine vucharlength(                                    &
     ! working for shells where the material direction is set to theta = zero degrees.
 
     ! Material point coordinates in the material frame (for random initial fiber misalignments)
-    If (ncomp .EQ. 6) Then
+    If (ncomp == 6) Then
       charLength(k, 4) = DOT_PRODUCT(coordMp(k,:), direct(k,:,1))
       charLength(k, 5) = DOT_PRODUCT(coordMp(k,:), direct(k,:,2))
       charLength(k, 6) = DOT_PRODUCT(coordMp(k,:), direct(k,:,3))

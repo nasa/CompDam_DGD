@@ -1,6 +1,7 @@
 Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
 
-  include 'vaba_param.inc'
+  Implicit Double Precision (a-h, o-z)
+  Integer, parameter :: j_sys_Dimension = 2, n_vec_Length = 136, maxblk = n_vec_Length
 
   ! Arguments
   Dimension i_Array(niArray), r_Array(nrArray)
@@ -37,7 +38,7 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   ! and scatter the data.
 
   ! Start of the analysis
-  If (lOp .EQ. j_int_StartAnalysis) Then
+  If (lOp == j_int_StartAnalysis) Then
 
     ! User coding to set up the environment, open files, launch/connect to the external programs, etc.
 

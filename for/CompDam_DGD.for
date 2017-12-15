@@ -7,7 +7,7 @@
 ! Reserved.
 
 #include "vexternaldb.for"
-#include "VUMATArgs.for"
+#include "vumatArgs.for"
 #include "version.for"
 #include "forlog.for"
 #include "matrixUtil.for"
@@ -34,14 +34,15 @@ Subroutine VUMAT(  &
   ! Write only (modifiable) variables:
   stressNew,stateNew,enerInternNew,enerInelasNew)
 
-  Include 'vaba_param.inc'
+  Implicit Double Precision (a-h, o-z)
+  Parameter (j_sys_Dimension = 2, n_vec_Length = 136, maxblk = n_vec_Length)
 
   Dimension jblock(*),props(*),density(*),coordMp(*),charLength(*),strainInc(*),relSpinInc(*),tempOld(*),tempNew(*),      &
     stretchOld(*),defgradOld(*),fieldOld(*),stressOld(*),stateOld(*),enerInternOld(*),                          &
     enerInelasOld(*),stretchNew(*),defgradNew(*),fieldNew(*),stressNew(*),stateNew(*),                          &
     enerInternNew(*),enerInelasNew(*)
 
-  Character*80 cmname
+  Character(len=80) :: cmname
 
   Integer, parameter :: i_nblock=1, i_npt=2, i_layer=3, i_kspt=4, i_noel=5
 
@@ -52,6 +53,7 @@ Subroutine VUMAT(  &
   ! Throw error on single precision
   If (PRECISION(dt) < 15) Then
     Print *, 'ERROR: Found single precision data. CompDam must be run in double precision.'
+    Call XPLB_EXIT
   Else
     Call CompDam(  &
       ! Read only (unmodifiable) variables:
@@ -62,6 +64,7 @@ Subroutine VUMAT(  &
       stretchNew,defgradNew,fieldNew,                               &
       ! Write only (modifiable) variables:
       stressNew,stateNew,enerInternNew,enerInelasNew,               &
+      ! Read only, extra arguments:
       jblock(i_noel), jblock(i_npt), jblock(i_layer), jblock(i_kspt))
   End If
 End Subroutine VUMAT
@@ -76,7 +79,7 @@ Subroutine CompDam(  &
   stretchNew,defgradNew,fieldNew,                               &
   ! Write only (modifiable) variables:
   stressNew,stateNew,enerInternNew,enerInelasNew,               &
-  ! Read only, extra arguments
+  ! Read only, extra arguments:
   nElement, nMatPoint, nLayer, nSecPoint)
 
   Use forlog_Mod
@@ -86,7 +89,8 @@ Subroutine CompDam(  &
   Use parameters_Mod
   Use DGD_Mod
 
-  Include 'vaba_param.inc'
+  Implicit Double Precision (a-h, o-z)
+  Parameter (j_sys_Dimension = 2, n_vec_Length = 136, maxblk = n_vec_Length)
 
   Double Precision :: props(nprops), density(nblock), coordMp(nblock,*), charLength(nblock,*), strainInc(nblock,ndir+nshr), relSpinInc(nblock,nshr), tempOld(nblock), tempNew(nblock), &
     stretchOld(nblock,ndir+nshr), defgradOld(nblock,ndir+nshr+nshr), fieldOld(nblock,nfieldv), stressOld(nblock,ndir+nshr), stateOld(nblock,nstatev), enerInternOld(nblock),         &
@@ -98,7 +102,7 @@ Subroutine CompDam(  &
 
   Double Precision :: stepTime, totalTime, dt
 
-  Character*80 cmname
+  Character(len=80) :: cmname
 
   ! -------------------------------------------------------------------- !
   !    End VUMAT standard interface                                      !
@@ -120,7 +124,7 @@ Subroutine CompDam(  &
   Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
 
   ! Structure of all VUMAT argments
-  Type(VUMATArg) :: args
+  Type(vumatArg) :: args
 
   ! For access to the logger
   Type(forlog) :: logger
@@ -143,10 +147,10 @@ Subroutine CompDam(  &
   Call args%init(nblock, ndir, nshr, nstatev, stepTime, totalTime, dt)
 
   ! Only write git hash on first call
-  If ((totalTime .LE. DT) .AND. (p%logLevel .EQ. 0)) Then
+  If ((totalTime <= DT) .AND. (p%logLevel == 0)) Then
 
     ! Initialize the logger for use in loadParameters()
-    Call log%init(level=2, VUMATArgStruct=args, format=p%logFormat)
+    Call log%init(level=2, vumatArgStruct=args, format=p%logFormat)
 
     ! Load the CompDam solution parameters
     p = loadParameters()
@@ -156,19 +160,19 @@ Subroutine CompDam(  &
   End If
 
   ! Initialize the logger
-  Call log%init(level=p%logLevel, VUMATArgStruct=args, format=p%logFormat)
+  Call log%init(level=p%logLevel, vumatArgStruct=args, format=p%logFormat)
 
-  If (totalTime .LE. DT) Then
+  If (totalTime <= DT) Then
 
     If (Allocated(user%materials)) Then
       mats = Size(user%materials)
       readMaterial: Do I = 1,mats
-        If (user%materials(I)%name .EQ. trim(cmname)) Then
+        If (user%materials(I)%name == trim(cmname)) Then
           m = user%materials(I)
           Exit readMaterial
         End If
 
-        If (I .EQ. mats) Then
+        If (I == mats) Then
           Call log%info("Saving user material #"//trim(str(I+1))//": "//trim(cmname))
 
           ! Store all existing material data in temp array
@@ -184,7 +188,7 @@ Subroutine CompDam(  &
           Deallocate (user_temp%materials)
 
           ! Add new material data to resized user%materials
-          If (totalTime .EQ. zero) Then
+          If (totalTime == zero) Then
             user%materials(mats+1) = loadMatProps(cmname, .TRUE., nprops, props)
           Else
             user%materials(mats+1) = loadMatProps(cmname, .FALSE., nprops, props)
@@ -198,7 +202,7 @@ Subroutine CompDam(  &
 
       Call log%info("Saving initial user material: "//trim(cmname))
       Allocate (user%materials(1))
-      If (totalTime .EQ. zero) Then
+      If (totalTime == zero) Then
         user%materials(1) = loadMatProps(cmname, .TRUE., nprops, props)
       Else
         user%materials(1) = loadMatProps(cmname, .FALSE., nprops, props)
@@ -209,7 +213,7 @@ Subroutine CompDam(  &
 
   Else  ! After user%materials(:) has been fully populated
     Do I = 1,Size(user%materials)
-      If (user%materials(I)%name .EQ. trim(cmname))  m = user%materials(I)
+      If (user%materials(I)%name == trim(cmname))  m = user%materials(I)
     End Do
   End If
 
@@ -232,7 +236,7 @@ Subroutine CompDam(  &
   ! As of Abaqus 6.16, the packager recieves a defGradNew of (0.999, 0.999, 0.0, 0.001, 0.001)
   ! for S4R elements. The F(3,3) of 0.0 breaks the initial pass through the VUMAT and the model
   ! will not run. The following statement is a workaround to this problem.
-  If (totalTime .EQ. 0 .AND. nshr .EQ. 1) F(3,3) = one
+  If (totalTime == 0 .AND. nshr == 1) F(3,3) = one
 
   ! -------------------------------------------------------------------- !
   !    Recall previous elastic limits, plasticity, and damage states:    !
@@ -245,11 +249,11 @@ Subroutine CompDam(  &
   ! -------------------------------------------------------------------- !
   !    Define the characteristic element lengths                         !
   ! -------------------------------------------------------------------- !
-  If (sv%Lc(1) .EQ. zero) Then
+  If (sv%Lc(1) == zero) Then
 
     sv%Lc(1) = charLength(km, 1)
     sv%Lc(2) = charLength(km, 2)
-    If (nshr .EQ. 1) Then
+    If (nshr == 1) Then
       sv%Lc(3) = m%thickness
     Else
       sv%Lc(3) = charLength(km, 3)
@@ -260,12 +264,12 @@ Subroutine CompDam(  &
 
   End If
 
-  If (totalTime .LE. DT) Call checkForSnapBack(m, sv%Lc, nElement(km))
+  If (totalTime <= DT) Call checkForSnapBack(m, sv%Lc, nElement(km))
 
   ! -------------------------------------------------------------------- !
   !    Initialize phi0                                                   !
   ! -------------------------------------------------------------------- !
-  If (totalTime .LE. DT .AND. m%fiberCompDamFKT) Then
+  If (totalTime <= DT .AND. m%fiberCompDamFKT) Then
     sv%phi0 = initializePhi0(sv%phi0, m%G12, m%XC, m%aPL, m%nPL, sv%Lc, charLength(km, 4:6))
   End If
 
@@ -274,19 +278,19 @@ Subroutine CompDam(  &
   ! -------------------------------------------------------------------- !
 
   ! Damage initiation prediction
-  If (.NOT. (m%matrixDam .AND. sv%d2 .GT. zero) .AND. .NOT. (m%fiberCompDamFKT .AND. sv%d1C .GT. zero)) Then
+  If (.NOT. (m%matrixDam .AND. sv%d2 > zero) .AND. .NOT. (m%fiberCompDamFKT .AND. sv%d1C > zero)) Then
 
     Call DGDInit(U,F,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km))
 
   End IF
 
   ! Matrix crack damage evolution
-  If (m%matrixDam .AND. sv%d2 .GT. zero) Then
+  If (m%matrixDam .AND. sv%d2 > zero) Then
 
     Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km))
 
   ! Fiber compression damage evolution (New model)
-  Else If (m%fiberCompDamFKT .AND. sv%d1C .GT. zero) Then
+  Else If (m%fiberCompDamFKT .AND. sv%d1C > zero) Then
 
     Call DGDKinkband(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km))
 

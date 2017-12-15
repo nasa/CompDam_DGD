@@ -3,11 +3,9 @@ Module CDM_fiber_mod
 
 Contains
 
-  Pure Subroutine FiberTenDmg(eps,ndir,E1,XT,GXT,n,m,Lc,rfT,d1T,d1C,STATUS)
+  Pure Subroutine FiberTenDmg(eps, ndir, E1, XT, GXT, n, m, Lc, rfT, d1T, d1C, STATUS)
     ! The purpose of this subroutine is to evaluate fiber damage.
     ! This subroutine is for tension-only fiber damage.
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: E1                        ! Stiffness
@@ -44,10 +42,10 @@ Contains
     FIfT = E1/XT*eps(1,1)
 
     ! Update damage threshold
-    If (FIfT .GT. rfT) rfT = FIfT
+    If (FIfT > rfT) rfT = FIfT
 
     ! Determine d1T if damage has occurred
-    If (rfT .GT. one) Then
+    If (rfT > one) Then
 
       eps_rfT = rfT*XT/E1
 
@@ -64,10 +62,10 @@ Contains
       d1T = n*(dmg_1 - dmg_2) + dmg_2
 
       ! Prevent healing; If the current damage is less than previous damage, use previous damage
-      If (d1T .LT. d1T_temp) d1T = d1T_temp
+      If (d1T < d1T_temp) d1T = d1T_temp
 
       ! Delete element when it becomes fully damaged
-      If (d1T .GE. d1MAX) Then
+      If (d1T >= d1MAX) Then
         d1T = d1MAX
         STATUS = 0
       End If
@@ -86,8 +84,6 @@ Contains
   Pure Subroutine FiberCompDmg(eps,ndir,E1,XC,GXC,n,m,Lc,rfT,rfC,d1T,d1C,STATUS)
     ! The purpose of this subroutine is to evaluate fiber damage.
     ! This subroutine is for compression-only fiber damage.
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: E1                        ! Stiffness
@@ -124,15 +120,15 @@ Contains
     FIfC = -E1/XC*eps(1,1)
 
     ! Update damage threshold
-    If (FIfC .GT. rfC) Then
+    If (FIfC > rfC) Then
       rfC = FIfC
 
       ! For load reversal
-      If (rfC .GT. rfT) rfT = rfC
+      If (rfC > rfT) rfT = rfC
     End If
 
     ! Determine d1C if damage has occurred
-    If (rfC .GT. one) Then
+    If (rfC > one) Then
 
       eps_rfC = rfC*XC/E1
 
@@ -149,10 +145,10 @@ Contains
       d1C = n*(dmg_1 - dmg_2) + dmg_2
 
       ! Prevent healing; If the current damage is less than previous damage, use previous damage
-      If (d1C .LT. d1C_temp) d1C = d1C_temp
+      If (d1C < d1C_temp) d1C = d1C_temp
 
       ! Delete element when it becomes fully damaged
-      If (d1C .GE. d1MAX) Then
+      If (d1C >= d1MAX) Then
         d1C = d1MAX
         STATUS = 0
       End If
@@ -163,7 +159,7 @@ Contains
       rfC = FIfC
 
       ! If there's no damage in tension, set rfT to zero
-      If (d1T .LE. zero) rfT = zero
+      If (d1T <= zero) rfT = zero
 
     End If
 

@@ -7,13 +7,11 @@ Module cohesive_mod
 
 Contains
 
-  Pure Subroutine cohesive_damage_matProp(m,delta,Pen,delta_n_init,B,FI,damage,dGdGc)
+  Pure Subroutine cohesive_damage_matProp(m, delta, Pen, delta_n_init, B, FI, damage, dGdGc)
     ! Uses the properties in a matProps struct
 
     Use forlog_Mod
     Use matProp_Mod
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Type(matProps), intent(IN) :: m
@@ -29,13 +27,11 @@ Contains
   End Subroutine cohesive_damage_matProp
 
 
-  Pure Subroutine cohesive_damage_toughnessListed(GYT,GSL,m,delta,Pen,delta_n_init,B,FI,damage,dGdGc)
+  Pure Subroutine cohesive_damage_toughnessListed(GYT, GSL, m, delta, Pen, delta_n_init, B, FI, damage, dGdGc)
     ! Uses the properties in a matProps struct
 
     Use forlog_Mod
     Use matProp_Mod
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: GYT, GSL                                  ! Toughnesses
@@ -52,13 +48,11 @@ Contains
   End Subroutine cohesive_damage_toughnessListed
 
 
-  Pure Subroutine cohesive_damage_propsListed(YT,SL,ST,GYT,GSL,etaL,etaT,eta_BK,delta,Pen,delta_n_init,B,FI,damage,dGdGc)
+  Pure Subroutine cohesive_damage_propsListed(YT, SL, ST, GYT, GSL, etaL, etaT, eta_BK, delta, Pen, delta_n_init, B, FI, damage, dGdGc)
     ! All properties are passed in as arguments
 
     Use forlog_Mod
     Use matProp_Mod
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, intent(IN) :: YT,SL,ST,GYT,GSL,etaL,etaT,eta_BK        ! Material properties
@@ -95,7 +89,7 @@ Contains
     del    = SQRT(MAX(zero, del_n)*del_n + del_s*del_s)
 
     ! Account for LaRC04 and calculate "mixed shear" strengths and stiffnesses
-    If (del_s .GT. zero) Then
+    If (del_s > zero) Then
       ds1_str = SL - etaL*Pen(2)*MIN(zero, delta_n_init)  ! LaRC04 longitudinal shear strength
       ds2_str = ST - etaT*Pen(2)*MIN(zero, delta_n_init)  ! LaRC04 transverse shear strength
       KS = SQRT((Pen(1)*del_s1)**2 + (Pen(3)*del_s2)**2)/del_s  ! Combined shear penalty stiffness
@@ -111,7 +105,7 @@ Contains
 
     ! Mode mixity
     beta = del_s*del_s + MAX(zero, del_n)*del_n
-    If (beta .EQ. zero) Then
+    If (beta == zero) Then
       beta = one
     Else
       beta = del_s*del_s/beta
@@ -120,11 +114,11 @@ Contains
     B = KS*beta/(KS*beta + Pen(2)*(one - beta))
 
     ! Mixed-mode initiation displacements
-    If (B .GE. one - mode_mix_limit) Then
+    If (B >= one - mode_mix_limit) Then
       beta = one
       B = one
       d0 = del0s
-    Else If (B .LE. mode_mix_limit) Then
+    Else If (B <= mode_mix_limit) Then
       beta = zero
       B = zero
       d0 = del0n
@@ -143,9 +137,9 @@ Contains
       delfs = two*GSL/del0s/KS  ! mode II cohesive final disp.
 
       ! Mixed-mode final failure displacements
-      If (B .GE. one - mode_mix_limit) Then
+      If (B >= one - mode_mix_limit) Then
         df = delfs
-      Else If (B .LE. mode_mix_limit) Then
+      Else If (B <= mode_mix_limit) Then
         df = delfn
       Else
         delfnB = ((one - B**eta_BK)*del0n*delfn + KS/Pen(2)*B**eta_BK*del0s*delfs)*(one - B)/del0nB
@@ -155,7 +149,7 @@ Contains
 
       ! Determine the new damage state
       dmg_temp = damage                     ! Store the current damage variable
-      If (del .EQ. zero) Then
+      If (del == zero) Then
         damage = zero
       Else
         damage = df*(del - d0)/del/(df - d0)  ! Calculate the new damage variable
@@ -165,7 +159,7 @@ Contains
       ! Check for damage advancement
 
       ! If there is no damage progression...
-      If (damage .LE. dmg_temp) Then
+      If (damage <= dmg_temp) Then
 
         ! ...use the old damage and mode mixity variables.
         damage = dmg_temp

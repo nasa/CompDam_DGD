@@ -6,8 +6,6 @@ Contains
   Pure Function StiffFunc(NTENS, E1, E2, E3, G12, G13, G23, v12, v13, v23, d1, d2, d3) result(Stiff)
     ! Constructs the damaged orthotropic stiffness tensor based on the calculated damage state variables
 
-    Include 'vaba_param.inc'
-
     ! Input
     Double Precision, intent(IN) :: E1,E2,E3,G12,G13,G23,v12,v23,v13,d1,d2,d3
     Integer, intent(IN) :: NTENS
@@ -21,7 +19,7 @@ Contains
     ! -------------------------------------------------------------------- !
 
     v21 = v12*E2/E1
-    If (NTENS .GT. 4) Then
+    If (NTENS > 4) Then
        v31 = v13*E3/E1
        v32 = v23*E3/E2
     Else
@@ -41,7 +39,7 @@ Contains
 
     Stiff(4,4) = (one-d1)*(one-d2)*G12
 
-    If (NTENS .GT. 4) Then ! Solid element
+    If (NTENS > 4) Then ! Solid element
        Stiff(1,3) = delta*(one-d1)*(one-d3)*(v13+v12*v23*(one-d2))*E3
        Stiff(3,1) = Stiff(1,3)
        Stiff(2,3) = delta*(one-d2)*(one-d3)*(v23+v21*v13*(one-d1))*E3
@@ -54,12 +52,10 @@ Contains
   End Function StiffFunc
 
 
-  Function StiffRot(C,ntens,theta) result(StiffOut)
+  Function StiffRot(C, NTENS, theta) result(StiffOut)
     ! Rotates the stiffness matrix by the specified angle (radians)
 
     Use forlog_Mod
-
-    Include 'vaba_param.inc'
 
     ! Input
     Double Precision, intent(IN) :: C(NTENS,NTENS), theta
@@ -80,7 +76,7 @@ Contains
     StiffOut = 0
 
     ! Depends on element type
-    If (ntens .GT. 4) Then
+    If (NTENS > 4) Then
       StiffOut(1,1) = m**four*C(1,1) + 2*m**two*n**two*(C(1,2) + 2*C(4,4)) + n**four*C(2,2)
       StiffOut(1,2) = n**two*m**two*(C(1,1) + C(2,2) - four*C(4,4)) + (n**four + m**four)*C(1,2)
       StiffOut(1,3) = m**two*C(1,3) + n**two*C(2,3)
@@ -112,12 +108,10 @@ Contains
   End Function StiffRot
 
 
-  Pure Function convertToCauchy(stress,strainDef,F,U) result(Cauchy)
+  Pure Function convertToCauchy(stress, strainDef, F, U) result(Cauchy)
     ! Converts the stress to Cauchy stress for the given type of strain specified in strainDef
 
     Use matrixAlgUtil_Mod
-
-    Include 'vaba_param.inc'
 
     ! Input
     Double Precision, intent(IN) :: stress(3,3)
@@ -128,11 +122,11 @@ Contains
     Double Precision :: Cauchy(3,3)
     ! -------------------------------------------------------------------- !
 
-    If (strainDef .EQ. 1) Then  ! Log strain
+    If (strainDef == 1) Then  ! Log strain
       Cauchy = stress
-    Else If (strainDef .EQ. 2) Then  ! GL strain
+    Else If (strainDef == 2) Then  ! GL strain
       Cauchy = MATMUL(F, MATMUL(stress, TRANSPOSE(F)))/MDet(F)
-    Else If (strainDef .EQ. 3) Then  ! Biot strain
+    Else If (strainDef == 3) Then  ! Biot strain
       Cauchy = MATMUL(F, MATMUL(MInverse(U), MATMUL(stress, TRANSPOSE(F))))/MDet(F)
     End If
 
@@ -140,12 +134,10 @@ Contains
   End Function convertToCauchy
 
 
-  Pure Function Hooke(C,strain,nshr) result(stress)
+  Pure Function Hooke(C, strain, nshr) result(stress)
     ! Calculates the energy conjugate stress based on the input strain and stiffness tensor
 
     Use matrixAlgUtil_Mod
-
-    Include 'vaba_param.inc'
 
     ! Input
     Double Precision, intent(IN) :: C(3+nshr,3+nshr)         ! Stiffness

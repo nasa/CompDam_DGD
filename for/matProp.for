@@ -8,7 +8,7 @@ Module matProp_Mod
   Type matProps
     ! Stores the set of properties
 
-    Character*80 :: name ! Material name, required
+    Character(len=80) :: name ! Material name, required
 
     ! Material properties, grouped by feature
     ! (Required inputs)
@@ -91,8 +91,6 @@ Contains
 
     Use forlog_Mod
 
-    Include 'vaba_param.inc'
-
     ! Arguments
     Character(len=*), intent(IN) :: materialName
     Logical, intent(IN) :: issueWarnings
@@ -138,7 +136,7 @@ Contains
 #endif
 
     ! Handle cases
-    If (fileExists .AND. nprops .GT. 8) Then
+    If (fileExists .AND. nprops > 8) Then
       Call log%warn("loadMatProps: Found material property file " // trim(fileName) // " and properties in input deck; using properties in the input deck.")
       Call loadPropertiesFromInp(nprops, props)
     Else If (fileExists) Then
@@ -175,7 +173,6 @@ Contains
     ! Populates m with the material properties in the specified .props file
 
     Use forlog_Mod
-    Include 'vaba_param.inc'
 
     !Arguments
     Character(len=*), intent(IN) :: fileName
@@ -196,30 +193,30 @@ Contains
     ! Try to load material properties from a '.props' file
     Open(UNIT=unit, FILE=fileName, STATUS='old', ACTION='read', position='rewind', IOSTAT=iostat)
 
-    If (iostat .NE. 0) Call log%error("loadMatProps: Unable to access the .props file")
+    If (iostat /= 0) Call log%error("loadMatProps: Unable to access the .props file")
     ReadLines: Do
 
       ! Read the next line in the file
       Read(unit,'(A255)',IOSTAT=iostat) line
 
-      If (iostat .GT. 0) Then
+      If (iostat > 0) Then
         Call log%error("loadMatProps: Unknown error reading file")
         Return
 
-      Else If (iostat .LT. 0) Then
+      Else If (iostat < 0) Then
         Call log%debug("loadMatProps: Reached end of props file")
         Exit ReadLines
 
       Else  ! Parse the line in the file
         ! Skip blank lines
-        If (Len(Trim(line)) .EQ. 0) Cycle ReadLines
+        If (Len(Trim(line)) == 0) Cycle ReadLines
 
         ! Ignore comment lines (token: //)
         commentTokenPos = Index(line, '//')
-        If (commentTokenPos .EQ. 1) Then
+        If (commentTokenPos == 1) Then
           Cycle ReadLines
 
-        Else If (commentTokenPos .GT. 1) Then
+        Else If (commentTokenPos > 1) Then
           ! This line has a trailing comment, retain everything before the comment
           line = line(1:commentTokenPos-1)
         End If
@@ -227,7 +224,7 @@ Contains
         ! Split the line into a key and value
         equalTokenPos = Index(line, '=')
 
-        If (equalTokenPos .EQ. 0) Call log%error("loadMatProps: Expected [name] = [value] format not found. Line image: " // trim(line))
+        If (equalTokenPos == 0) Call log%error("loadMatProps: Expected [name] = [value] format not found. Line image: " // trim(line))
 
         ! Parse key and value from the line
         key = line(1:equalTokenPos-1)
@@ -357,10 +354,10 @@ Contains
     Close(unit)
 
     ! Require at least the first three material properties to be specified in the inp deck
-    If (nprops .LT. 3) Call log%error("loadMatProps: Must define the first three properties in the inp deck")
+    If (nprops < 3) Call log%error("loadMatProps: Must define the first three properties in the inp deck")
 
     ! Load material properties from input deck (at most, first 8)
-    If (nprops .GT. 8) Then
+    If (nprops > 8) Then
       Call loadPropertiesFromInp(8, props)
     Else
       Call loadPropertiesFromInp(nprops, props)
@@ -372,8 +369,6 @@ Contains
 
   Subroutine loadPropertiesFromInp(nprops, props)
     Use forlog_Mod
-
-    Include 'vaba_param.inc'
 
     !Arguments
     Integer, intent(IN) :: nprops
@@ -392,7 +387,7 @@ Contains
           write (tmp, *) props(i)
           featureFlags = Adjustl(tmp(1:Index(tmp, '.')-1))
           numMissingLeadingZeros = 6 - Len_trim(featureFlags)
-          If (numMissingLeadingZeros .GT. 0) Then
+          If (numMissingLeadingZeros > 0) Then
             Do j=1, numMissingLeadingZeros
               featureFlags = '0' // featureFlags
             End Do
@@ -407,13 +402,13 @@ Contains
           ! Position 6: Friction
 
           ! Default friction to enabled
-          If (Len_trim(featureFlags) .LT. 6) Call log%error("loadMatProps: All 6 feature flags must be specified, only found " // trim(str(Len_trim(featureFlags))))
+          If (Len_trim(featureFlags) < 6) Call log%error("loadMatProps: All 6 feature flags must be specified, only found " // trim(str(Len_trim(featureFlags))))
 
           ! Set flags
           Do j=1,Len_trim(featureFlags)
             Select Case (j)
               Case (1)
-                If (featureFlags(j:j) .EQ. '1') Then
+                If (featureFlags(j:j) == '1') Then
                   m%matrixDam = .TRUE.
                   Call log%info("loadMatProps: Matrix damage ENABLED")
                 Else
@@ -422,11 +417,11 @@ Contains
                 End If
 
               Case (2)
-                If (featureFlags(j:j) .EQ. '1') Then
+                If (featureFlags(j:j) == '1') Then
                   m%shearNonlinearity = .TRUE.
                   m%schapery = .FALSE.
                   Call log%info("loadMatProps: Shear nonlinearity ENABLED")
-                Else If (featureFlags(j:j) .EQ. '2') Then
+                Else If (featureFlags(j:j) == '2') Then
                   m%shearNonlinearity = .FALSE.
                   m%schapery = .TRUE.
                   Call log%info("loadMatProps: Schapery micro-damage ENABLED")
@@ -437,7 +432,7 @@ Contains
                 End If
 
               Case (3)
-                If (featureFlags(j:j) .EQ. '1') Then
+                If (featureFlags(j:j) == '1') Then
                   m%fiberTenDam = .TRUE.
                   Call log%info("loadMatProps: fiber tensile damage ENABLED")
                 Else
@@ -446,13 +441,13 @@ Contains
                 End If
 
               Case (4)
-                If (featureFlags(j:j) .EQ. '1') Then
+                If (featureFlags(j:j) == '1') Then
                   m%fiberCompDamBL = .TRUE.
                   m%fiberCompDamFKT = .FALSE.
                   Call log%info("loadMatProps: fiber comp. damage (CDM) ENABLED")
-                Else If (featureFlags(j:j) .EQ. '2') Then
+                Else If (featureFlags(j:j) == '2') Then
                   Call log%error("loadMatProps: fiber comp. model 2 not implemented. TODO")
-                Else If (featureFlags(j:j) .EQ. '3') Then
+                Else If (featureFlags(j:j) == '3') Then
                   m%fiberCompDamBL = .FALSE.
                   m%fiberCompDamFKT = .TRUE.
                   Call log%info("loadMatProps: fiber comp. damage (DGD) ENABLED")
@@ -463,12 +458,12 @@ Contains
                 End If
 
               Case (5)
-                If (featureFlags(j:j) .EQ. '1') Then
+                If (featureFlags(j:j) == '1') Then
                   Call log%info("loadMatProps: feature flag position 5 is not used.")
                 End If
 
               Case (6)
-                If (featureFlags(j:j) .EQ. '1') Then
+                If (featureFlags(j:j) == '1') Then
                   m%friction = .TRUE.
                   Call log%info("loadMatProps: friction ENABLED")
                 Else
@@ -671,10 +666,10 @@ Contains
     Read(value,*) valueDbl
 
     ! Verify that the value is within the specified bounds
-    If (valueDbl .LT. min) Then
+    If (valueDbl < min) Then
       Call log%error(" PROPERTY ERROR " // trim(key) // " cannot be less than " // trim(str(min)) // ". Found value: " // trim(str(valueDbl)))
 
-    Else If (valueDbl .GT. max) Then
+    Else If (valueDbl > max) Then
       Call log%error(" PROPERTY ERROR " // trim(key) // " cannot be greater than " // trim(str(max)) // ". Found value: " // trim(str(valueDbl)))
 
     Else
@@ -707,8 +702,8 @@ Contains
     ! -------------------------------------------------------------------- !
 
     ! Verify that the value is within the specified bounds
-    If (value .LT. min) Then
-      If (value .EQ. zero) Then
+    If (value < min) Then
+      If (value == zero) Then
         flag = .FALSE.
         Call log%info(" loadMatProps: assuming " // trim(key) // " is not defined")
         Return
@@ -716,7 +711,7 @@ Contains
         Call log%error(" PROPERTY ERROR " // trim(key) // " cannot be less than " // trim(str(min)) // ". Found value: " // trim(str(value)))
       End If
 
-    Else If (value .GT. max) Then
+    Else If (value > max) Then
       Call log%error(" PROPERTY ERROR " // trim(key) // " cannot be greater than " // trim(str(max)) // ". Found value: " // trim(str(value)))
 
     Else
@@ -885,8 +880,6 @@ Contains
 
     Use forlog_Mod
 
-    Include 'vaba_param.inc'
-
     ! Arguments
     Type(matProps), intent(IN) :: m
     Double Precision, intent(IN) :: Lc(3)                    ! Element length
@@ -899,17 +892,17 @@ Contains
 
     ! Fiber Tension
     If (m%fiberTenDam) Then
-      If (two*m%GXT*m%E1 .LT. Lc(1)*m%XT**2) Then
+      If (two*m%GXT*m%E1 < Lc(1)*m%XT**2) Then
         Lc_fT = two*m%GXT*m%E1/m%XT**2
         Call log%warn("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(1))) // " which is > fiber tension snap-back threshold. Set element size < " // trim(str(Lc_fT)))
       End If
 
-      If (two*m%GXT*m%fGXT*m%E1 .LT. Lc(1)*(m%XT*m%fXT)**2) Then
+      If (two*m%GXT*m%fGXT*m%E1 < Lc(1)*(m%XT*m%fXT)**2) Then
         Lc_fT = two*m%GXT*m%fGXT*m%E1/(m%XT*m%fXT)**2
         Call log%warn("Snap-back in 1st part of fiber tensile softening law. Adjust bilinear ratios or decrease the element size.")
       End If
 
-      If (two*m%GXT*(one - m%fGXT)*m%E1 .LT. Lc(1)*(m%XT*(one - m%fXT))**2) Then
+      If (two*m%GXT*(one - m%fGXT)*m%E1 < Lc(1)*(m%XT*(one - m%fXT))**2) Then
         Lc_fT = two*m%GXT*(one - m%fGXT)*m%E1/(m%XT*(one - m%fXT))**2
         Call log%warn("Snap-back in 2nd part of fiber tensile softening law. Adjust bilinear ratios or decrease the element size.")
       End If
@@ -917,17 +910,17 @@ Contains
 
     ! Fiber Compression
     If (m%fiberCompDamBL) Then
-      If (two*m%GXC*m%E1 .LT. Lc(1)*m%XC**2) Then
+      If (two*m%GXC*m%E1 < Lc(1)*m%XC**2) Then
         Lc_fC = two*m%GXC*m%E1/m%XC**2
         Call log%warn("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(1))) // " which is > fiber compression snap-back threshold 1. Set element size < " // trim(str(Lc_fC)))
       End If
 
-      If (two*m%GXC*m%fGXC*m%E1 .LT. Lc(1)*(m%XC*m%fXC)**2) Then
+      If (two*m%GXC*m%fGXC*m%E1 < Lc(1)*(m%XC*m%fXC)**2) Then
         Lc_fT = two*m%GXC*m%fGXC*m%E1/(m%XC*m%fXC)**2
         Call log%warn("Snap-back in 1st part of fiber compression softening law. Adjust bilinear ratios or decrease the element size.")
       End If
 
-      If (two*m%GXC*(one - m%fGXC)*m%E1 .LT. Lc(1)*(m%XC*(one - m%fXC))**2) Then
+      If (two*m%GXC*(one - m%fGXC)*m%E1 < Lc(1)*(m%XC*(one - m%fXC))**2) Then
         Lc_fT = two*m%GXC*(one - m%fGXC)*m%E1/(m%XC*(one - m%fXC))**2
         Call log%warn("Snap-back in 2nd part of fiber compression softening law. Adjust bilinear ratios or decrease the element size.")
       End If
@@ -935,19 +928,19 @@ Contains
 
     If (m%matrixDam) Then
       ! Matrix Tension
-      If (two*m%GYT*m%E2 .LT. Lc(2)*m%YT**2) Then
+      If (two*m%GYT*m%E2 < Lc(2)*m%YT**2) Then
         Lc_mT = two*m%GYT*m%E2/m%YT/m%YT
         Call log%warn("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(2))) // " which is > matrix mode I snap-back threshold. Set element size < " // trim(str(Lc_mT)))
       End If
 
       ! Matrix Shear
-      If (two*m%GSL*m%G12 .LT. Lc(2)*m%SL**2) Then
+      If (two*m%GSL*m%G12 < Lc(2)*m%SL**2) Then
         Lc_SL = two*m%GSL*m%G12/m%SL**2
         Call log%warn("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(2))) // " which is > matrix mode II snap-back threshold. Set element size < " // trim(str(Lc_SL)))
       End If
 
       ! Matrix Compression
-      If (two*m%GSL*m%E2 .LT. Lc(2)*m%YC**2*COS(m%alpha0)) Then
+      If (two*m%GSL*m%E2 < Lc(2)*m%YC**2*COS(m%alpha0)) Then
         Lc_YC = two*m%GSL*m%E2/(m%YC**2*COS(m%alpha0))
         Call log%warn("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(2))) // " which is > matrix compression snap-back threshold. Set element size < " // trim(str(Lc_YC)))
       End If
@@ -963,8 +956,6 @@ Contains
     Use forlog_Mod
     Use matrixAlgUtil_Mod
     Use stress_Mod
-
-    Include 'vaba_param.inc'
 
     ! Arguments
     Double Precision, Intent(IN) :: alpha0, E1, E2, E3, G12, G13, G23, v12, v13, v23, Yc
@@ -1011,11 +1002,11 @@ Contains
       err = Length(Residual)
 
       ! If converged,
-      If (err .LT. tolerance) Then
+      If (err < tolerance) Then
         alpha0_DGD = ATAN(F(2)/F(3)*TAN(alpha0))
         EXIT alphaLoop
       End If
-      IF (counter .EQ. counter_max) Call log%error('Function alpha0_DGD failed to converge')
+      IF (counter == counter_max) Call log%error('Function alpha0_DGD failed to converge')
 
       ! Define the Jacobian matrix, J
       Jac = zero
@@ -1059,7 +1050,7 @@ Contains
     Double Precision :: randomNumbers(1000)
     Double Precision :: rn
     Integer :: index, rnsize
-    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
+    Double Precision, parameter :: zero=0.d0, half=0.5d0, one=1.d0, two=2.d0
 
     ! Common
     Common randomNumbers
@@ -1068,20 +1059,20 @@ Contains
 
     shearInstabilityPhi0 = (nPL-one)/G12*((G12-XC)/(XC*nPL*aPL**(one/nPL)))**(nPL/(nPL-one))
 
-    If (phi0 .EQ. zero) Then  ! Special case to use phi0 corresponding to instability
+    If (phi0 == zero) Then  ! Special case to use phi0 corresponding to instability
       ! Calculate phi0
       initializePhi0 = shearInstabilityPhi0
 
-    Else If (phi0 .LE. 0.5d0) Then   ! Use initial condition value of phi0
+    Else If (phi0 <= half) Then   ! Use initial condition value of phi0
       initializePhi0 = phi0
 
-    Else If (phi0 .EQ. 1.d0) Then   ! 1-D variation
+    Else If (phi0 == one) Then   ! 1-D variation
       ! Set index to be integer count of row
       index = NINT(position(1)/Lc(1))
 
       ! Wrap in a loop if there are more rows than randomNumbers is long
       rnsize = SIZE(randomNumbers, 1)
-      If (index .GT. rnsize) Then
+      If (index > rnsize) Then
         index = MOD(index, rnsize)
         Call log%warn('Random fiber misalignments are being wrapped in a loop. Increase randomNumberCount in vexternaldb.')
       End If
