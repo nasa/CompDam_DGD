@@ -147,7 +147,7 @@ Subroutine CompDam(  &
   Call args%init(nblock, ndir, nshr, nstatev, stepTime, totalTime, dt)
 
   ! Only write git hash on first call
-  If ((totalTime <= DT) .AND. (p%logLevel == 0)) Then
+  If ((stepTime <= DT) .AND. (p%logLevel == 0)) Then
 
     ! Initialize the logger for use in loadParameters()
     Call log%init(level=2, vumatArgStruct=args, format=p%logFormat)
@@ -162,7 +162,7 @@ Subroutine CompDam(  &
   ! Initialize the logger
   Call log%init(level=p%logLevel, vumatArgStruct=args, format=p%logFormat)
 
-  If (totalTime <= DT) Then
+  If (stepTime <= DT .AND. m%E1 < one) Then
 
     If (Allocated(user%materials)) Then
       mats = Size(user%materials)
