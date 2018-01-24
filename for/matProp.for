@@ -586,7 +586,7 @@ Contains
         ! external properties file.
 
         Case Default
-          Call log%error("loadMatProps: Unknown property #"//trim(str(i))//" found. Expecting nprops <= 39")
+          Call log%error("loadMatProps: Unknown property #"//trim(str(i))//" found. Expecting nprops <= 40")
       End Select
 
     End Do
@@ -836,7 +836,7 @@ Contains
 
       Call log%info('PROPERTY: fiber compression damage BL (model 1) properties have been defined')
     Else
-      Call log%info('PROPERTY: fiber compressuib damage BL (model 1) is disabled')
+      Call log%info('PROPERTY: fiber compression damage BL (model 1) is disabled')
     End If
 
     ! Check if the DGD fiber compression damage properties have been defined
