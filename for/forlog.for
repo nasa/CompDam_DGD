@@ -98,7 +98,7 @@ Contains
       open(this%fileUnit, file=trim(this%fileName), position='append', recl=1000)
     End If
 
-    ! Git SHA-1 hash (Replace this with the code version number on release)
+    ! Git SHA-1 hash
     If (this%arg%totalTime == zero .AND. .NOT. this%hashPrinted) Then
       print *, 'Git hash: ' // trim(hash)
       print *, 'Git commit timestamp: ' // trim(timestamp)

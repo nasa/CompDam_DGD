@@ -155,8 +155,6 @@ Subroutine CompDam(  &
     ! Load the CompDam solution parameters
     p = loadParameters()
 
-    Call log%info("CompDam parameters initialized")
-
   End If
 
   ! Initialize the logger
