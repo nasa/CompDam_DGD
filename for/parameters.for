@@ -96,7 +96,7 @@ Contains
     Character(len=*), intent(IN) :: fileName
 
     ! Locals
-    Integer, Parameter :: unit=106
+    Integer, Parameter :: unit=109
     Integer :: iostat
     Character(len=256) :: line, key, value, tmp
     Character(len=30) :: featureFlags
