@@ -32,20 +32,24 @@ Contains
 
     Stiff(1,1) = delta*(one-d1)*(one - v23*v32*(one-d2)*(one-d3))*E1
     Stiff(2,2) = delta*(one-d2)*(one - v13*v31*(one-d1)*(one-d3))*E2
-    Stiff(3,3) = delta*(one-d3)*(one - v12*v21*(one-d1)*(one-d2))*E3
 
     Stiff(1,2) = delta*(one-d1)*(one-d2)*(v12 + v32*v13*(one-d3))*E2
     Stiff(2,1) = Stiff(1,2)
 
-    Stiff(4,4) = (one-d1)*(one-d2)*G12
+    If (NTENS == 3) Then  ! Shell element in Abaqus/Standard
+      Stiff(3,3) = (one-d1)*(one-d2)*G12
+    Else
+      Stiff(3,3) = delta*(one-d3)*(one - v12*v21*(one-d1)*(one-d2))*E3
+      Stiff(4,4) = (one-d1)*(one-d2)*G12
+    End If
 
     If (NTENS > 4) Then ! Solid element
-       Stiff(1,3) = delta*(one-d1)*(one-d3)*(v13+v12*v23*(one-d2))*E3
-       Stiff(3,1) = Stiff(1,3)
-       Stiff(2,3) = delta*(one-d2)*(one-d3)*(v23+v21*v13*(one-d1))*E3
-       Stiff(3,2) = Stiff(2,3)
-       Stiff(5,5) = (one-d2)*(one-d3)*G23
-       Stiff(6,6) = (one-d1)*(one-d3)*G13
+      Stiff(1,3) = delta*(one-d1)*(one-d3)*(v13+v12*v23*(one-d2))*E3
+      Stiff(3,1) = Stiff(1,3)
+      Stiff(2,3) = delta*(one-d2)*(one-d3)*(v23+v21*v13*(one-d1))*E3
+      Stiff(3,2) = Stiff(2,3)
+      Stiff(5,5) = (one-d2)*(one-d3)*G23
+      Stiff(6,6) = (one-d1)*(one-d3)*G13
     End If
 
     Return
