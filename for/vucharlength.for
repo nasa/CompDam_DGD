@@ -38,10 +38,10 @@ Subroutine vucharlength(                                    &
     charLength(k, :) = zero
     Nodes: Do n = 1, nnode
       Dimensions: Do d = 1, ndim
-        charLength(k, d) = charLength(k, d) + DOT_PRODUCT(coordNode(k, d, :) - center(:), direct(k, :, d))
+        charLength(k, d) = charLength(k, d) + ABS(DOT_PRODUCT(coordNode(k, n, :) - center(:), direct(k, :, d)))
       End Do Dimensions
     End Do Nodes
-    charLength(k, :) = ABS(charLength(k, :)) * two / nnode
+    charLength(k, :) = charLength(k, :) * two / nnode
 
     ! TODO: incorporate the data in T(nblock,3,3) for use in shell and membrane elements. This version may only be
     ! working for shells where the material direction is set to theta = zero degrees.
