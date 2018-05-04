@@ -356,6 +356,11 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_elastic_fiberTension")
 
 
+    def test_C3D8R_elastic_simpleShear12(self):
+        """ Elastic simple shear """
+        self.runTest("test_C3D8R_elastic_simpleShear12")
+
+
     def test_C3D8R_elementSize(self):
         """ User characteristic length """
         self.runTest("test_C3D8R_elementSize")
