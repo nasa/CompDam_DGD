@@ -16,7 +16,7 @@ class UNC0_FKT(av.TestCase):
     __metaclass__ = av.ParametricMetaClass
 
     # Refers to the template input file name
-    baseName = "UNC0_C3D8R_FKT"
+    baseName = "test_UNC0_C3D8R_FKT"
 
     # Use python script instead of input file
     pythonScriptForModel = True
