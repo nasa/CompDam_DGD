@@ -36,6 +36,11 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_UMAT_elastic_matrixTension")
 
 
+    def test_C3D8R_UMAT_elastic_simpleShear12(self):
+        """ Elastic simple shear, Abaqus/Standard """
+        self.runTest("test_C3D8R_UMAT_elastic_simpleShear12")
+
+
     def test_C3D8R_UMAT_matrixTension(self):
         """ Matrix tension, Abaqus/Standard """
         self.runTest("test_C3D8R_UMAT_matrixTension")
@@ -44,6 +49,11 @@ class SingleElementTests(av.TestCase):
     def test_C3D8R_UMAT_simpleShear12(self):
         """ Simple shear in the 1-2 plane, Abaqus/Standard """
         self.runTest("test_C3D8R_UMAT_simpleShear12")
+
+
+    def test_C3D8R_UMAT_fiberCompression_FKT(self):
+        """ Fiber kinking model, Abaqus/Standard """
+        self.runTest("test_C3D8R_UMAT_fiberCompression_FKT")
 
 
 

@@ -29,6 +29,7 @@ Module stateVar_Mod
     Double Precision :: phi0
     Double Precision :: gamma
     Double Precision :: Sr            ! Schapery micro-damage state variable, reduced
+    Double Precision :: direct(9)
 
     ! Stored for debugging only
     Double Precision :: d_eps12
