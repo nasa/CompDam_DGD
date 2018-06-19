@@ -180,7 +180,7 @@ Contains
     Double Precision :: props(nprops)
 
     ! Locals
-    Integer, Parameter :: unit=106
+    Integer, Parameter :: unit=108
     Integer :: iostat
     Character(len=256) :: line, key, value, tmp
     Character(len=30) :: featureFlags

@@ -42,8 +42,19 @@ Contains
 
     ! Local variables
     Double Precision, allocatable :: charLength_v(:,:)
-    Double Precision stepTime, totalTime
-    Double Precision eig_values(3), eig_vectors(3,3), stretch(3,3)
+    Double Precision :: stepTime, totalTime
+    Double Precision :: eig_values(3), eig_vectors(3,3)
+    Double Precision :: stretch(3,3)                            ! U from polar decomposition of DFGRD1
+    Double Precision :: direct(3,3)                             ! Rotation from global basis to basis at start of increment
+    Double Precision :: R_13(3,3)                               ! Rotation from global basis to basis at end of increment
+    Double Precision :: R(3,3)                                  ! Rotation from polar decomposition
+    Double Precision :: DFGRD0rot(3,3), DFGRD1rot(3,3)          ! DFGRD in the global basis
+    Double Precision :: deltaF(3,3), deltaR(3,3), deltaU(3,3)   ! Increments in F, R, U
+    Double Precision :: CauchyVUMAT(3,3)                        ! Cauchy stress as returned from the vumat
+    Double Precision :: CauchyRef(3,3)                          ! Cauchy stress in the global (reference) basis
+    Double Precision :: CauchyABQ(3,3)                          ! Cauchy stress in the basis at the end of the increment (returned to Abaqus)
+    Double Precision :: eye(3,3)
+    Double Precision :: mdet_direct
 
     ! VUMAT arguments
     Double Precision density(km),coordMp(km,3), &
@@ -79,6 +90,8 @@ Contains
     ! Parameters
     Double Precision, parameter :: zero=0.d0, half=0.5d0, one=1.d0
     Integer, parameter :: i_nblock=1, i_npt=2, i_layer=3, i_kspt=4, i_noel=5
+
+    eye = zero; DO I = 1,3; eye(I,I) = one; end DO
 
     ! -------------------------------------------------------------------- !
     ! Map UMAT inputs to VUMAT inputs
@@ -138,7 +151,7 @@ Contains
     End If
 
     ! Map old state variables
-    stateOld(km,:) = statev(:)
+    stateOld(km,:) = statev(1:nstatv-9)
 
     ! Map energies
     enerInternOld(km) = SSE
@@ -148,45 +161,40 @@ Contains
     tempOld(km) = TEMP
     tempNew(km) = TEMP + DTEMP
 
-    ! Map deformation gradient tensors
-    defgradOld(km,1) = DFGRD0(1,1)
-    defgradOld(km,2) = DFGRD0(2,2)
-    defgradOld(km,3) = DFGRD0(3,3)
-    defgradOld(km,4) = DFGRD0(1,2)
-
-    defgradNew(km,1) = DFGRD1(1,1)
-    defgradNew(km,2) = DFGRD1(2,2)
-    defgradNew(km,3) = DFGRD1(3,3)
-    defgradNew(km,4) = DFGRD1(1,2)
-    If (nshr > 1) Then
-      defgradOld(km,5) = DFGRD0(2,3)
-      defgradOld(km,6) = DFGRD0(3,1)
-      defgradOld(km,7) = DFGRD0(2,1)
-      defgradOld(km,8) = DFGRD0(3,2)
-      defgradOld(km,9) = DFGRD0(1,3)
-
-      defgradNew(km,5) = DFGRD1(2,3)
-      defgradNew(km,6) = DFGRD1(3,1)
-      defgradNew(km,7) = DFGRD1(2,1)
-      defgradNew(km,8) = DFGRD1(3,2)
-      defgradNew(km,9) = DFGRD1(1,3)
-    Else
-      defgradOld(km,5) = DFGRD0(2,1)
-
-      defgradNew(km,5) = DFGRD1(2,1)
+    ! Load direct (from usdfld)
+    direct = Vec2Matrix(statev(nstatv-8:nstatv))
+    mdet_direct = MDet(direct)
+    If (stepTime == zero .AND. ABS(mdet_direct-one)>1.d-7) Then
+      direct = eye
+    Else If (stepTime > zero .AND. ABS(mdet_direct-one)>1.d-7) Then
+      print *, 'ERROR: det(direct) /= 1, improper rotation matrix'
+      print *, 'det(direct) = ', mdet_direct
+      print *, 'direct:'
+      print *, transpose(direct)
+      print *, 'Make sure the material card includes a "*User defined field" card'
+      Call XIT
     End If
 
-    ! Map stretch tensors
-    stretch = MATMUL(TRANSPOSE(DFGRD0), DFGRD0)
-    Call SPRIND((/ stretch(1,1), stretch(2,2), stretch(3,3), stretch(1,2), stretch(1,3), stretch(2,3) /), eig_values, eig_vectors, 1, 3, 3)
-    eig_values = SQRT(eig_values)
-    stretch = MATMUL(TRANSPOSE(eig_vectors), MATMUL(reshape((/eig_values(1), zero, zero, zero, eig_values(2), zero, zero, zero, eig_values(3)/), (/3,3/)), eig_vectors))
-    stretchOld(km,:) = Matrix2Vec(stretch, nshr)
+    ! Get the increment in deformation to subsequently get the increment in rotation
+    deltaF = MATMUL(DFGRD1, MInverse(DFGRD0))
+    ! Calculate deltaR from polar decomposition of deltaF
+    Call PolarDecomp(deltaF, deltaR, deltaU)
 
-    stretch = MATMUL(TRANSPOSE(DFGRD1), DFGRD1)
-    Call SPRIND((/ stretch(1,1), stretch(2,2), stretch(3,3), stretch(1,2), stretch(1,3), stretch(2,3) /), eig_values, eig_vectors, 1, 3, 3)
-    eig_values = SQRT(eig_values)
-    stretch = MATMUL(TRANSPOSE(eig_vectors), MATMUL(reshape((/eig_values(1), zero, zero, zero, eig_values(2), zero, zero, zero, eig_values(3)/), (/3,3/)), eig_vectors))
+    ! Rotation from basis 1 (global) to basis 3 (end of increment)
+    R_13 = MATMUL(deltaR, direct)
+
+    ! Rotate DFGRD to original stationary coordinate basis
+    DFGRD0rot = MATMUL(MATMUL(direct, DFGRD0), TRANSPOSE(direct))
+    DFGRD1rot = MATMUL(MATMUL(R_13, DFGRD1), TRANSPOSE(R_13))
+
+    ! Map deformation gradient tensors
+    defgradOld(km,:) = Matrix2Vec(DFGRD0rot, nshr, .FALSE.)
+    defgradNew(km,:) = Matrix2Vec(DFGRD1rot, nshr, .FALSE.)
+
+    ! Map stretch tensors
+    Call PolarDecomp(DFGRD0rot, R, stretch)
+    stretchOld(km,:) = Matrix2Vec(stretch, nshr)
+    Call PolarDecomp(DFGRD1rot, R, stretch)
     stretchNew(km,:) = Matrix2Vec(stretch, nshr)
 
     ! TODO: Field variables are not currently supported in the VUMAT wrapper
@@ -217,25 +225,36 @@ Contains
         stressNew,stateNew,enerInternNew,enerInelasNew)
     End If
 
+    ! CompDam specific
+    ! Rotate stress to the correct reference frame
+    ! Stress as a 3,3 array as returned by CompDam
+    CauchyVUMAT = Vec2Matrix(stressNew(km,:))
+    ! Same R used in VUMAT
+    R = MATMUL(DFGRD1rot, MInverse(stretch))
+    ! Stress in reference frame
+    CauchyRef = MATMUL(R, MATMUL(CauchyVUMAT, TRANSPOSE(R)))
+    ! Stress in abaqus current frame
+    CauchyABQ = MATMUL(TRANSPOSE(R_13), MATMUL(CauchyRef, (R_13)))
+
     ! -------------------------------------------------------------------- !
     ! Map VUMAT outputs to UMAT inputs
     ! -------------------------------------------------------------------- !
     ! Map updated stresses
-    stress(1) = stressNew(km,1)
-    stress(2) = stressNew(km,2)
+    stress(1) = CauchyABQ(1,1)
+    stress(2) = CauchyABQ(2,2)
     If (ndi > 2) Then
-      stress(3) = stressNew(km,3)
-      stress(4) = stressNew(km,4)
+      stress(3) = CauchyABQ(3,3)
+      stress(4) = CauchyABQ(1,2)
       If (nshr > 1) Then
-        stress(5) = stressNew(km,6)
-        stress(6) = stressNew(km,5)
+        stress(5) = CauchyABQ(2,3)
+        stress(6) = CauchyABQ(3,1)
       End If
     Else
-      stress(3) = stressNew(km,4)
+      stress(3) = CauchyABQ(1,2)
     End If
 
     ! Map new state variables
-    statev(:) = stateNew(km,:)
+    statev(1:24) = stateNew(km,:)
 
     ! Map new energies
     SSE = enerInternNew(km)
@@ -255,3 +274,23 @@ Contains
   End Subroutine vumat_Wrapper
 
 End Module vumat_Wrapper_Mod
+
+
+Subroutine USDFLD(field,statev,pnewdt,direct,t,celent, &
+  time,dtime,cmname,orname,nfield,nstatv,noel,npt,layer, &
+  kspt,kstep,kinc,ndi,nshr,coord,jmac,jmatyp,matlayo,laccfla)
+
+  Use matrixAlgUtil_Mod
+
+  implicit Double Precision (a-h, o-z)
+
+  Character*80 cmname,orname
+  Character*3  flgray(15)
+  Dimension field(nfield),statev(nstatv),direct(3,3),t(3,3),time(2)
+  Dimension array(15),jarray(15),jmac(*),jmatyp(*),coord(*)
+
+  ! save the direct as state variable to pass to umat
+  statev(nstatv-8:nstatv) = Matrix2Vec(direct, nshr, .FALSE.)
+
+  Return
+End Subroutine USDFLD

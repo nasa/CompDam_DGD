@@ -430,6 +430,97 @@ Pre-existing damage can be modeled by creating an element set for the damaged re
           0.d0,  0.d0,  0.d0,  0.d0
 </pre>
 
+## Using CompDam with Abaqus/Standard
+The repository includes a developmental capability to run the CompDam VUMAT in an Abaqus/Standard analysis using a wrapper, `for/vumatWrapper.for`, that translates between the UMAT and VUMAT user subroutine interfaces. The intended usage is for Abaqus/Standard runs with little or no damage. 
+
+### Usage
+To run an analysis with CompDam in Abaqus/Standard, the following input deck template is provided. Note that 9 additional state variables are required. In contrast to usage with Abaqus/Explicit, all state variables must be defined in Abaqus/Standard despite whether the corresponding CompDam features are enabled via the feature flags.
+
+<pre>
+*Section controls, name=control_name, hourglass=ENHANCED
+**
+*Material, name=IM7-8552
+*Density
+ 1.57e-09,
+*User material, constants=40
+** 1              2  3          4  5  6  7  8
+** feature flags,  , thickness, 4, 5, 6, 7, 8
+          100001,  ,       0.1,  ,  ,  ,  ,  ,
+**
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT,
+    171420.0, 9080.0,   5290.0,   0.32,     0.52,     62.3,     92.30,    0.277,
+**
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+    0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
+**
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+    -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.2,      133.3,    0.5,
+**
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,       cf,     w_kb,     None,     mu
+    1200.1,      ,         ,          ,         ,     0.1,          ,     0.3
+**
+*Depvar, delete=11
+  33,
+  1, CDM_d2
+  2, CDM_Fb1
+  3, CDM_Fb2
+  4, CDM_Fb3
+  5, CDM_B
+  6, CDM_Lc1
+  7, CDM_Lc2
+  8, CDM_Lc3
+  9, CDM_FIm
+ 10, CDM_alpha
+ 11, CDM_STATUS
+ 12, CDM_Plas12
+ 13, CDM_Inel12
+ 14, CDM_FIfT
+ 15, CDM_slide1
+ 16, CDM_slide2
+ 17, CDM_FIfC
+ 18, CDM_d1T
+ 19, CDM_d1C
+ 20, CDM_phi
+ 21, CDM_gamma
+ 22, CDM_Fm1
+ 23, CDM_Fm2
+ 24, CDM_Fm3
+ 25, CDM_DIRECT11
+ 26, CDM_DIRECT21
+ 27, CDM_DIRECT31
+ 28, CDM_DIRECT12
+ 29, CDM_DIRECT22
+ 30, CDM_DIRECT32
+ 31, CDM_DIRECT13
+ 32, CDM_DIRECT23
+ 33, CDM_DIRECT33
+*User defined field
+**
+** INITIAL CONDITIONS
+**
+*Initial Conditions, Type=Solution
+ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+*Initial Conditions, Type=Field, Variable=1
+GLOBAL,  0.d0
+** GLOBAL is an nset with all nodes attached to compdam enabled elements
+** In each step, NLGEOM=YES must be used. This is NOT the default setting.
+</pre>
+
+### Current limitations 
+As the `vumatWrapper` is a developmental capability, several important limitations exist at present:
+1. The material Jacobian tensor is hard-coded in `for/vumatWrapper.for` for IM7/8552 elastic stiffnesses. A more general Jacobian is needed.
+2. The material response can become inaccurate for large increments in rotations. If large rotations occur, small increments must be used. A cut-back scheme based on rotation increment size is needed.
+3. Testing has been conducted on the C3D8R element type only.
+
+
 ## Example problems
 The directory `examples/` includes a collection of example models that use CompDam along with corresponding files that defined the expected results (for use with Abaverify, following the same pattern as the test models in the `tests/` directory. The file `example_runner.py` can be used to automate submission of several models and/or for automatically post-processing the model results to verify that they match the expected results.
 

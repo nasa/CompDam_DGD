@@ -37,9 +37,9 @@ Subroutine VUMAT(  &
   Implicit Double Precision (a-h, o-z)
   Parameter (j_sys_Dimension = 2, n_vec_Length = 136, maxblk = n_vec_Length)
 
-  Dimension jblock(*),props(*),density(*),coordMp(*),charLength(*),strainInc(*),relSpinInc(*),tempOld(*),tempNew(*),      &
-    stretchOld(*),defgradOld(*),fieldOld(*),stressOld(*),stateOld(*),enerInternOld(*),                          &
-    enerInelasOld(*),stretchNew(*),defgradNew(*),fieldNew(*),stressNew(*),stateNew(*),                          &
+  Dimension jblock(*),props(*),density(*),coordMp(*),charLength(*),strainInc(*),relSpinInc(*),tempOld(*),tempNew(*), &
+    stretchOld(*),defgradOld(*),fieldOld(*),stressOld(*),stateOld(*),enerInternOld(*),                               &
+    enerInelasOld(*),stretchNew(*),defgradNew(*),fieldNew(*),stressNew(*),stateNew(*),                               &
     enerInternNew(*),enerInelasNew(*)
 
   Character(len=80) :: cmname
@@ -92,10 +92,12 @@ Subroutine CompDam(  &
   Implicit Double Precision (a-h, o-z)
   Parameter (j_sys_Dimension = 2, n_vec_Length = 136, maxblk = n_vec_Length)
 
-  Double Precision :: props(nprops), density(nblock), coordMp(nblock,*), charLength(nblock,*), strainInc(nblock,ndir+nshr), relSpinInc(nblock,nshr), tempOld(nblock), tempNew(nblock), &
-    stretchOld(nblock,ndir+nshr), defgradOld(nblock,ndir+nshr+nshr), fieldOld(nblock,nfieldv), stressOld(nblock,ndir+nshr), stateOld(nblock,nstatev), enerInternOld(nblock),         &
-    enerInelasOld(nblock), stretchNew(nblock,ndir+nshr), defgradNew(nblock,ndir+nshr+nshr), fieldNew(nblock,nfieldv), stressNew(nblock,ndir+nshr), stateNew(nblock,nstatev),         &
-    enerInternNew(nblock), enerInelasNew(nblock)
+  Double Precision :: props(nprops), density(nblock), coordMp(nblock,*), charLength(nblock,*),           &
+    strainInc(nblock,ndir+nshr), relSpinInc(nblock,nshr), tempOld(nblock), tempNew(nblock),              &
+    stretchOld(nblock,ndir+nshr), defgradOld(nblock,ndir+nshr+nshr), fieldOld(nblock,nfieldv),           &
+    stressOld(nblock,ndir+nshr), stateOld(nblock,nstatev), enerInternOld(nblock), enerInelasOld(nblock), &
+    stretchNew(nblock,ndir+nshr), defgradNew(nblock,ndir+nshr+nshr), fieldNew(nblock,nfieldv),           &
+    stressNew(nblock,ndir+nshr), stateNew(nblock,nstatev), enerInternNew(nblock), enerInelasNew(nblock)
 
   ! Extra arguments
   Integer :: nElement(nblock), nMatPoint, nLayer, nSecPoint
@@ -241,8 +243,9 @@ Subroutine CompDam(  &
   ! -------------------------------------------------------------------- !
   sv = loadStateVars(nstatev, stateOld(km,:), m)
 
-  ! The sign of the change in shear strain, used in the shear nonlinearity subroutine. This was previously a state variable.
-  If (m%shearNonlinearity) sv%d_eps12 = Sign(one, (F(1,1)*F(1,2) + F(2,1)*F(2,2) + F(3,2)*F(3,1)) - (F_old(1,1)*F_old(1,2) + F_old(2,1)*F_old(2,2) + F_old(3,2)*F_old(3,1)))
+  ! The sign of the change in shear strain, used in the shear nonlinearity subroutine. Previously was a state variable.
+  If (m%shearNonlinearity) sv%d_eps12 = Sign(one, (F(1,1)*F(1,2) + F(2,1)*F(2,2) + F(3,2)*F(3,1)) - &
+                                          (F_old(1,1)*F_old(1,2) + F_old(2,1)*F_old(2,2) + F_old(3,2)*F_old(3,1)))
 
   ! -------------------------------------------------------------------- !
   !    Define the characteristic element lengths                         !
