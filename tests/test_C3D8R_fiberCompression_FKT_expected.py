@@ -39,7 +39,7 @@ parameters = {
                 }
             ],
             "referenceValue": -0.00157,
-            "tolerance": 0.00001
+            "tolerance": 0.0001
         }
 	]
 }
