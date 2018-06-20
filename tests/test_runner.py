@@ -42,10 +42,10 @@ def plotFailureEnvelope(baseName, abscissaIdentifier, ordinateIdentifier, abciss
                         dataHeaders.append(lineSplit[i])
                 else:
                     for i in range(0, len(lineSplit)):
-                        data[dataHeaders[i]].append(lineSplit[i])
+                        data[dataHeaders[i]].append(float(lineSplit[i]))
 
         # Plot the failure envelope
-        fig = plt.figure()
+        fig, ax = plt.subplots()
 
         # Reference data
         dataRef = dict()
@@ -55,7 +55,6 @@ def plotFailureEnvelope(baseName, abscissaIdentifier, ordinateIdentifier, abciss
 
         # Data from CompDam
         plt.plot(data[abscissaIdentifier], data[ordinateIdentifier], 'o', markerfacecolor='none', markeredgecolor='#ED7D31')
-        ax = plt.subplot(111)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines['left'].set_position('zero')
