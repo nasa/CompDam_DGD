@@ -34,6 +34,12 @@ Module stateVar_Mod
     ! Stored for debugging only
     Double Precision :: d_eps12
 
+    ! Temporary values
+    Double Precision :: Plas12_temp
+    Double Precision :: Inel12_temp
+    Double Precision :: d_eps12_temp
+    Double Precision :: Sr_temp
+
   End Type stateVars
 
 Contains
@@ -178,4 +184,51 @@ Contains
   End Function storeStateVars
 
 
+  Subroutine initializeTemp(sv, m)
+    ! This function sets all temporary state variables equal to the actual state variable value
+
+    Use matProp_Mod
+
+    ! Arguments
+    Type(stateVars), intent(INOUT) :: sv
+    Type(matProps), intent(IN) :: m
+    ! -------------------------------------------------------------------- !
+
+    If (m%shearNonlinearity) Then
+      sv%Plas12_temp = sv%Plas12
+      sv%Inel12_temp = sv%Inel12
+      sv%d_eps12_temp = sv%d_eps12
+    End If
+
+    If (m%schapery) Then
+      sv%Sr_temp = sv%Sr
+    End If
+
+    Return
+  End Subroutine initializeTemp
+
+  Subroutine finalizeTemp(sv, m)
+    ! This function updates actual state variables to the value of corresponding temporary state variables
+    ! This function is intended to be called once iterations for which temporary state variables were needed
+    ! are complete
+
+    Use matProp_Mod
+
+    ! Arguments
+    Type(stateVars), intent(INOUT) :: sv
+    Type(matProps), intent(IN) :: m
+    ! -------------------------------------------------------------------- !
+
+    If (m%shearNonlinearity) Then
+      sv%Plas12 = sv%Plas12_temp
+      sv%Inel12 = sv%Inel12_temp
+      sv%d_eps12 = sv%d_eps12_temp
+    End If
+
+    If (m%schapery) Then
+      sv%Sr = sv%Sr_temp
+    End If
+
+    Return
+  End Subroutine finalizeTemp
 End Module stateVar_Mod

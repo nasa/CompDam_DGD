@@ -66,9 +66,9 @@ Contains
     ! Locals
     Double Precision :: del                                                  ! Magnitude of current cohesive displacement
     Double Precision :: del_n, del_s1, del_s2, del_s                         ! Temporary values used to calculate del
-    Double Precision :: del0n, del0s                                         ! Initation displacements for pure Mode I and Mode II
+    Double Precision :: del0n, del0s                                         ! Initiation displacements for pure Mode I and Mode II
     Double Precision :: delfn, delfs                                         ! Final displacements for pure Mode I and Mode II
-    Double Precision :: d0, df                                               ! Initation and final displacements for current mode-mixity ratio
+    Double Precision :: d0, df                                               ! Initiation and final displacements for current mode-mixity ratio
     Double Precision :: del0nB, del0sB, delfnB, delfsB                       ! Temporary, used to calculate d0 and df
     Double Precision :: damage_max                                           ! Maximum value for damage variable
     Double Precision :: beta                                                 ! Placeholder (temp.) variables for Mode-mixity
@@ -99,7 +99,7 @@ Contains
       KS = Pen(1)
     End If
 
-    ! Cohesive displacements for inititation for pure mode I and mode II
+    ! Cohesive displacements for initiation for pure mode I and mode II
     del0n = YT/Pen(2)             ! mode I cohesive initiation disp.
     del0s = ds_str/KS             ! mode II cohesive initiation disp.
 

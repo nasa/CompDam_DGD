@@ -11,13 +11,13 @@ Publications that describe the theories used in this code:
 - Cheryl A. Rose, et al. ["Analysis Methods for Progressive Damage of Composite Structures"](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20140001002.pdf) NASA/TM-2013-218024, July 2013.
 - Frank A. Leone Jr. ["Deformation gradient tensor decomposition for representing matrix cracks in fiber-reinforced materials"](http://dx.doi.org/10.1016/j.compositesa.2015.06.014) *Composites Part A* (2015) **76**:334-341.
 - Frank A. Leone Jr. ["Representing matrix cracks through decomposition of the deformation gradient tensor in continuum damage mechanics methods"](http://iccm20.org/fullpapers/file?f=Abk7n4gkWV) *Proceedings of the 20th International Conference on Composite Materials*, Copenhagen, Denmark, 19-24 July 2015.
-- Andrew C. Bergan, et al., "Development of a Mesoscale Finite Element Constitutive Model for Fiber Kinking" *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
+- Andrew C. Bergan, et al., ["Development of a Mesoscale Finite Element Constitutive Model for Fiber Kinking"](https://arc.aiaa.org/doi/10.2514/6.2018-1221) *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
 
 Examples of this code being applied can be found in the following publications:
 - Mark McElroy, et al. ["Simulation of delamination-migration and core crushing in a CFRP sandwich structure"](https://doi.org/10.1016/j.compositesa.2015.08.026) *Composites Part A* (2015) **79**:192-202.
 - Frank A. Leone Jr., et al. ["Fracture-Based Mesh Size Requirements for Matrix Cracks in Continuum Damage Mechanics Models"](https://doi.org/10.2514/6.2017-0198) *AIAA SciTech Forum*, Grapevine, Texas, 9-13 January 2017.
 - Imran Hyder, et al. ["Assessment of Intralaminar Progressive Damage and Failure Analysis Using an Efficient Evaluation Framework"](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20170010326.pdf) *32nd American Society for Composites (ASC) Annual Technical Conference*, West Lafayette, Indiana, 22-25 October 2017.
-- Kyongchan Song, et al. "Continuum Damage Mechanics Models for the Analysis of Progressive Damage in Cross-Ply and Quasi-Isotropic Panels Subjected to Static Indentation" *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
+- Kyongchan Song, et al. ["Continuum Damage Mechanics Models for the Analysis of Progressive Damage in Cross-Ply and Quasi-Isotropic Panels Subjected to Static Indentation"](https://arc.aiaa.org/doi/10.2514/6.2018-1466) *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
 
 
 For any questions, please contact the developers:
@@ -36,6 +36,8 @@ For any questions, please contact the developers:
 - [Advanced debugging](#advanced-debugging)
 - [Python extension module](#python-extension-module)
 - [Summary of tests classes](#summary-of-tests-classes)
+- [Contributing](#contributing)
+- [Citing CompDam](#citing-compdam)
 
 
 ## Getting started
@@ -270,7 +272,7 @@ The strain is calculated using the deformation gradient tensor provided by the A
 Hooke's law is applied using the Green-Lagrange strain to calculate the 2<sup>nd</sup> Piola-Kirchhoff stress *S*.
 
 ### Fiber nonlinearity
-Nonlinear elastic behavior in the fiber direction can be introduced with the material property c<sub>*l*</sub>. The expression used follows [Le Goff et al. 2017](https://doi.org/10.1177/0021998316646439):
+Nonlinear elastic behavior in the fiber direction can be introduced with the material property c<sub>*l*</sub>. The expression used follows [Kowalski 1988](https://www.astm.org/DIGITAL_LIBRARY/STP/PAGES/STP26136S.htm):
 
 *E<sub>1</sub>* = *E<sub>1</sub>*(1 + c<sub>*l*</sub>*&epsilon;*<sub>11</sub>)
 
@@ -612,4 +614,16 @@ This section includes a brief summary of each test implemented in the `tests` fo
 - *simpleShear12friction*: Demonstrates the constitutive response under prescribed simple shear with friction enabled. The element is loaded under transverse compression and then sheared. Shows the friction-induced stresses.
 
 ## Contributing
-We invite your contributions to CompDam_DGD! Please submit contributions (including a test case) with pull requests so that we can reproduce the behavior of interest. Commits history should be clean. Please contact the developers if you would like to make a major contribution to this repository.
+We invite your contributions to CompDam_DGD! Please submit contributions (including a test case) with pull requests so that we can reproduce the behavior of interest. Commits history should be clean. Please contact the developers if you would like to make a major contribution to this repository. Here is a [checklist](contributing-checklist.md) that we use for contributions.
+
+## Citing CompDam
+If you use CompDam, please cite using the following BibTex entry:
+
+<pre>
+  @misc{CompDam,
+  title={CompDam - Deformation Gradient Decomposition (DGD), v2.1.3},
+  author={Leone Jr., F. A., Bergan, A. C., D\'avila, C. G. },
+  note={https://github.com/nasa/CompDam_DGD},
+  year={2018}
+  }
+</pre>
