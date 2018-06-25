@@ -56,7 +56,6 @@ Module matProp_Mod
     Double Precision :: v21, v31, v32
     Double Precision :: etaL, etaT, ST, phic, alpha0_deg
 
-    Integer :: strainDef
     Double Precision :: thickness
 
     ! Flags for features
@@ -77,6 +76,7 @@ Module matProp_Mod
   Public :: loadMatProps
   Public :: checkForSnapBack
   Public :: initializePhi0
+  Public :: consistencyChecks
 
 
   ! Reference to object for singleton
@@ -86,14 +86,14 @@ Module matProp_Mod
 
 Contains
 
-  Type(matProps) Function loadMatProps(materialName, issueWarnings, nprops, props)
+  Type(matProps) Function loadMatProps(materialName, nprops, props)
     ! Loads material properties into module variable m
 
     Use forlog_Mod
 
     ! Arguments
     Character(len=*), intent(IN) :: materialName
-    Logical, intent(IN) :: issueWarnings
+    ! Logical, intent(IN) :: issueWarnings
     Integer, intent(IN) :: nprops
     Double Precision :: props(nprops)
 
@@ -151,8 +151,8 @@ Contains
     ! Feature flags
     If (.NOT. m%friction) m%mu = zero
 
-    ! Checks that a consistent set of properties has been defined
-    Call consistencyChecks(issueWarnings)
+    ! ! Checks that a consistent set of properties has been defined
+    ! Call consistencyChecks(issueWarnings)
 
     ! Calculated properties
     m%v21 = m%E2*m%v12/m%E1
@@ -476,8 +476,6 @@ Contains
             End Select
           End Do
         Case (2)
-          ! m%strainDef = Int(props(i))
-          m%strainDef = 2
         Case (3)
           m%thickness = props(i)
         ! props(4:8) are reserved for use in the future as needed
@@ -646,7 +644,7 @@ Contains
 
 
   Subroutine verifyAndSaveProperty_str(key, value, min, max, saveTo, flag)
-    ! Checks if the value is within the specifed bounds. Prints an error message
+    ! Checks if the value is within the specified bounds. Prints an error message
     ! which kills the analysis if a value is out of bounds. Otherwise, save the property
     ! and sets the flag to indicate that the property has been read in.
 
@@ -685,7 +683,7 @@ Contains
 
 
   Subroutine verifyAndSaveProperty_double(key, value, min, max, saveTo, flag)
-    ! Checks if the value is within the specifed bounds. Prints an error message
+    ! Checks if the value is within the specified bounds. Prints an error message
     ! which kills the analysis if a value is out of bounds. Otherwise, save the property
     ! and sets the flag to indicate that the property has been read in.
 
@@ -726,12 +724,13 @@ Contains
   End Subroutine verifyAndSaveProperty_double
 
 
-  Subroutine consistencyChecks(issueWarnings)
+  Subroutine consistencyChecks(m, issueWarnings)
     ! Checks that a consistent set of properties has been defined
 
     Use forlog_Mod
 
     ! Arguments
+    Type(matProps), intent(INOUT) :: m
     Logical, intent(IN) :: issueWarnings
 
     ! Locals
@@ -770,9 +769,6 @@ Contains
       If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for eta_BK.')
       If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for YC.')
       If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for alpha0.')
-
-      m%alpha0_deg = NINT(m%alpha0*45.d0/ATAN(one))
-      m%alpha0 = alpha0_DGD(m%alpha0, m%E1, m%E2, m%E3, m%G12, m%G13, m%G23, m%v12, m%v13, m%v23, m%YC)
       m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
       m%etaT = -one/TAN(two*m%alpha0)
       m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
@@ -849,15 +845,6 @@ Contains
 
       ! Make sure shear nonlinearity is enabled
       If (.NOT. m%shearNonlinearity) Call log%error('PROPERTY ERROR: Shear-nonlinearity must be enabled with fiber compression damage FKT.')
-
-      If (.NOT. m%matrixDam) Then
-        m%alpha0_deg = NINT(m%alpha0*45.d0/ATAN(one))
-        m%alpha0 = alpha0_DGD(m%alpha0, m%E1, m%E2, m%E3, m%G12, m%G13, m%G23, m%v12, m%v13, m%v23, m%YC)
-      End If
-      m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
-      m%etaT = -one/TAN(two*m%alpha0)
-      m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
-      m%phic = ATAN((one - SQRT(one - four*(m%SL/m%XC + m%etaL)*(m%SL/m%XC)))/(two*(m%SL/m%XC + m%etaL)))
 
       Call log%info('PROPERTY: fiber compression damage FKT (model 3) properties have been defined')
     Else
@@ -948,88 +935,6 @@ Contains
 
     Return
   End Subroutine checkForSnapBack
-
-
-  Function alpha0_DGD(alpha0, E1, E2, E3, G12, G13, G23, v12, v13, v23, Yc)
-    ! Determines the orientation of the angle alpha0 when subject to sigma22 = -Yc
-
-    Use forlog_Mod
-    Use matrixAlgUtil_Mod
-    Use stress_Mod
-
-    ! Arguments
-    Double Precision, Intent(IN) :: alpha0, E1, E2, E3, G12, G13, G23, v12, v13, v23, Yc
-
-    ! Locals
-    Double Precision :: C(6,6)         ! 3-D Stiffness
-    Double Precision :: F(3)           ! Represents diagonal of deformation gradient tensor
-    Double Precision :: Residual(3)          ! Residual vector
-    Double Precision :: tolerance
-    Double Precision :: err
-    Double Precision :: Jac(3,3)       ! Jacobian
-    Integer :: counter
-    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
-    ! -------------------------------------------------------------------- !
-
-    Call log%debug('Start of Function alpha0_DGD')
-
-    tolerance = 1.d-4  ! alphaLoop tolerance
-
-    ! Build the stiffness matrix
-    C = StiffFunc(6, E1, E2, E3, G12, G13, G23, v12, v13, v23, zero, zero, zero)
-
-    ! Make an initial guess
-    F = (/ one, one, one /)
-
-    ! -------------------------------------------------------------------- !
-    !    alphaLoop Loop and solution controls definition                   !
-    ! -------------------------------------------------------------------- !
-    counter = 0  ! Counter for alphaLoop
-    counter_max = 100
-
-    alphaLoop: Do  ! Loop to determine the F which corresponds to sigma22 = -Yc
-      counter = counter + 1
-      ! -------------------------------------------------------------------- !
-      !    Define the stress residual vector, R. R is equal to the           !
-      !    difference in stress between the cohesive interface and the bulk  !
-      !    stress projected onto the cohesive interface                      !
-      ! -------------------------------------------------------------------- !
-      Residual(1) = (C(1,1)*(F(1)*F(1) - one) + C(1,2)*(F(2)*F(2) - one) + C(1,3)*(F(3)*F(3) - one))/two
-      Residual(2) = (C(2,1)*(F(1)*F(1) - one) + C(2,2)*(F(2)*F(2) - one) + C(2,3)*(F(3)*F(3) - one))/two + Yc*F(1)*F(3)/F(2)
-      Residual(3) = (C(3,1)*(F(1)*F(1) - one) + C(3,2)*(F(2)*F(2) - one) + C(3,3)*(F(3)*F(3) - one))/two
-
-      ! Check for convergence
-      err = Length(Residual)
-
-      ! If converged,
-      If (err < tolerance) Then
-        alpha0_DGD = ATAN(F(2)/F(3)*TAN(alpha0))
-        EXIT alphaLoop
-      End If
-      IF (counter == counter_max) Call log%error('Function alpha0_DGD failed to converge')
-
-      ! Define the Jacobian matrix, J
-      Jac = zero
-
-      Jac(1,1) = C(1,1)*F(1)
-      Jac(1,2) = C(1,2)*F(2)
-      Jac(1,3) = C(1,3)*F(3)
-
-      Jac(2,1) = C(2,1)*F(1) + two*Yc*F(3)/F(2)
-      Jac(2,2) = C(2,2)*F(1) - two*Yc*F(3)*F(1)/(F(2)*F(2))
-      Jac(2,3) = C(2,3)*F(1) + two*Yc*F(1)/F(2)
-
-      Jac(3,1) = C(3,1)*F(1)
-      Jac(3,2) = C(3,2)*F(2)
-      Jac(3,3) = C(3,3)*F(3)
-
-      ! Calculate the new diagonal deformation gradient
-      F = F - MATMUL(MInverse(Jac), Residual)
-
-    End Do alphaLoop
-
-    Return
-  End Function alpha0_DGD
 
 
   Function initializePhi0(phi0, G12, XC, aPL, nPL, Lc, position)

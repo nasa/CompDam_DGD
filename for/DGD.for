@@ -17,6 +17,7 @@ Contains
     Use stress_Mod
     Use cohesive_mod
     Use strain_mod
+    Use plasticity_mod
     Use CDM_fiber_mod
     Use schapery_mod
 
@@ -65,7 +66,6 @@ Contains
     Double Precision :: pk2_fiberDir(3,3)                                  ! 2PK stress in the fiber direction
     Double Precision :: R_phi0(3,3)                                        ! Rotation to the misaligned frame
     Double Precision :: gamma_rphi0                                        ! Shear strain in the misaligned frame
-    Double Precision :: E1                                                 ! Fiber direction modulus; used for fiber nonlinearity
 
     ! Miscellaneous
     Double Precision :: rad_to_deg, deg_to_rad
@@ -73,6 +73,7 @@ Contains
     Double Precision, parameter :: pert=0.0001d0                           ! Small perturbation used to compute a numerical derivative
 
     ! -------------------------------------------------------------------- !
+    Call log%debug('Start of DGDInit')
 
     ! Miscellaneous constants
     rad_to_deg = 45.d0/ATAN(one)  ! Converts radians to degrees when multiplied
@@ -92,12 +93,8 @@ Contains
     X = zero; X(1,1) = sv%Lc(1); X(2,2) = sv%Lc(2); X(3,3) = sv%Lc(3)
     F_inverse_transpose = MInverse(TRANSPOSE(F))
 
-    ! Compute the strains: eps, Plas12, Inel12
-    ! Note the first argument is a flag to define the strain to use
-    Call Strains(F, m, U, DT, ndir, eps, sv%Plas12, sv%Inel12, sv%d_eps12, sv%status, p%gamma_max, E1)
-
-    ! Calculate the current Schapery micro-damage state variable as a function of the current strain state
-    sv%Sr = Schapery_damage(m, eps, sv%Sr)
+    ! Compute the Green-Lagrange strain tensor: eps
+    Call Strains(F, m, DT, ndir, eps)
 
     ! Check fiber tension or fiber compression damage
     If (eps(1,1) >= zero) Then    ! Fiber tension
@@ -107,20 +104,23 @@ Contains
         sv%rfC = zero
       End If
 
+      ! Compute the plastic strains and remove from the strain tensor
+      Call Plasticity(m, sv, ndir, eps)
+
       ! Evaluate fiber tension failure criteria and damage variable
       If (m%fiberTenDam) Then
-        Call FiberTenDmg(eps, ndir, E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), sv%rfT, sv%d1T, sv%d1C, sv%STATUS)
+        Call FiberTenDmg(eps, ndir, m%E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), sv%rfT, sv%d1T, sv%d1C, sv%STATUS)
         Call log%debug('Computed fiber damage variable, d1T ' // trim(str(sv%d1T)))
 
         d1 = sv%d1T
       End If
 
       ! Build the stiffness matrix
-      Stiff = StiffFunc(ndir+nshr, E1, m%E2*Schapery_reduction(sv%Sr, m%es), m%E3, m%G12*Schapery_reduction(sv%Sr, m%gs), m%G13, m%G23, m%v12, m%v13, m%v23, d1, zero, zero)
+      Call StiffFuncNL(m, ndir, nshr, d1, zero, zero, eps, Stiff, sv%Sr)
 
       ! Calculate stress
       stress = Hooke(Stiff, eps, nshr)
-      Cauchy = convertToCauchy(stress, m%strainDef, F, U)
+      Cauchy = convertToCauchy(stress, F)
 
     Else  ! Compression in 1-dir
 
@@ -143,18 +143,21 @@ Contains
         R_phi0(:,2) = normalDir
         R_phi0(:,3) = (/zero, zero, one/)
 
-        ! Calculate strain in the fiber-aligned frame
-        Call Strains(F, m, U, DT, ndir, eps, sv%Plas12, sv%Inel12, sv%d_eps12, sv%STATUS, p%gamma_max, E1, R_phi0)
+        ! Transform strain to the fiber frame
+        eps = MATMUL(TRANSPOSE(R_phi0), MATMUL(eps, R_phi0))
+
+        ! Compute the plastic strains and remove from the strain tensor
+        Call Plasticity(m, sv, ndir, eps)
 
         ! Get total 1,2 strain component
         gamma_rphi0 = two*(eps(1,2) + sv%Plas12/two)
 
-        ! Only decompose element if the plastic strain is nonnegligible and the kinkband is smaller than the element size
+        ! Only decompose element if the plastic strain is nonnegligible and the kink band is smaller than the element size
         If (sv%Inel12 > 0.00001d0) Then
           If (m%w_kb/sv%Lc(1) < p%kb_decompose_thres) Then
             Call log%debug('DGDInit triggering DGDKinkband.')
             sv%d1C   = 1.d-6    ! Used as a flag to call DGDEvolve
-            sv%alpha = zero     ! Assume an in-plane kinkband
+            sv%alpha = zero     ! Assume an in-plane kink band
             sv%Fb1 = F(1,1)
             sv%Fb2 = F(2,1)
             sv%Fb3 = F(3,1)
@@ -162,12 +165,12 @@ Contains
         End If
 
         ! Compute the undamaged stiffness matrix
-        Stiff = StiffFunc(ndir+nshr, E1, m%E2*Schapery_reduction(sv%Sr, m%es), m%E3, m%G12*Schapery_reduction(sv%Sr, m%gs), m%G13, m%G23, m%v12, m%v13, m%v23, zero, zero, zero)
+        Call StiffFuncNL(m, ndir, nshr, d1, zero, zero, eps, Stiff, sv%Sr)
 
         ! Calculate stress
         pk2_fiberDir = Hooke(Stiff, eps, nshr)  ! 2PK in the fiber direction
         stress = MATMUL(R_phi0, MATMUL(pk2_fiberDir, TRANSPOSE(R_phi0)))  ! 2PK rotated back to the reference direction
-        Cauchy = convertToCauchy(stress, m%strainDef, F, U)  ! Cauchy stress in the reference frame
+        Cauchy = convertToCauchy(stress, F)  ! Cauchy stress in the reference frame
 
         ! Failure index for fiber kinking
         sv%rfC = abs((-1*Cauchy(1,1)*cos(two*(sv%phi0+gamma_rphi0)))/((ramberg_osgood(gamma_rphi0 + pert, m%G12, m%aPL, m%nPL) - ramberg_osgood(gamma_rphi0 - pert, m%G12, m%aPL, m%nPL)) / (two * pert)))
@@ -184,26 +187,29 @@ Contains
 
       Else
 
+        ! Compute the plastic strains and remove from the strain tensor
+        Call Plasticity(m, sv, ndir, eps)
+
         If (m%fiberCompDamBL) Then
-          Call FiberCompDmg(eps, ndir, E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), sv%rfT, sv%rfC, sv%d1T, sv%d1C, sv%STATUS)
+          Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), sv%rfT, sv%rfC, sv%d1T, sv%d1C, sv%STATUS)
           Call log%debug('Computed fiber damage variable, d1C ' // trim(str(sv%d1C)))
 
           d1 = sv%d1C
         End If
 
         ! Build the stiffness matrix
-        Stiff = StiffFunc(ndir+nshr, E1, m%E2*Schapery_reduction(sv%Sr, m%es), m%E3, m%G12*Schapery_reduction(sv%Sr, m%gs), m%G13, m%G23, m%v12, m%v13, m%v23, d1, zero, zero)
+        Call StiffFuncNL(m, ndir, nshr, d1, zero, zero, eps, Stiff, sv%Sr)
 
         ! Calculate stress
         stress = Hooke(Stiff, eps, nshr)
-        Cauchy = convertToCauchy(stress, m%strainDef, F, U)
+        Cauchy = convertToCauchy(stress, F)
 
       End If
 
     End If
 
     ! -------------------------------------------------------------------- !
-    !    Search for matrix crack initiation only when no fiber damage has occured
+    !    Search for matrix crack initiation only when no fiber damage has occurred
     ! -------------------------------------------------------------------- !
     If (m%matrixDam .AND. sv%d1T == zero .AND. sv%d1C == zero) Then
       ! Get fiber direction
@@ -348,6 +354,7 @@ Contains
     Use stress_Mod
     Use cohesive_mod
     Use strain_mod
+    Use plasticity_mod
     Use CDM_fiber_mod
     Use friction_mod
     Use schapery_mod
@@ -386,7 +393,7 @@ Contains
     Integer :: MD, EQk                                                       ! MatrixDamage and equilibrium loop indices
 
     ! Equilibrium loop
-    Double Precision :: F_bulk(3,3), U_bulk(3,3)
+    Double Precision :: F_bulk(3,3)
     Double Precision :: F_bulk_old(3), F_bulk_change(3), F_bulk_inverse(3,3)
     Double Precision :: Residual(3)                                          ! Residual stress vector
     Double Precision :: tol_DGD
@@ -413,7 +420,6 @@ Contains
     ! Misc
     Double Precision :: X(ndir,ndir)                                         ! Reference configuration
     Double Precision :: dGdGc
-    Double Precision :: Plas12_temp, Inel12_temp, eps12_temp, Sr_temp
     Double Precision :: tr, Y(ndir,ndir)
     Double Precision :: eye(ndir,ndir)
     Double Precision :: Fb_s1(3), Fb_s3(3)
@@ -421,13 +427,11 @@ Contains
 
     ! Added by Drew for fiber compression
     !Double Precision, Intent(IN) :: XC,w_kb,phi_ff
-    Double Precision :: fiberDir(3)                                          ! Misligned fiber direction in the reference configuration
+    Double Precision :: fiberDir(3)                                          ! Misaligned fiber direction in the reference configuration
     Double Precision :: rfT_temp, rfC_temp                                   ! Fiber damage thresholds, from previous converged solution
     Double Precision :: d1T_temp, d1C_temp                                   ! Fiber damage variables, from previous converged solution
     Double Precision :: phi0
     Double Precision :: d1
-
-    Double Precision :: E1
 
     ! Friction
     Double Precision :: slide_old(2)
@@ -608,9 +612,8 @@ Contains
         ! -------------------------------------------------------------------- !
         ! Initialize all temporary state variables for use in Equilibrium loop:
 
-        ! Shear nonlinearity variables
-        Plas12_temp = sv%Plas12
-        Inel12_temp = sv%Inel12
+        ! Shear nonlinearity temporary variables
+        Call initializeTemp(sv, m)
 
         ! CDM fiber damage variables
         d1 = zero
@@ -635,45 +638,39 @@ Contains
           crack_open = .False.
         End If
 
-        ! TODO for other strain component implementation: Calculate U_bulk from F_bulk
-        U_bulk = zero
-
         ! Calculate the sign of the change in shear strain (for shear nonlinearity subroutine)
         If (m%shearNonlinearity .AND. Q == 2) Then
-           eps12_temp = Sign(one, (F(1,1)*F_bulk(1,2) + F(2,1)*F_bulk(2,2) + F_bulk(3,2)*F(3,1)) - (F_old(1,1)*sv%Fb1 + F_old(2,1)*sv%Fb2 + sv%Fb3*F_old(3,1)))
-        Else
-           eps12_temp = sv%d_eps12
+           sv%d_eps12_temp = Sign(one, (F(1,1)*F_bulk(1,2) + F(2,1)*F_bulk(2,2) + F_bulk(3,2)*F(3,1)) - (F_old(1,1)*sv%Fb1 + F_old(2,1)*sv%Fb2 + sv%Fb3*F_old(3,1)))
         End If
 
-        ! Compute the strains: eps, Plas12, Inel12
-        ! Note the first argument is a flag to define the strain to use
-        Call Strains(F_bulk, m, U_bulk, DT, ndir, eps, Plas12_temp, Inel12_temp, eps12_temp, sv%STATUS, p%gamma_max, E1)
+        ! Compute the Green-Lagrange strain tensor for the bulk material: eps
+        Call Strains(F_bulk, m, DT, ndir, eps)
 
-        ! Calculate the current Schapery micro-damage state variable as a function of the current strain state
-        Sr_temp = Schapery_damage(m, eps, sv%Sr)
+        ! Compute the plastic strains and remove from the strain tensor
+        Call Plasticity(m, sv, ndir, eps, use_temp=.TRUE.)
 
         ! -------------------------------------------------------------------- !
         !    Evaluate the CDM fiber failure criteria and damage variable:      !
         ! -------------------------------------------------------------------- !
         If (eps(1,1) >= zero) Then
-          If (m%fiberTenDam) Call FiberTenDmg(eps, ndir, E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), rfT_temp, d1T_temp, d1C_temp, sv%STATUS)
+          If (m%fiberTenDam) Call FiberTenDmg(eps, ndir, m%E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), rfT_temp, d1T_temp, d1C_temp, sv%STATUS)
           d1 = d1T_temp
           d1C_temp = sv%d1C
         Else If (m%fiberCompDamBL) Then
-          Call FiberCompDmg(eps, ndir, E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), rfT_temp, rfC_temp, d1T_temp, d1C_temp, sv%STATUS)
+          Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), rfT_temp, rfC_temp, d1T_temp, d1C_temp, sv%STATUS)
           d1 = d1C_temp
         End If
 
         ! -------------------------------------------------------------------- !
         !    Build the stiffness matrix:                                       !
         ! -------------------------------------------------------------------- !
-        Stiff = StiffFunc(ndir+nshr, E1, m%E2*Schapery_reduction(Sr_temp, m%es), m%E3, m%G12*Schapery_reduction(Sr_temp, m%gs), m%G13, m%G23, m%v12, m%v13, m%v23, d1, zero, zero)
+        Call StiffFuncNL(m, ndir, nshr, d1, zero, zero, eps, Stiff, sv%Sr_temp)
 
         ! -------------------------------------------------------------------- !
         !    Determine the bulk material tractions on the fracture plane:      !
         ! -------------------------------------------------------------------- !
         stress = Hooke(Stiff, eps, nshr)
-        Cauchy = convertToCauchy(stress, m%strainDef, F_bulk, U_bulk)
+        Cauchy = convertToCauchy(stress, F_bulk)
         T = MATMUL(Cauchy, R_cr(:,2))  ! Traction on fracture surface
         T_bulk = MATMUL(TRANSPOSE(R_cr), T)
 
@@ -784,9 +781,7 @@ Contains
           sv%rfC = rfC_temp
 
           ! Update shear nonlinearity state variables
-          sv%Plas12 = Plas12_temp
-          sv%Inel12 = Inel12_temp
-          sv%Sr = Sr_temp
+          Call finalizeTemp(sv, m)
 
           ! If fully damaged
           If (sv%d2 >= damage_max) Then
@@ -1008,6 +1003,7 @@ Contains
     Use parameters_Mod
     Use stress_Mod
     Use strain_mod
+    Use plasticity_mod
 
     ! -------------------------------------------------------------------- !
     ! Arguments
@@ -1029,11 +1025,10 @@ Contains
     Double Precision :: gamma_rphi0                                          ! Shear strain in the misaligned frame
     Double Precision :: X(ndir,ndir)                                         ! Reference configuration
     Double Precision :: eye(ndir,ndir)
-    Double Precision :: U_bulk(3,3)
     Double Precision :: R_phi0(3,3)                                          ! Transformation to the misaligned frame from the reference frame
-    Double Precision :: E1
+    Double Precision :: d1
 
-    ! Kinkband region
+    ! Kink band region
     Double Precision :: Fkb(3,3)
     Double Precision :: Fkb_inverse(3,3)
     Double Precision :: Fkb_old(3,3)
@@ -1051,9 +1046,6 @@ Contains
     Double Precision :: stressm(ndir,ndir)
     Double Precision :: Cauchym(ndir,ndir)
     Double Precision :: Tm(3)
-
-    ! Shear nonlinearity
-    Double Precision :: Plas12_temp, Inel12_temp
 
     ! Constants
     Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
@@ -1103,7 +1095,7 @@ Contains
     ! Normal to misaligned fibers (reference config)
     normalDir = (/-sin(sv%phi0), cos(sv%phi0), zero/)
 
-    ! Misalgined fiber direction (reference config)
+    ! Misaligned fiber direction (reference config)
     fiberDir = (/cos(sv%phi0), sin(sv%phi0), zero/)
 
     ! Build R_phi0 matrix
@@ -1133,11 +1125,7 @@ Contains
 
       ! -------------------------------------------------------------------- !
       ! Initialize all temporary state variables for use in Equilibrium loop:
-
-      ! Shear nonlinearity temporary variables. Start each equilibrium iteration with the
-      ! converged values of Plas12 and Inel12 from the last increment.
-      Plas12_temp = sv%Plas12
-      Inel12_temp = sv%Inel12
+      Call initializeTemp(sv, m)
 
       ! -------------------------------------------------------------------- !
       ! Compatibility constraints
@@ -1159,35 +1147,32 @@ Contains
       ! Calculate the angle that define the rotation of the fibers
       sv%gamma = ATAN(R_cr(2,1)/R_cr(1,1)) - sv%phi0
 
-      ! TODO for other strain component implementation: Calculate U_bulk from F_bulk
-      U_bulk = zero
-
       ! Calculate the sign of the change in shear strain (for shear nonlinearity subroutine)
-      If (m%shearNonlinearity) Then
-        eps12kb_dir = Sign(one, (Fkb(1,1)*Fkb(1,2) + Fkb(2,1)*Fkb(2,2) + Fkb(3,1)*Fkb(3,2)) - (sv%Fb1*Fkb_old(1,2) + sv%Fb2*Fkb_old(2,2) + sv%Fb3*Fkb_old(3,2)))
-      End If
+      sv%d_eps12_temp = Sign(one, (Fkb(1,1)*Fkb(1,2) + Fkb(2,1)*Fkb(2,2) + Fkb(3,1)*Fkb(3,2)) - (sv%Fb1*Fkb_old(1,2) + sv%Fb2*Fkb_old(2,2) + sv%Fb3*Fkb_old(3,2)))
 
       ! -------------------------------------------------------------------- !
       !    Calculate the stress in the bulk material region:                 !
       ! -------------------------------------------------------------------- !
-      epsm = GLStrain(Fm,ndir)
+      ! epsm = GLStrain(Fm,ndir)
+      Call Strains(Fm, m, DT, ndir, epsm)
       epsm = MATMUL(TRANSPOSE(R_phi0), MATMUL(epsm, R_phi0))
-      E1 = m%E1*(1+m%cl*epsm(1,1))
-      Stiff = StiffFunc(ndir+nshr, E1, m%E2, m%E3, m%G12, m%G13, m%G23, m%v12, m%v13, m%v23, zero, zero, zero)
+      Call StiffFuncNL(m, ndir, nshr, d1, zero, zero, epsm, Stiff, sv%Sr)
       pk2_fiberDirm = Hooke(Stiff, epsm, nshr) ! 2PK
       stressm = MATMUL(R_phi0, MATMUL(pk2_fiberDirm, TRANSPOSE(R_phi0)))  ! 2PK rotated back to the reference direction
-      Cauchym = convertToCauchy(stressm, m%strainDef, Fm, U_bulk)
+      Cauchym = convertToCauchy(stressm, Fm)
       Tm = MATMUL(Cauchym, R_cr(:,1))  ! Traction on surface with normal in fiber direction
 
       ! -------------------------------------------------------------------- !
-      !    Calculate the stress in the kinkband bulk region:                 !
+      !    Calculate the stress in the kink band bulk region:                 !
       ! -------------------------------------------------------------------- !
-      Call Strains(Fkb, m, U_bulk, DT, ndir, epskb, Plas12_temp, Inel12_temp, eps12kb_dir, sv%STATUS, p%gamma_max, E1, R_phi0)
-      gamma_rphi0 = two*(epskb(1,2) + Plas12_temp/two)
-      Stiff = StiffFunc(ndir+nshr, E1, m%E2, m%E3, m%G12, m%G13, m%G23, m%v12, m%v13, m%v23, zero, zero, zero)
+      Call Strains(Fkb, m, DT, ndir, epskb)
+      epskb = MATMUL(TRANSPOSE(R_phi0), MATMUL(epskb, R_phi0))
+      Call Plasticity(m, sv, ndir, epskb, use_temp=.TRUE.)
+      gamma_rphi0 = two*(epskb(1,2) + sv%Plas12_temp/two)
+      Call StiffFuncNL(m, ndir, nshr, d1, zero, zero, epskb, Stiff, sv%Sr)
       pk2_fiberDirkb = Hooke(Stiff, epskb, nshr) ! 2PK in the fiber direction
       stresskb = MATMUL(R_phi0, MATMUL(pk2_fiberDirkb, TRANSPOSE(R_phi0)))  ! 2PK rotated back to the reference direction
-      Cauchykb = convertToCauchy(stresskb, m%strainDef, Fkb, U_bulk)
+      Cauchykb = convertToCauchy(stresskb, Fkb)
       Cauchy = Cauchykb
       Tkb = MATMUL(Cauchykb, R_cr(:,1))  ! Traction on surface with normal in fiber direction
 
@@ -1228,8 +1213,7 @@ Contains
         sv%Fb1 = Fkb(1,1); sv%Fb2 = Fkb(2,1); sv%Fb3 = Fkb(3,1)
 
         ! Update shear nonlinearity state variables
-        sv%Plas12 = Plas12_temp
-        sv%Inel12 = Inel12_temp
+        Call finalizeTemp(sv, m)
 
         EXIT Equilibrium
       End If
@@ -1275,7 +1259,7 @@ Contains
         dCauchym_dFkb1(:,:,I) = (MATMUL(MATMUL(dFm_dFkb1(:,:,I), stressm) + MATMUL(Fm, dSm_dFkb1(:,:,I)), TRANSPOSE(Fm)) + MATMUL(MATMUL(Fm, stressm), TRANSPOSE(dFm_dFkb1(:,:,I))))/MDet(Fm) - Cauchym*tr
         dTm_dFkb1(:,I) = MATMUL(dCauchym_dFkb1(:,:,I), R_cr(:,1)) + MATMUL(Cauchym, dR_cr_dFkb1(:,1,I))
 
-        ! Kinkband bulk
+        ! Kink band bulk
         dEkb_dFkb1(:,:,I) = (MATMUL(TRANSPOSE(dFkb_dFkb1(:,:,I)), Fkb) + MATMUL(TRANSPOSE(Fkb), dFkb_dFkb1(:,:,I)))/two
         dEkb_dFkb1(:,:,I) = MATMUL(TRANSPOSE(R_phi0), MATMUL(dEkb_dFkb1(:,:,I), R_phi0))
         dSkb_dFkb1(:,:,I) = Hooke(Stiff, dEkb_dFkb1(:,:,I), nshr)
@@ -1310,6 +1294,113 @@ Contains
     ! -------------------------------------------------------------------- !
     Return
   End Subroutine DGDKinkband
+
+
+  Function alpha0_DGD(m)
+    ! Determines the orientation of the angle alpha0 when subject to sigma22 = -Yc
+
+    Use forlog_Mod
+    Use matrixAlgUtil_Mod
+    Use stress_Mod
+    Use matProp_Mod
+
+    ! Arguments
+    Type(matProps), intent(IN) :: m
+    ! Double Precision, Intent(IN) :: alpha0, E1, E2, E3, G12, G13, G23, v12, v13, v23, Yc
+
+    ! Locals
+    Double Precision :: E3, G13, v13, G23    ! For transverse isotropy assumption
+    Double Precision :: C(6,6)               ! 3-D Stiffness
+    Double Precision :: F(3)                 ! Represents diagonal of deformation gradient tensor
+    Double Precision :: Residual(3)          ! Residual vector
+    Double Precision :: tolerance
+    Double Precision :: err
+    Double Precision :: Jac(3,3)             ! Jacobian
+    Integer :: counter
+    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
+    ! -------------------------------------------------------------------- !
+
+    Call log%debug('Start of Function alpha0_DGD')
+
+    tolerance = 1.d-4  ! alphaLoop tolerance
+
+    ! Assume transverse isotropy if needed
+    If (m%E3 < one) Then
+      E3 = m%E2
+    Else
+      E3 = m%E3
+    End If
+    If (m%G13 < one) Then
+      G13 = m%G12
+    Else
+      G13 = m%G13
+    End If
+    If (m%v13 == zero) Then
+      v13 = m%v12
+    Else
+      v13 = m%v13
+    End If
+    If (m%G23 < one) Then
+      G23 = m%E2/two/(one + m%v23)
+    Else
+      G23 = m%G23
+    End If
+
+    ! Build the stiffness matrix
+    C = StiffFunc(6, m%E1, m%E2, E3, m%G12, G13, G23, m%v12, v13, m%v23, zero, zero, zero)
+
+    ! Make an initial guess
+    F = (/ one, one, one /)
+
+    ! -------------------------------------------------------------------- !
+    !    alphaLoop Loop and solution controls definition                   !
+    ! -------------------------------------------------------------------- !
+    counter = 0  ! Counter for alphaLoop
+    counter_max = 100
+
+    alphaLoop: Do  ! Loop to determine the F which corresponds to sigma22 = -Yc
+      counter = counter + 1
+      ! -------------------------------------------------------------------- !
+      !    Define the stress residual vector, R. R is equal to the           !
+      !    difference in stress between the cohesive interface and the bulk  !
+      !    stress projected onto the cohesive interface                      !
+      ! -------------------------------------------------------------------- !
+      Residual(1) = (C(1,1)*(F(1)*F(1) - one) + C(1,2)*(F(2)*F(2) - one) + C(1,3)*(F(3)*F(3) - one))/two
+      Residual(2) = (C(2,1)*(F(1)*F(1) - one) + C(2,2)*(F(2)*F(2) - one) + C(2,3)*(F(3)*F(3) - one))/two + m%Yc*F(1)*F(3)/F(2)
+      Residual(3) = (C(3,1)*(F(1)*F(1) - one) + C(3,2)*(F(2)*F(2) - one) + C(3,3)*(F(3)*F(3) - one))/two
+
+      ! Check for convergence
+      err = Length(Residual)
+
+      ! If converged,
+      If (err < tolerance) Then
+        alpha0_DGD = ATAN(F(2)/F(3)*TAN(m%alpha0))
+        EXIT alphaLoop
+      End If
+      IF (counter == counter_max) Call log%error('Function alpha0_DGD failed to converge')
+
+      ! Define the Jacobian matrix, J
+      Jac = zero
+
+      Jac(1,1) = C(1,1)*F(1)
+      Jac(1,2) = C(1,2)*F(2)
+      Jac(1,3) = C(1,3)*F(3)
+
+      Jac(2,1) = C(2,1)*F(1) + two*m%Yc*F(3)/F(2)
+      Jac(2,2) = C(2,2)*F(1) - two*m%Yc*F(3)*F(1)/(F(2)*F(2))
+      Jac(2,3) = C(2,3)*F(1) + two*m%Yc*F(1)/F(2)
+
+      Jac(3,1) = C(3,1)*F(1)
+      Jac(3,2) = C(3,2)*F(2)
+      Jac(3,3) = C(3,3)*F(3)
+
+      ! Calculate the new diagonal deformation gradient
+      F = F - MATMUL(MInverse(Jac), Residual)
+
+    End Do alphaLoop
+
+    Return
+  End Function alpha0_DGD
 
 
   Subroutine writeDGDArgsToFile(m, p, sv, U, F, F_old, ndir, nshr, DT)

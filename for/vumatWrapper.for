@@ -37,7 +37,7 @@ Contains
     Character(len=80) :: cmname
 
     ! Optional arguments
-    Double Precision, optional :: vucharlength(*)  ! element lengths corrresponding to a subroutine vucharlength() call
+    Double Precision, optional :: vucharlength(*)  ! element lengths corresponding to a subroutine vucharlength() call
     Integer, intent(IN), optional :: nvucharlength ! size of vucharlength(:)
 
     ! Local variables

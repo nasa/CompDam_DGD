@@ -56,6 +56,42 @@ Contains
   End Function StiffFunc
 
 
+  Subroutine StiffFuncNL(m, ndir, nshr, d1, d2, d3, eps, stiff, sr)
+    ! Constructs the damaged orthotropic stiffness tensor accounting for damage state variables and recoverable 
+    ! pre-peak nonlinearities including Schapery and elastic fiber nonlinearity
+
+    Use matProp_Mod
+    Use schapery_mod
+
+    ! Arguments
+    Type(matProps), intent(IN) :: m
+    Integer, intent(IN) :: ndir, nshr
+    Double Precision, intent(IN) :: d1, d2, d3                       ! Damage state variables
+    Double Precision, intent(IN) :: eps(ndir,ndir)                   ! Green-Lagrange strain tensor
+    Double Precision, intent(OUT) :: stiff(ndir+nshr,ndir+nshr)      ! Stiffness tensor
+    Double Precision :: sr                                           ! Shapery state variable (no intent is specified so that zero can be used when schapery is N/A)
+
+    ! Locals
+    Double Precision :: E1
+    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
+    ! -------------------------------------------------------------------- !
+
+    If (m%Schapery) Then
+      sr = Schapery_damage(m, eps, sr)
+    Else
+      sr = zero
+    End If
+
+    ! Elastic fiber nonlinearity
+    E1 = m%E1*(1+m%cl*eps(1,1))
+
+    ! Update stiffness matrix
+    stiff = StiffFunc(ndir+nshr, E1, m%E2*Schapery_reduction(sr, m%es), m%E3, m%G12*Schapery_reduction(sr, m%gs), m%G13, m%G23, m%v12, m%v13, m%v23, d1, d2, d3)
+
+    Return
+  End Subroutine StiffFuncNL
+
+
   Function StiffRot(C, NTENS, theta) result(StiffOut)
     ! Rotates the stiffness matrix by the specified angle (radians)
 
@@ -112,27 +148,20 @@ Contains
   End Function StiffRot
 
 
-  Pure Function convertToCauchy(stress, strainDef, F, U) result(Cauchy)
-    ! Converts the stress to Cauchy stress for the given type of strain specified in strainDef
+  Pure Function convertToCauchy(stress, F) result(Cauchy)
+    ! Converts the stress to Cauchy stress
 
     Use matrixAlgUtil_Mod
 
     ! Input
     Double Precision, intent(IN) :: stress(3,3)
-    Double Precision, intent(IN) :: F(3,3), U(3,3)  ! Deformation gradient and stretch tensor
-    Integer, intent(IN) :: strainDef
+    Double Precision, intent(IN) :: F(3,3)            ! Deformation gradient
 
     ! Output
     Double Precision :: Cauchy(3,3)
     ! -------------------------------------------------------------------- !
 
-    If (strainDef == 1) Then  ! Log strain
-      Cauchy = stress
-    Else If (strainDef == 2) Then  ! GL strain
-      Cauchy = MATMUL(F, MATMUL(stress, TRANSPOSE(F)))/MDet(F)
-    Else If (strainDef == 3) Then  ! Biot strain
-      Cauchy = MATMUL(F, MATMUL(MInverse(U), MATMUL(stress, TRANSPOSE(F))))/MDet(F)
-    End If
+    Cauchy = MATMUL(F, MATMUL(stress, TRANSPOSE(F)))/MDet(F)
 
     Return
   End Function convertToCauchy
@@ -145,7 +174,7 @@ Contains
 
     ! Input
     Double Precision, intent(IN) :: C(3+nshr,3+nshr)         ! Stiffness
-    Double Precision, intent(IN) :: strain(3,3)              ! Strain (type of strain defined by strainDef)
+    Double Precision, intent(IN) :: strain(3,3)
     Integer, intent(IN) :: nshr
 
     ! Output
