@@ -95,31 +95,33 @@ stepDuration = 0.1
     1200.1,      ,         ,          ,     10.0,     <wkb>,    ,         0.3
 **
 *Depvar
-  24,
-  1, CDM_d2
-  2, CDM_Fb1
-  3, CDM_Fb2
-  4, CDM_Fb3
-  5, CDM_B
-  6, CDM_Lc1
-  7, CDM_Lc2
-  8, CDM_Lc3
-  9, CDM_FIm
- 10, CDM_alpha
- 11, CDM_STATUS
- 12, CDM_Plas12
- 13, CDM_Inel12
- 14, CDM_FIfT
- 15, CDM_slide1
- 16, CDM_slide2
- 17, CDM_FIfC
- 18, CDM_d1T
- 19, CDM_d1C
- 20, CDM_phi
- 21, CDM_gamma
- 22, CDM_Fm1
- 23, CDM_Fm2
- 24, CDM_Fm3
+26,
+ 1, CDM_d2
+ 2, CDM_Fb1
+ 3, CDM_Fb2
+ 4, CDM_Fb3
+ 5, CDM_B
+ 6, CDM_Lc1
+ 7, CDM_Lc2
+ 8, CDM_Lc3
+ 9, CDM_FIm
+10, CDM_alpha
+11, CDM_STATUS
+12, CDM_Plas12
+13, CDM_Inel12
+14, CDM_FIfT
+15, CDM_slide1
+16, CDM_slide2
+17, CDM_FIfC
+18, CDM_d1T
+19, CDM_d1C
+20, CDM_Plas13
+21, CDM_Inel13
+22, CDM_phi
+23, CDM_gamma
+24, CDM_Fm1
+25, CDM_Fm2
+26, CDM_Fm3
 *Characteristic Length, definition=USER, components=3
 **
 ** INITIAL CONDITIONS
@@ -128,7 +130,7 @@ stepDuration = 0.1
   Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
   0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
   0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-  0.d0,
+  0.d0,  0.d0,  0.d0
 ** ----------------------------------------------------------------
 **
 ** STEP: Step-1

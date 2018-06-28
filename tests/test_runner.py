@@ -336,8 +336,23 @@ class SingleElementTests(av.TestCase):
 
 
     def test_C3D8R_nonlinearShear12(self):
-        """ Nonlinear shear model, loading and unloading """
+        """ Nonlinear shear model, loading and unloading in 1-2 plane """
         self.runTest("test_C3D8R_nonlinearShear12")
+
+
+    def test_C3D8R_nonlinearShear12_loadReversal(self):
+        """ Nonlinear shear model, loading and unloading in 1-2 plane, including full load reversal """
+        self.runTest("test_C3D8R_nonlinearShear12_loadReversal")
+
+
+    def test_C3D8R_nonlinearShear13(self):
+        """ Nonlinear shear model, loading and unloading in 1-3 plane"""
+        self.runTest("test_C3D8R_nonlinearShear13")
+
+
+    def test_C3D8R_nonlinearShear13_loadReversal(self):
+        """ Nonlinear shear model, loading and unloading in 1-3 plane, including full load reversal"""
+        self.runTest("test_C3D8R_nonlinearShear13_loadReversal")
 
 
     def test_C3D8R_schapery12(self):
