@@ -69,7 +69,7 @@ Contains
     epsEff = ABS(strain - Plas) + Inel
 
     ! Compute stress following the Ramberg-Osgood curve
-    tau = ramberg_osgood(strain, modulus, aPL, nPL)
+    tau = ramberg_osgood(epsEff, modulus, aPL, nPL)
 
     ! Compute the inelastic strain (independent of unloading/reloading) and plastic strain (depends on loading direction) 
     Inel_trial = epsEff - tau/Modulus
