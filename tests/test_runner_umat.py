@@ -51,6 +51,16 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_UMAT_simpleShear12")
 
 
+    def test_C3D8R_UMAT_nonlinearShear12(self):
+        """ Nonlinear shear model, loading and unloading in 1-2 plane, Abaqus/Standard """
+        self.runTest("test_C3D8R_UMAT_nonlinearShear12")
+
+
+    def test_C3D8R_UMAT_nonlinearShear13(self):
+        """ Nonlinear shear model, loading and unloading in 1-3 plane, Abaqus/Standard """
+        self.runTest("test_C3D8R_UMAT_nonlinearShear13")
+
+
     def test_C3D8R_UMAT_fiberCompression_FKT(self):
         """ Fiber kinking model, Abaqus/Standard """
         self.runTest("test_C3D8R_UMAT_fiberCompression_FKT")

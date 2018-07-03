@@ -209,13 +209,17 @@ Hygroscopic strains are not accounted for. If the effects of hygroscopic expansi
 Two approaches to modeling the matrix nonlinearity are available: Ramberg-Osgood plasticity and Schapery theory. These two methods are mutually exclusive and optional.
 
 #### Ramberg-Osgood plasticity
-Shear nonlinearity in the 1-2 plane can be modeled using the [Ramberg-Osgood equation](https://en.wikipedia.org/wiki/Ramberg%E2%80%93Osgood_relationship), with its parameters selected to fit experimental data. As applied herein, the Ramberg-Ogsood equation is written in the following form:
+Shear nonlinearity in the 1-2 and/or the 1-3 plane can be modeled using the [Ramberg-Osgood equation](https://en.wikipedia.org/wiki/Ramberg%E2%80%93Osgood_relationship), with its parameters selected to fit experimental data. As applied herein, the Ramberg-Ogsood equation is written in the following form for the 1-2 plane:
 
 *&gamma;*<sub>12</sub> = [*&tau;*<sub>12</sub> + *&alpha;*<sub>PL</sub>sign(*&tau;*<sub>12</sub>)|*&tau;*<sub>12</sub>|<sup>*n*<sub>PL</sub></sup>]/*G*<sub>12</sub>
 
-where *&gamma;*<sub>12</sub> is the shear strain and *&tau;*<sub>12</sub> is the shear stress. Prior to the initiation of matrix damage (i.e., `CDM_d2`), the nonlinear shear response due to the above is equation is plastic, and the unloading/reloading slope is unchanged. No pre-peak nonlinearity is applied to the matrix tensile or compressive responses.
+where *&gamma;*<sub>12</sub> is the shear strain and *&tau;*<sub>12</sub> is the shear stress. Likewise, the expression for the 1-3 plane is
 
-The required material inputs are the two parameters in the above equation: *&alpha;*<sub>PL</sub> and *n*<sub>PL</sub>. The state variables `CDM_Plas12` and `CDM_Inel12` are used to track the current plastic shear strain and the total amount of inelastic plastic shear strain that has occurred through the local deformation history, respectively. For cases of monotonic loading, `CDM_Plas12` and `CDM_Inel12` should have the same magnitude.
+*&gamma;*<sub>13</sub> = [*&tau;*<sub>13</sub> + *&alpha;*<sub>PL</sub>sign(*&tau;*<sub>13</sub>)|*&tau;*<sub>13</sub>|<sup>*n*<sub>PL</sub></sup>]/*G*<sub>13</sub>
+
+Prior to the initiation of matrix damage (i.e., `CDM_d2 = 0`), the nonlinear shear response due to the above equation is plastic, and the unloading/reloading slope is unchanged. No pre-peak nonlinearity is applied to the matrix tensile or compressive responses (i.e., *&sigma;<sub>22</sub>*).
+
+The required material inputs are the two parameters in the above equation: *&alpha;*<sub>PL</sub> and *n*<sub>PL</sub>. Note that the same constants are used for the 1-2 and 1-3 planes under the assumption of transverse isotropy (see [Seon et al. 2017](http://dpi-proceedings.com/index.php/asc32/article/view/15267)). For the 1-2 plane, the state variables `CDM_Plas12` and `CDM_Inel12` are used to track the current plastic shear strain and the total amount of inelastic plastic shear strain that has occurred through the local deformation history, respectively. For cases of monotonic loading, `CDM_Plas12` and `CDM_Inel12` should have the same magnitude. Likewise, the state variables `CDM_Plas13` and `CDM_Inel13` are utilized for the 1-3 plane. The [feature flags](#contrlling-which-features-are-enabled) can be used to enable this Ramberg-Osgood model in the 1-2 plane, 1-3 plane, or both planes.
 
 #### Schapery micro-damage
 Matrix nonlinearity in the 1-2 plane can also be modeled using Schapery theory, in which all pre-peak matrix nonlinearity is attributed to the initiation and development of micro-scale matrix damage. With this approach, the local stress/strain curves will unload to the origin, and not develop plastic strain. A simplified version of the approach of [Pineda and Waas](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20120000914.pdf) is here applied. The micro-damage functions *e<sub>s</sub>* and *g<sub>s</sub>* are limited to third degree polynomials for ease of implementation. As such, four fitting parameters are required for each of *e<sub>s</sub>* and *g<sub>s</sub>* to define the softening of the matrix normal and shear responses to micro-damage development.
@@ -368,7 +372,7 @@ Model features can be enabled or disabled by two methods. The first method is sp
 The second method is by specifying the status of each feature directly as a material property in the input deck. Each feature of the subroutine is controlled by a position in an integer, where 0 is disabled and 1 is enabled.
 The positions correspond to the features as follows:
 - Position 1: Matrix damage
-- Position 2: Shear nonlinearity (1=Ramberg-Osgood, 2=Schapery || more information [here](#shear-nonlinearity))
+- Position 2: Shear nonlinearity (1=Ramberg-Osgood 1-2 plane, 2=Schapery, 3=Ramberg-Osgood 3-D, 4=Ramberg-Osgood 1-3 plane, || more information [here](#shear-nonlinearity))
 - Position 3: Fiber tensile damage
 - Position 4: Fiber compression damage (1=max strain, 2=N/A, 3=FKT || more information [here](#fiber-compression-damage))
 - Position 5: *reserved*
@@ -380,7 +384,7 @@ For example, `101000` indicates that the model will run with matrix damage and f
 Length along the thickness-direction associated with the current integration point.
 
 ## State variables
-The table below lists all of the state variables in the model. The model requires a minimum of 18 state variables. Additional state variables are defined depending on which (if any) fiber compression features are enabled. When fiber compression is enabled, additional state variables are required. For fiber compression model 1: nstatev = 19 and for model 3: nstatev = 24.
+The table below lists all of the state variables in the model. The model requires a minimum of 18 state variables. Additional state variables are defined depending on which (if any) shear nonlinearity and fiber compression features are enabled. For fiber compression model 1: nstatev = 19 and for model 3: nstatev = 26. For shear nonlinearity models 3 or 4: nstatev = 21.
 
 | # | Name             | Description                                                           |
 |---|------------------|-----------------------------------------------------------------------|
@@ -405,14 +409,17 @@ The table below lists all of the state variables in the model. The model require
 |---|------------------|-----------------------------------------------------------------------|
 | 19| `CDM_d1C`        | Fiber compression damage variable                                     |
 |---|------------------|-----------------------------------------------------------------------|
-| 20| `CDM_phi0`       | Initial fiber misalignment (radians)                                  |
-| 21| `CDM_gamma`      | Current rotation of the fibers due to loading (radians)               |
-| 22| `CDM_Fm1`        | Fm1                                                                   |
-| 23| `CDM_Fm2`        | Fm2                                                                   |
-| 24| `CDM_Fm3`        | Fm3                                                                   ||
+| 20| `CDM_Plas13`     | 1-3 plastic strain                                                    |
+| 21| `CDM_Inel13`     | 1-3 inelastic strain                                                  |
+|---|------------------|-----------------------------------------------------------------------|
+| 22| `CDM_phi0`       | Initial fiber misalignment (radians)                                  |
+| 23| `CDM_gamma`      | Current rotation of the fibers due to loading (radians)               |
+| 24| `CDM_Fm1`        | Fm1                                                                   |
+| 25| `CDM_Fm2`        | Fm2                                                                   |
+| 26| `CDM_Fm3`        | Fm3                                                                   ||
 
 ### Initial conditions
-All state variables should be initialized using the `*Initial conditions` command. As a default, all state variables should be initialized as zero, except `CDM_alpha` and `CDM_STATUS`.
+All state variables should be initialized using the `*Initial conditions` command. As a default, all state variables should be initialized as zero, except `CDM_alpha`, `CDM_STATUS`, and `CDM_phi0`.
 
 The initial condition for `CDM_alpha` can be used to specify a predefined angle for the cohesive surface normal. To specify a predefined `CDM_alpha`, set the initial condition for `CDM_alpha` to an integer (degrees). The range of valid values for `CDM_alpha` depends on the aspect ratio of the element, but values in the range of 0 to 90 degrees are always valid. Setting `CDM_alpha` to -999 will make the subroutine evaluate cracks every 10 degrees in the 2-3 plane to find the correct crack initiation angle. Note that `CDM_alpha` is measured from the 2-axis rotating about the 1-direction. The amount by which alpha is incremented when evaluating matrix crack initiation can be changed from the default of 10 degrees by modifying `alpha_inc` in the `CompDam.parameters` file.
 
@@ -436,7 +443,7 @@ Pre-existing damage can be modeled by creating an element set for the damaged re
 The repository includes a developmental capability to run the CompDam VUMAT in an Abaqus/Standard analysis using a wrapper, `for/vumatWrapper.for`, that translates between the UMAT and VUMAT user subroutine interfaces. The intended usage is for Abaqus/Standard runs with little or no damage. 
 
 ### Usage
-To run an analysis with CompDam in Abaqus/Standard, the following input deck template is provided. Note that 9 additional state variables are required. In contrast to usage with Abaqus/Explicit, all state variables must be defined in Abaqus/Standard despite whether the corresponding CompDam features are enabled via the feature flags.
+To run an analysis with CompDam in Abaqus/Standard, the following input deck template is provided. Note that 9 additional state variables are required.
 
 <pre>
 *Section controls, name=control_name, hourglass=ENHANCED
@@ -466,7 +473,7 @@ To run an analysis with CompDam in Abaqus/Standard, the following input deck tem
     1200.1,      ,         ,          ,         ,     0.1,          ,     0.3
 **
 *Depvar, delete=11
-  33,
+  28,
   1, CDM_d2
   2, CDM_Fb1
   3, CDM_Fb2
@@ -486,20 +493,15 @@ To run an analysis with CompDam in Abaqus/Standard, the following input deck tem
  17, CDM_FIfC
  18, CDM_d1T
  19, CDM_d1C
- 20, CDM_phi
- 21, CDM_gamma
- 22, CDM_Fm1
- 23, CDM_Fm2
- 24, CDM_Fm3
- 25, CDM_DIRECT11
- 26, CDM_DIRECT21
- 27, CDM_DIRECT31
- 28, CDM_DIRECT12
- 29, CDM_DIRECT22
- 30, CDM_DIRECT32
- 31, CDM_DIRECT13
- 32, CDM_DIRECT23
- 33, CDM_DIRECT33
+ 20, CDM_DIRECT11
+ 21, CDM_DIRECT21
+ 22, CDM_DIRECT31
+ 23, CDM_DIRECT12
+ 24, CDM_DIRECT22
+ 25, CDM_DIRECT32
+ 26, CDM_DIRECT13
+ 27, CDM_DIRECT23
+ 28, CDM_DIRECT33
 *User defined field
 **
 ** INITIAL CONDITIONS
@@ -508,8 +510,7 @@ To run an analysis with CompDam in Abaqus/Standard, the following input deck tem
 ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0
 *Initial Conditions, Type=Field, Variable=1
 GLOBAL,  0.d0
 ** GLOBAL is an nset with all nodes attached to compdam enabled elements
@@ -608,7 +609,10 @@ This section includes a brief summary of each test implemented in the `tests` fo
 - *matrixCompression*: Demonstrates the constitutive response in the 2-direction under prescribed compression displacement.
 - *matrixTension*: Demonstrates the constitutive response in the 2-direction under prescribed extension. The 2-direction stress-strain curve is bilinear.
 - *mixedModeMatrix*: A parametric model used to stress the internal DGD convergence loop. The crack angle *&alpha;* and the direction of loading are varied. Large tensile and compressive displacements are prescribed to ensure the DGD method is able to find converged solutions under a wide variety of deformations.
-- *nonlinearShear12*: Demonstrates the nonlinear Ramberg-Osgood constitutive response under prescribed simple shear deformation. Several cycles of loading and unloading are applied, with increasing peak displacements in each cycle.
+- *nonlinearShear12*: Demonstrates the nonlinear Ramberg-Osgood constitutive response under prescribed simple shear deformation in the 1-2 plane with matrix damage enabled. Several cycles of loading and unloading are applied, with increasing peak displacements in each cycle.
+- *nonlinearShear12_loadReversal*: Demonstrates the response of the Ramberg-Osgood model under load reversal in the 1-2 plane. Several cycles of loading and unloading are applied, with inelastic strain accumulated throughout the load history. Damage is disabled.
+- *nonlinearShear13*: Demonstrates the nonlinear Ramberg-Osgood constitutive response under prescribed simple shear deformation in the 1-3 plane with matrix damage enabled. Several cycles of loading and unloading are applied, with increasing peak displacements in each cycle.
+- *nonlinearShear13_loadReversal*: Demonstrates the response of the Ramberg-Osgood model under load reversal in the 1-3 plane. Several cycles of loading and unloading are applied, with inelastic strain accumulated throughout the load history. Damage is disabled.
 - *schapery12*: Demonstrates the in-plane response to prescribed simple shear deformation for the Schapery micro-damage model. Several cycles of loading and unloading are applied, with increasing peak shear displacements in each cycle.
 - *simpleShear12*: Demonstrates the constitutive response under prescribed simple shear. The shear stress-strain curve is bilinear.
 - *simpleShear12friction*: Demonstrates the constitutive response under prescribed simple shear with friction enabled. The element is loaded under transverse compression and then sheared. Shows the friction-induced stresses.
@@ -621,7 +625,7 @@ If you use CompDam, please cite using the following BibTex entry:
 
 <pre>
   @misc{CompDam,
-  title={CompDam - Deformation Gradient Decomposition (DGD), v2.1.3},
+  title={CompDam - Deformation Gradient Decomposition (DGD), v2.2.0},
   author={Leone Jr., F. A., Bergan, A. C., D\'avila, C. G. },
   note={https://github.com/nasa/CompDam_DGD},
   year={2018}

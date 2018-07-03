@@ -22,6 +22,8 @@ Module stateVar_Mod
     Integer :: STATUS                 ! Element deletion flag (0 := delete element)
     Double Precision :: Plas12        ! Plastic shear strain
     Double Precision :: Inel12        ! Inelastic shear strain
+    Double Precision :: Plas13        ! Plastic shear strain
+    Double Precision :: Inel13        ! Inelastic shear strain
     Double Precision :: slide(2)      ! Slip on a cohesive crack, in the fiber and transverse directions
     Double Precision :: rfC           ! Fiber compression damage threshold
     Double Precision :: d1T           ! Fiber tension damage
@@ -32,12 +34,15 @@ Module stateVar_Mod
     Double Precision :: direct(9)
 
     ! Stored for debugging only
-    Double Precision :: d_eps12
+    Double Precision :: d_eps12, d_eps13
 
     ! Temporary values
     Double Precision :: Plas12_temp
     Double Precision :: Inel12_temp
     Double Precision :: d_eps12_temp
+    Double Precision :: Plas13_temp
+    Double Precision :: Inel13_temp
+    Double Precision :: d_eps13_temp
     Double Precision :: Sr_temp
 
   End Type stateVars
@@ -78,7 +83,7 @@ Contains
     sv%alpha  = stateOld(10)
     sv%STATUS = stateOld(11)
 
-    If (m%shearNonlinearity) Then
+    If (m%shearNonlinearity12) Then
       sv%Plas12 = stateOld(12)
       sv%Inel12 = stateOld(13)
       sv%Sr = one
@@ -102,17 +107,25 @@ Contains
     sv%d1T = MAX(zero, stateOld(18))
     sv%d1C = zero
 
-    ! These state variables are required only for fiber compression
-    If (m%fiberCompDamBL .OR. m%fiberCompDamFKT) Then
+    If (m%fiberCompDamBL) Then
       sv%d1C = MAX(zero, stateOld(19))
-      ! DGD-based fiber compression
-      If (m%fiberCompDamFKT) Then
-        sv%phi0 = stateOld(20)  ! State variable 20
-        sv%gamma = zero  ! State variable 21
-        sv%Fm1 = stateOld(22)
-        sv%Fm2 = stateOld(23)
-        sv%Fm3 = stateOld(24)
-      End If
+    End If
+
+    If (m%shearNonlinearity13) Then
+      sv%Plas13 = stateOld(20)
+      sv%Inel13 = stateOld(21)
+    Else
+      sv%Plas13 = zero
+      sv%Inel13 = zero
+    End If
+
+    If (m%fiberCompDamFKT) Then
+      sv%d1C = MAX(zero, stateOld(19))
+      sv%phi0 = stateOld(22)  ! State variable 20
+      sv%gamma = zero  ! State variable 21
+      sv%Fm1 = stateOld(24)
+      sv%Fm2 = stateOld(25)
+      sv%Fm3 = stateOld(26)
     End If
 
     Return
@@ -148,7 +161,7 @@ Contains
     stateNew(10) = sv%alpha
     stateNew(11) = sv%STATUS
 
-    If (m%shearNonlinearity) Then
+    If (m%shearNonlinearity12) Then
       stateNew(12) = sv%Plas12
       stateNew(13) = sv%Inel12
     Else If (m%schapery) Then
@@ -165,19 +178,32 @@ Contains
     stateNew(17) = sv%rfC
     stateNew(18) = sv%d1T
 
-    ! Fiber compression enabled
     If (m%fiberCompDamBL .OR. m%fiberCompDamFKT) Then
       stateNew(19) = sv%d1C
-      ! DGD based fiber compression enabled
-      If (m%fiberCompDamFKT) Then
-        stateNew(20) = sv%phi0
-        stateNew(21) = sv%gamma
-        stateNew(22) = sv%Fm1
-        stateNew(23) = sv%Fm2
-        stateNew(24) = sv%Fm3
-      End If
-    Else
+    Else If (nstatev >= 19) Then
       stateNew(19) = zero
+    End If
+
+    If (m%shearNonlinearity13) Then
+      stateNew(20) = sv%Plas13
+      stateNew(21) = sv%Inel13
+    Else If (nstatev > 21) Then
+      stateNew(20) = zero
+      stateNew(21) = zero
+    End If
+
+    If (m%fiberCompDamFKT) Then
+      stateNew(22) = sv%phi0
+      stateNew(23) = sv%gamma
+      stateNew(24) = sv%Fm1
+      stateNew(25) = sv%Fm2
+      stateNew(26) = sv%Fm3
+    Else If (nstatev == 26) Then
+      stateNew(22) = zero
+      stateNew(23) = zero
+      stateNew(24) = zero
+      stateNew(25) = zero
+      stateNew(26) = zero
     End If
 
     Return
@@ -194,10 +220,15 @@ Contains
     Type(matProps), intent(IN) :: m
     ! -------------------------------------------------------------------- !
 
-    If (m%shearNonlinearity) Then
+    If (m%shearNonlinearity12) Then
       sv%Plas12_temp = sv%Plas12
       sv%Inel12_temp = sv%Inel12
       sv%d_eps12_temp = sv%d_eps12
+    End If
+    If (m%shearNonlinearity13) Then
+      sv%Plas13_temp = sv%Plas13
+      sv%Inel13_temp = sv%Inel13
+      sv%d_eps13_temp = sv%d_eps13
     End If
 
     If (m%schapery) Then
@@ -219,10 +250,15 @@ Contains
     Type(matProps), intent(IN) :: m
     ! -------------------------------------------------------------------- !
 
-    If (m%shearNonlinearity) Then
+    If (m%shearNonlinearity12) Then
       sv%Plas12 = sv%Plas12_temp
       sv%Inel12 = sv%Inel12_temp
       sv%d_eps12 = sv%d_eps12_temp
+    End If
+    If (m%shearNonlinearity13) Then
+      sv%Plas13 = sv%Plas13_temp
+      sv%Inel13 = sv%Inel13_temp
+      sv%d_eps13 = sv%d_eps13_temp
     End If
 
     If (m%schapery) Then

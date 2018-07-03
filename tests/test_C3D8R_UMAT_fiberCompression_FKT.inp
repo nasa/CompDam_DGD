@@ -94,7 +94,7 @@ stepDuration = 1.0
     1200.1,      ,         ,          ,     ,         <wkb>,    ,         0.3
 **
 *Depvar
-  33,
+  35,
   1, CDM_d2
   2, CDM_Fb1
   3, CDM_Fb2
@@ -114,20 +114,22 @@ stepDuration = 1.0
  17, CDM_FIfC
  18, CDM_d1T
  19, CDM_d1C
- 20, CDM_phi
- 21, CDM_gamma
- 22, CDM_Fm1
- 23, CDM_Fm2
- 24, CDM_Fm3
- 25, CDM_DIRECT11
- 26, CDM_DIRECT21
- 27, CDM_DIRECT31
- 28, CDM_DIRECT12
- 29, CDM_DIRECT22
- 30, CDM_DIRECT32
- 31, CDM_DIRECT13
- 32, CDM_DIRECT23
- 33, CDM_DIRECT33
+ 20, CDM_Plas13
+ 21, CDM_Inel13
+ 22, CDM_phi
+ 23, CDM_gamma
+ 24, CDM_Fm1
+ 25, CDM_Fm2
+ 26, CDM_Fm3
+ 27, CDM_DIRECT11
+ 28, CDM_DIRECT21
+ 29, CDM_DIRECT31
+ 30, CDM_DIRECT12
+ 31, CDM_DIRECT22
+ 32, CDM_DIRECT32
+ 33, CDM_DIRECT13
+ 34, CDM_DIRECT23
+ 35, CDM_DIRECT33
 *User defined field
 **
 ** INITIAL CONDITIONS
@@ -135,9 +137,9 @@ stepDuration = 1.0
 *Initial Conditions, Type=Solution
   Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
   0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
-  0.d0,  0.d0,  0.d0,  0.d0,  5.236d-2,  0.d0,  0.d0,  0.d0,
+  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0, 5.236d-2,  0.d0,
   0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0
 *Initial Conditions, Type=Field, Variable=1
   Part-1-1.GLOBAL,  0.d0
 **

@@ -29,7 +29,7 @@ Contains
       use_temporary_sv = .FALSE.
     End If
 
-    If (m%shearNonlinearity) Then
+    If (m%shearNonlinearity12) Then
       If (use_temporary_sv) Then
         Call ro_plasticity(two*eps(1,2), sv%d_eps12_temp, m%G12, m%aPL, m%nPL, sv%Plas12_temp, sv%Inel12_temp)
         eps(1,2) = eps(1,2) - sv%Plas12_temp/two
@@ -38,6 +38,16 @@ Contains
         Call ro_plasticity(two*eps(1,2), sv%d_eps12, m%G12, m%aPL, m%nPL, sv%Plas12, sv%Inel12)
         eps(1,2) = eps(1,2) - sv%Plas12/two
         eps(2,1) = eps(1,2)
+      End IF
+    Else If (m%shearNonlinearity13) Then
+      If (use_temporary_sv) Then
+        Call ro_plasticity(two*eps(1,3), sv%d_eps13_temp, m%G13, m%aPL, m%nPL, sv%Plas13_temp, sv%Inel13_temp)
+        eps(1,3) = eps(1,3) - sv%Plas13_temp/two
+        eps(3,1) = eps(1,3)
+      Else
+        Call ro_plasticity(two*eps(1,3), sv%d_eps13, m%G13, m%aPL, m%nPL, sv%Plas13, sv%Inel13)
+        eps(1,3) = eps(1,3) - sv%Plas13/two
+        eps(3,1) = eps(1,3)
       End IF
     ! Else If (m%other_plasticity_model)
       ! TODO

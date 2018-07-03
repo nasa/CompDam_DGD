@@ -59,7 +59,14 @@ Module matProp_Mod
     Double Precision :: thickness
 
     ! Flags for features
-    Logical :: matrixDam, shearNonlinearity, schapery, fiberTenDam, fiberCompDamBL, fiberCompDamFKT, friction
+    Logical :: matrixDam
+    Logical :: shearNonlinearity12
+    Logical :: shearNonlinearity13
+    Logical :: schapery
+    Logical :: fiberTenDam
+    Logical :: fiberCompDamBL
+    Logical :: fiberCompDamFKT
+    Logical :: friction
 
   End Type matProps
 
@@ -418,15 +425,28 @@ Contains
 
               Case (2)
                 If (featureFlags(j:j) == '1') Then
-                  m%shearNonlinearity = .TRUE.
+                  m%shearNonlinearity12 = .TRUE.
+                  m%shearNonlinearity13 = .FALSE.
                   m%schapery = .FALSE.
-                  Call log%info("loadMatProps: Shear nonlinearity ENABLED")
+                  Call log%info("loadMatProps: Shear nonlinearity (1-2 plane) ENABLED")
                 Else If (featureFlags(j:j) == '2') Then
-                  m%shearNonlinearity = .FALSE.
+                  m%shearNonlinearity12 = .FALSE.
+                  m%shearNonlinearity13 = .FALSE.
                   m%schapery = .TRUE.
                   Call log%info("loadMatProps: Schapery micro-damage ENABLED")
+                Else If (featureFlags(j:j) == '3') Then
+                  m%shearNonlinearity12 = .TRUE.
+                  m%shearNonlinearity13 = .TRUE.
+                  m%schapery = .FALSE.
+                  Call log%info("loadMatProps: Shear nonlinearity (3-D) ENABLED")
+                Else If (featureFlags(j:j) == '4') Then
+                  m%shearNonlinearity12 = .FALSE.
+                  m%shearNonlinearity13 = .TRUE.
+                  m%schapery = .FALSE.
+                  Call log%info("loadMatProps: Shear nonlinearity (1-3 plane) ENABLED")
                 Else
-                  m%shearNonlinearity = .FALSE.
+                  m%shearNonlinearity12 = .FALSE.
+                  m%shearNonlinearity13 = .FALSE.
                   m%schapery = .FALSE.
                   Call log%info("loadMatProps: pre-peak nonlinearity DISABLED")
                 End If
@@ -790,7 +810,7 @@ Contains
     End If
 
     ! Check if shear nonlinearity properties have been defined
-    If (m%shearNonlinearity) Then
+    If (m%shearNonlinearity12 .OR. m%shearNonlinearity13) Then
       If (.NOT. m%aPL_def) Call log%error('PROPERTY ERROR: Some shear-nonlinearity properties are missing. Must define a value for alpha_PL.')
       If (.NOT. m%nPL_def) Call log%error('PROPERTY ERROR: Some shear-nonlinearity properties are missing. Must define a value for n_PL.')
       Call log%info('PROPERTY: Shear-nonlinearity properties have been defined')
@@ -844,7 +864,7 @@ Contains
       If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (FKT model). Must define a value for SL.')
 
       ! Make sure shear nonlinearity is enabled
-      If (.NOT. m%shearNonlinearity) Call log%error('PROPERTY ERROR: Shear-nonlinearity must be enabled with fiber compression damage FKT.')
+      If (.NOT. m%shearNonlinearity12) Call log%error('PROPERTY ERROR: In-plane shear-nonlinearity must be enabled with fiber compression damage FKT.')
 
       Call log%info('PROPERTY: fiber compression damage FKT (model 3) properties have been defined')
     Else

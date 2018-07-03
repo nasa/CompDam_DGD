@@ -246,8 +246,8 @@ Contains
       stress(3) = CauchyABQ(3,3)
       stress(4) = CauchyABQ(1,2)
       If (nshr > 1) Then
-        stress(5) = CauchyABQ(2,3)
-        stress(6) = CauchyABQ(3,1)
+        stress(5) = CauchyABQ(3,1)
+        stress(6) = CauchyABQ(2,3)
       End If
     Else
       stress(3) = CauchyABQ(1,2)

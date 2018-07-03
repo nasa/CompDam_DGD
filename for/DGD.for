@@ -325,6 +325,7 @@ Contains
         sv%d2    = 1.d-8 ! Used as a flag to call DGDEvolve
         sv%alpha = alpha_test
         Call log%info('DGDInit found FIm > one. Matrix damage initiated.')
+        Call log%debug('alpha = ' // trim(str(sv%alpha)))
       End If
     End If
 
@@ -639,8 +640,11 @@ Contains
         End If
 
         ! Calculate the sign of the change in shear strain (for shear nonlinearity subroutine)
-        If (m%shearNonlinearity .AND. Q == 2) Then
+        If (m%shearNonlinearity12 .AND. Q == 2) Then
            sv%d_eps12_temp = Sign(one, (F(1,1)*F_bulk(1,2) + F(2,1)*F_bulk(2,2) + F_bulk(3,2)*F(3,1)) - (F_old(1,1)*sv%Fb1 + F_old(2,1)*sv%Fb2 + sv%Fb3*F_old(3,1)))
+        End If
+        If (m%shearNonlinearity13 .AND. Q == 3) Then
+           sv%d_eps13_temp = Sign(one, (F(1,1)*F_bulk(1,3) + F(2,1)*F_bulk(2,3) + F_bulk(3,1)*F(3,3)) - (F_old(1,1)*sv%Fb1 + F_old(2,1)*sv%Fb2 + F_old(3,2)*sv%Fb3))
         End If
 
         ! Compute the Green-Lagrange strain tensor for the bulk material: eps
@@ -1435,10 +1439,15 @@ Contains
     Else
       write(101,"(A)") '    "matrixDam": False,'
     End If
-    If (m%shearNonlinearity) Then
-      write(101,"(A)") '    "shearNonlinearity": True,'
+    If (m%shearNonlinearity12) Then
+      write(101,"(A)") '    "shearNonlinearity12": True,'
     Else
-      write(101,"(A)") '    "shearNonlinearity": False,'
+      write(101,"(A)") '    "shearNonlinearity12": False,'
+    End If
+    If (m%shearNonlinearity13) Then
+      write(101,"(A)") '    "shearNonlinearity13": True,'
+    Else
+      write(101,"(A)") '    "shearNonlinearity13": False,'
     End If
     If (m%fiberTenDam) Then
       write(101,"(A)") '    "fiberTenDam": True,'
