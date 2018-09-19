@@ -1,59 +1,95 @@
 Subroutine vucharlength(                                    &
   ! Read only (unmodifiable) variables:
-  nblock, nfieldv, nprops, ncomp, ndim, nnode, nstatev,     &
-  kSecPt, kLayer, kIntPt, jElType, jElem,                   &
-  totalTime, stepTime, dt,                                  &
-  cmname, coordMp, coordNode, direct, T, props,             &
-  field, stateOld,                                          &
+  nblock, nfieldv, nprops, ncomp, ndim, nnode, nstatev, kSecPt, kLayer, kIntPt, jElType, jElem,  &
+  totalTime, stepTime, dt, cmname, coordMp, coordNode, direct, T, props, field, stateOld,        &
   ! Write only (modifiable) variables:
   charLength )
+
+  Use matrixAlgUtil_Mod
 
   Implicit Double Precision (a-h, o-z)
   Integer, parameter :: j_sys_Dimension = 2, n_vec_Length = 136, maxblk = n_vec_Length
 
-  Dimension jElType(3), jElem(nblock), coordMp(nblock,ndim),  &
-    coordNode(nblock,nnode,ndim),                             &
-    direct(nblock,3,3), T(nblock,3,3), props(nprops),         &
-    stateOld(nblock,nstatev), charLength(nblock,ncomp),       &
-    field(nblock, nfieldv)
+  Dimension jElType(3), jElem(nblock), coordMp(nblock,ndim), coordNode(nblock,nnode,ndim), direct(nblock,3,3),  &
+    T(nblock,3,3), props(nprops), stateOld(nblock,nstatev), charLength(nblock,ncomp), field(nblock, nfieldv)
 
   Character(len=80) :: cmname
 
-  Double Precision :: center(ndim)
+  Integer :: fiberDir, matrixDir, thickDir
+  Double Precision :: edges(ndim, ndim), edges_n(ndim, ndim), edges_m(ndim, ndim)
+  Double Precision :: thick_test, fiber_test, delta_a_max, delta_a_avg
 
   ! Parameters
-  Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
+  Double Precision, parameter :: zero=0.d0, Pi=ACOS(-1.d0)
 
-  Master: Do k = 1, nblock
+  ! Evaluate vucharlength() only when element length state variables are undefined.
+  If ( stateOld(1, 6) == zero ) Then
 
-    ! Center is the geometric center of the nodes
-    center = zero
-    Do n = 1, nnode
-      center(:) = center(:) + coordNode(k, n, :)
-    End Do
-    center(:) = center(:) / nnode
+    Master: Do k = 1, nblock
 
-    ! The characteristic element lengths are calculated as the averaged length from the geometric center to each node,
-    ! projected onto the material directions (direct)
-    charLength(k, :) = zero
-    Nodes: Do n = 1, nnode
-      Dimensions: Do d = 1, ndim
-        charLength(k, d) = charLength(k, d) + ABS(DOT_PRODUCT(coordNode(k, n, :) - center(:), direct(k, :, d)))
-      End Do Dimensions
-    End Do Nodes
-    charLength(k, :) = charLength(k, :) * two / nnode
+      ! Material point coordinates in the material frame (for random initial fiber misalignments)
+      If (ncomp == 6) Then
+        charLength(k, 4) = DOT_PRODUCT(coordMp(k,:), direct(k,:,1))
+        charLength(k, 5) = DOT_PRODUCT(coordMp(k,:), direct(k,:,2))
+        charLength(k, 6) = DOT_PRODUCT(coordMp(k,:), direct(k,:,3))
+      End If
 
-    ! TODO: incorporate the data in T(nblock,3,3) for use in shell and membrane elements. This version may only be
-    ! working for shells where the material direction is set to theta = zero degrees.
+      ! Determine the average length of the parallel element edges
+      edges(1, :) = coordNode(k, 2, :) - coordNode(k, 1, :) + coordNode(k, 3, :) - coordNode(k, 4, :)
+      edges(2, :) = coordNode(k, 3, :) - coordNode(k, 2, :) + coordNode(k, 4, :) - coordNode(k, 1, :)
+      If (ndim == 3) Then
+        edges(1, :) = edges(1, :) - coordNode(k, 5, :) + coordNode(k, 6, :) + coordNode(k, 7, :) - coordNode(k, 8, :)
+        edges(2, :) = edges(2, :) - coordNode(k, 5, :) - coordNode(k, 6, :) + coordNode(k, 7, :) + coordNode(k, 8, :)
+        edges(3, :) = coordNode(k, 5, :) - coordNode(k, 1, :) + coordNode(k, 6, :) - coordNode(k, 2, :) + &
+                      coordNode(k, 7, :) - coordNode(k, 3, :) + coordNode(k, 8, :) - coordNode(k, 4, :)
+      End If
+      edges = 2 * edges / nnode
 
-    ! Material point coordinates in the material frame (for random initial fiber misalignments)
-    If (ncomp == 6) Then
-      charLength(k, 4) = DOT_PRODUCT(coordMp(k,:), direct(k,:,1))
-      charLength(k, 5) = DOT_PRODUCT(coordMp(k,:), direct(k,:,2))
-      charLength(k, 6) = DOT_PRODUCT(coordMp(k,:), direct(k,:,3))
-    End If
+      ! Matrix of normalized edges, edges_n(ndim, ndim)
+      Do n = 1, ndim; edges_n(n, :) = edges(n, :) / Length(edges(n, :)); End Do
 
-  End Do Master
+      ! Matrix of edge components in the material coordinate system
+      edges_m(1, 1) = ABS(DOT_PRODUCT(edges(1, :), direct(k, :, 1)))
+      edges_m(1, 2) = ABS(DOT_PRODUCT(edges(1, :), direct(k, :, 2)))
+      edges_m(2, 1) = ABS(DOT_PRODUCT(edges(2, :), direct(k, :, 1)))
+      edges_m(2, 2) = ABS(DOT_PRODUCT(edges(2, :), direct(k, :, 2)))
+      If (ndim == 3) Then
+        edges_m(3, 1) = ABS(DOT_PRODUCT(edges(3, :), direct(k, :, 1)))
+        edges_m(3, 2) = ABS(DOT_PRODUCT(edges(3, :), direct(k, :, 2)))
+
+        edges_m(1, 3) = ABS(DOT_PRODUCT(edges(1, :), direct(k, :, 3)))
+        edges_m(2, 3) = ABS(DOT_PRODUCT(edges(2, :), direct(k, :, 3)))
+        edges_m(3, 3) = ABS(DOT_PRODUCT(edges(3, :), direct(k, :, 3)))
+      End If
+
+      ! Determine which material directions the element edge vectors are closest to
+      thickDir = 3
+      If (ndim == 3) Then
+        thick_test = MAX(edges_m(1,3)/Length(edges(1, :)), edges_m(2,3)/Length(edges(2, :)), edges_m(3,3)/Length(edges(3, :)))
+        If (edges_m(1, 3)/Length(edges(1, :)) == thick_test) thickDir = 1
+        If (edges_m(2, 3)/Length(edges(2, :)) == thick_test) thickDir = 2
+      End If
+
+      fiberDir = MOD(thickDir, 3) + 1
+      fiber_test = MAX(edges_m(1,1)/Length(edges(1, :)), edges_m(2,1)/Length(edges(2, :)), edges_m(3,1)/Length(edges(3, :)))
+      If (edges_m(MOD(thickDir + 1, 3) + 1, 1)/Length(edges(MOD(thickDir + 1, 3) + 1, :)) == fiber_test) Then
+        fiberDir = MOD(thickDir + 1, 3) + 1
+      End If
+      matrixDir = 6 - fiberDir - thickDir
+
+      delta_a_max = Length(edges(fiberDir, :)) * SIN(ACOS(DOT_PRODUCT(edges_n(fiberDir, :), edges_n(matrixDir, :)))) / &
+                     SIN(ACOS(edges_m(matrixDir, 1) / Length(edges(matrixDir, :))))
+      delta_a_avg = delta_a_max * edges_m(matrixDir, 2) / (edges_m(fiberDir, 2) + edges_m(matrixDir, 2))
+
+      charLength(k, 1) = edges_m(fiberDir, 1)
+      charLength(k, 2) = Length(edges(matrixDir, :)) * SIN(ACOS(DOT_PRODUCT(-edges_n(fiberDir, :), edges_n(matrixDir, :)))) / &
+                          SIN(ACOS(edges_m(fiberDir, 2) / Length(edges(fiberDir, :))))
+      charLength(k, 2) = charLength(k, 2) * edges_m(fiberDir, 1) / delta_a_avg
+      If (ndim == 3) charLength(k, 3) = edges_m(thickDir, 3)
+
+    End Do Master
+
+  End If
 
   Return
 End Subroutine vucharlength
