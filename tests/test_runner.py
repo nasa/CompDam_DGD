@@ -406,6 +406,10 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_S4R_fiberLoadReversal")
 
 
+    def test_CPS4R_elementSize(self):
+        """ User characteristic length, plane stress """
+        self.runTest("test_CPS4R_elementSize")
+
 
 if __name__ == "__main__":
     av.runTests(relPathToUserSub='../for/CompDam_DGD', double=True)
