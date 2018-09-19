@@ -11,15 +11,16 @@
 #include "version.for"
 #include "forlog.for"
 #include "matrixUtil.for"
-#include "stress.for"
 #include "matProp.for"
 #include "stateVar.for"
 #include "parameters.for"
+#include "schapery.for"
+#include "stress.for"
 #include "strain.for"
+#include "plasticity.for"
 #include "fiberDamage.for"
 #include "friction.for"
 #include "cohesive.for"
-#include "schapery.for"
 #include "vucharlength.for"
 #include "DGD.for"
 
@@ -125,7 +126,7 @@ Subroutine CompDam(  &
   ! Parameters
   Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
 
-  ! Structure of all VUMAT argments
+  ! Structure of all VUMAT arguments
   Type(vumatArg) :: args
 
   ! For access to the logger
@@ -188,12 +189,25 @@ Subroutine CompDam(  &
           Deallocate (user_temp%materials)
 
           ! Add new material data to resized user%materials
-          If (totalTime == zero) Then
-            user%materials(mats+1) = loadMatProps(cmname, .TRUE., nprops, props)
-          Else
-            user%materials(mats+1) = loadMatProps(cmname, .FALSE., nprops, props)
+          user%materials(mats+1) = loadMatProps(cmname, nprops, props)
+          m = user%materials(mats+1)  ! Abbreviate
+
+          ! Calculate alpha0
+          If (m%matrixDam) Then
+            m%alpha0_deg = NINT(m%alpha0*45.d0/ATAN(one))
+            m%alpha0 = alpha0_DGD(m)
           End If
-          m = user%materials(mats+1)
+
+          ! Run consistency checks
+          If (totalTime == zero) Then
+            Call consistencyChecks(m, issueWarnings=.TRUE.)
+          Else
+            Call consistencyChecks(m, issueWarnings=.FALSE.)
+          End If
+
+          ! Make sure updated values in m are retained
+          user%materials(mats+1) = m
+
         End If
 
       End Do readMaterial
@@ -202,12 +216,26 @@ Subroutine CompDam(  &
 
       Call log%info("Saving initial user material: "//trim(cmname))
       Allocate (user%materials(1))
-      If (totalTime == zero) Then
-        user%materials(1) = loadMatProps(cmname, .TRUE., nprops, props)
-      Else
-        user%materials(1) = loadMatProps(cmname, .FALSE., nprops, props)
+
+      ! Load the first material
+      user%materials(1) = loadMatProps(cmname, nprops, props)
+      m = user%materials(1)  ! Abbreviate
+
+      ! Calculate alpha0
+      If (m%matrixDam) Then
+        m%alpha0_deg = NINT(m%alpha0*45.d0/ATAN(one))
+        m%alpha0 = alpha0_DGD(m)
       End If
-      m = user%materials(1)
+
+      ! Run consistency checks
+      If (totalTime == zero) Then
+        Call consistencyChecks(m, issueWarnings=.TRUE.)
+      Else
+        Call consistencyChecks(m, issueWarnings=.FALSE.)
+      End If
+
+      ! Make sure updated values in m are retained
+      user%materials(1) = m
 
     End If
 
@@ -233,7 +261,7 @@ Subroutine CompDam(  &
   F_old = Vec2Matrix(defgradOld(km,:))
 
   ! -------------------------------------------------------------------- !
-  ! As of Abaqus 6.16, the packager recieves a defGradNew of (0.999, 0.999, 0.0, 0.001, 0.001)
+  ! As of Abaqus 6.16, the packager receives a defGradNew of (0.999, 0.999, 0.0, 0.001, 0.001)
   ! for S4R elements. The F(3,3) of 0.0 breaks the initial pass through the VUMAT and the model
   ! will not run. The following statement is a workaround to this problem.
   If (totalTime == 0 .AND. nshr == 1) F(3,3) = one
@@ -244,8 +272,12 @@ Subroutine CompDam(  &
   sv = loadStateVars(nstatev, stateOld(km,:), m)
 
   ! The sign of the change in shear strain, used in the shear nonlinearity subroutine. Previously was a state variable.
-  If (m%shearNonlinearity) sv%d_eps12 = Sign(one, (F(1,1)*F(1,2) + F(2,1)*F(2,2) + F(3,2)*F(3,1)) - &
-                                          (F_old(1,1)*F_old(1,2) + F_old(2,1)*F_old(2,2) + F_old(3,2)*F_old(3,1)))
+  If (m%shearNonlinearity12) Then
+    sv%d_eps12 = Sign(one, (F(1,1)*F(1,2) + F(2,1)*F(2,2) + F(3,2)*F(3,1)) - (F_old(1,1)*F_old(1,2) + F_old(2,1)*F_old(2,2) + F_old(3,2)*F_old(3,1)))
+  End If
+  If (m%shearNonlinearity13) Then
+    sv%d_eps13 = Sign(one, (F(1,1)*F(1,3) + F(2,1)*F(2,3) + F(3,1)*F(3,3)) - (F_old(1,1)*F_old(1,3) + F_old(2,1)*F_old(2,3) + F_old(3,2)*F_old(3,3)))
+  End If
 
   ! -------------------------------------------------------------------- !
   !    Define the characteristic element lengths                         !

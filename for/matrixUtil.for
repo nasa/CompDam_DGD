@@ -55,20 +55,41 @@ Contains
   End Function Vec2Matrix
 
 
-  Pure Function Matrix2Vec(mat, nshr)
+  Pure Function Matrix2Vec(mat, nshr, symmetric)
     ! Converts a symmetric tensor stored in matrix format (3,3) to a vector
 
     ! Arguments
     Double Precision, intent(IN) :: mat(3,3)
     Integer, intent(IN) :: nshr
+    Logical, intent(IN), optional :: symmetric        ! True for symmetric matrix (default=True)
 
     ! Output
-    Double Precision :: Matrix2Vec(3+nshr)
+    Double Precision, allocatable :: Matrix2Vec(:)
 
     ! Locals
+    Integer :: output_length
+    Logical :: sym
     Double Precision, parameter :: zero=0.d0
     ! -------------------------------------------------------------------- !
 
+    ! Optional argument for symmetry
+    If (present(symmetric)) Then
+      sym = symmetric
+    Else
+      sym = .TRUE.
+    End If
+
+    ! Initialize output
+    If (sym) Then
+      output_length = 3+nshr
+    Else
+      If (nshr == 1) Then
+        output_length = 5
+      Else
+        output_length = 9
+      End If
+    End If
+    Allocate(Matrix2Vec(output_length))
     Matrix2Vec = zero
 
     ! 2D components
@@ -76,9 +97,21 @@ Contains
     Matrix2Vec(4) = mat(1,2)
 
     ! 3D
-    If (nshr > 1) Then
-      Matrix2Vec(5) = mat(2,3)
-      Matrix2Vec(6) = mat(3,1)
+    If (sym) Then
+      If (nshr > 1) Then
+        Matrix2Vec(5) = mat(2,3)
+        Matrix2Vec(6) = mat(3,1)
+      End If
+    Else
+      If (nshr > 1) Then
+        Matrix2Vec(5) = mat(2,3)
+        Matrix2Vec(6) = mat(3,1)
+        Matrix2Vec(7) = mat(2,1)
+        Matrix2Vec(8) = mat(3,2)
+        Matrix2Vec(9) = mat(1,3)
+      Else
+        Matrix2Vec(5) = mat(2,1)
+      End If
     End If
 
     Return
@@ -305,6 +338,52 @@ Contains
 
     Return
   End Function Length
+
+
+  Subroutine PolarDecomp(F,R,U)
+    ! Finds the polar decomposition of F
+    ! Returns R and U
+
+    ! Arguments
+    Double Precision, intent(IN) :: F(3,3)
+    Double Precision, intent(OUT) :: R(3,3), U(3,3)
+
+    ! Locals
+    Double precision :: eigVec(3,3), eigVal(3), WORK(1000), eigDiag(3,3)
+    Double Precision :: Usquared(3,3)
+    Integer :: INFO, LWORK
+    Double Precision, parameter :: zero=0.d0
+    ! -------------------------------------------------------------------- !
+
+    ! Calculate U^2
+    Usquared = MATMUL(TRANSPOSE(F), F)
+
+    ! Get the eigenvalues and eigenvectors of U^2
+    ! DSYEV is a LAPACK function; doc: http://www.netlib.org/lapack/double/dsyev.f
+    eigVec = Usquared  ! prevent overwrite
+    ! Setup workspace
+    LWORK = -1
+    Call DSYEV( 'V', 'U', 3, eigVec, 3, eigVal, WORK, LWORK, INFO )
+    LWORK = MIN( 1000, INT( WORK( 1 ) ) )
+    ! Solve the eigenvalue problem
+    Call DSYEV( 'V', 'U', 3, eigVec, 3, eigVal, WORK, LWORK, INFO )
+    If (info /= 0) Then
+      print *, 'WARNING'
+      print *, 'Failed to compute eigenvalues of U^2. DSYEV Error.'
+    End If
+
+    ! Get U
+    eigDiag = zero
+    eigDiag(1,1) = SQRT(eigVal(1))
+    eigDiag(2,2) = SQRT(eigVal(2))
+    eigDiag(3,3) = SQRT(eigVal(3))
+    U = MATMUL(eigVec, MATMUL(eigDiag, TRANSPOSE(eigVec)))
+
+    ! Get R
+    R = MATMUL(F, MInverse(U))
+
+    Return
+  End Subroutine PolarDecomp
 
 
 End Module

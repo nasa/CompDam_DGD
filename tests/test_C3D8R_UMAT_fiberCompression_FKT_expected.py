@@ -1,5 +1,5 @@
 # Variable results
-crushStress=-9.55
+crushStress=-13.1
 
 parameters = {
 	"results": [
@@ -11,8 +11,8 @@ parameters = {
                 "nset": "LOADAPP",
                 "position": "Node 4"
             },
-            "referenceValue": -36.003,
-            "tolerance": 0.72  # 2%
+            "referenceValue": -29.3,
+            "tolerance": 0.586  # 2%
         },
         {
             "type": "finalValue",
@@ -38,8 +38,8 @@ parameters = {
                     "nset": "LOADAPP"
                 }
             ],
-            "referenceValue": -0.00157,
-            "tolerance": 0.0001
+            "referenceValue": -0.00141,
+            "tolerance": 0.00001
         }
 	]
 }

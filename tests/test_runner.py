@@ -42,10 +42,10 @@ def plotFailureEnvelope(baseName, abscissaIdentifier, ordinateIdentifier, abciss
                         dataHeaders.append(lineSplit[i])
                 else:
                     for i in range(0, len(lineSplit)):
-                        data[dataHeaders[i]].append(lineSplit[i])
+                        data[dataHeaders[i]].append(float(lineSplit[i]))
 
         # Plot the failure envelope
-        fig = plt.figure()
+        fig, ax = plt.subplots()
 
         # Reference data
         dataRef = dict()
@@ -55,7 +55,6 @@ def plotFailureEnvelope(baseName, abscissaIdentifier, ordinateIdentifier, abciss
 
         # Data from CompDam
         plt.plot(data[abscissaIdentifier], data[ordinateIdentifier], 'o', markerfacecolor='none', markeredgecolor='#ED7D31')
-        ax = plt.subplot(111)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines['left'].set_position('zero')
@@ -301,6 +300,11 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_nonlinearShear12")
 
 
+    def test_C3D8R_nonlinearShear12_loadReversal(self):
+        """ Nonlinear shear model, loading and unloading, no damage, including full load reversal """
+        self.runTest("test_C3D8R_nonlinearShear12_loadReversal")
+
+
     def test_C3D8R_fiberTension(self):
         """ Fiber tension, solid element """
         self.runTest("test_C3D8R_fiberTension")
@@ -332,8 +336,23 @@ class SingleElementTests(av.TestCase):
 
 
     def test_C3D8R_nonlinearShear12(self):
-        """ Nonlinear shear model, loading and unloading """
+        """ Nonlinear shear model, loading and unloading in 1-2 plane """
         self.runTest("test_C3D8R_nonlinearShear12")
+
+
+    def test_C3D8R_nonlinearShear12_loadReversal(self):
+        """ Nonlinear shear model, loading and unloading in 1-2 plane, including full load reversal """
+        self.runTest("test_C3D8R_nonlinearShear12_loadReversal")
+
+
+    def test_C3D8R_nonlinearShear13(self):
+        """ Nonlinear shear model, loading and unloading in 1-3 plane"""
+        self.runTest("test_C3D8R_nonlinearShear13")
+
+
+    def test_C3D8R_nonlinearShear13_loadReversal(self):
+        """ Nonlinear shear model, loading and unloading in 1-3 plane, including full load reversal"""
+        self.runTest("test_C3D8R_nonlinearShear13_loadReversal")
 
 
     def test_C3D8R_schapery12(self):
@@ -354,6 +373,11 @@ class SingleElementTests(av.TestCase):
     def test_C3D8R_elastic_fiberTension(self):
         """ Elastic fiber tension """
         self.runTest("test_C3D8R_elastic_fiberTension")
+
+
+    def test_C3D8R_elastic_simpleShear12(self):
+        """ Elastic simple shear """
+        self.runTest("test_C3D8R_elastic_simpleShear12")
 
 
     def test_C3D8R_elementSize(self):

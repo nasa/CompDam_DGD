@@ -18,7 +18,7 @@ Module parameters_Mod
     Double Precision :: tol_DGD_f                                 ! tol_DGD_f = tol_DGD/YT
     Double Precision :: dGdGc_min                                 ! minimum amount of damage dissipated per MD increment
     Double Precision :: compLimit                                 ! minimum accepted det(F_bulk)
-    Double Precision :: penStiffMult                              ! penalty stiffness multipler
+    Double Precision :: penStiffMult                              ! penalty stiffness multiplier
     Double Precision :: cutback_amount                            ! artificially slow rate of change of F_bulk
     Double Precision :: tol_divergence                            ! Tolerance for divergence of internal Newton Raphson loop
     Double Precision :: gamma_max                                 ! Maximum shear strain; when this value is exceeded, the element is deleted
@@ -270,7 +270,7 @@ Contains
 
 
   Subroutine verifyAndSaveProperty_dbl(key, value, min, max, saveTo)
-    ! Checks if the value is within the specifed bounds. Prints an error message
+    ! Checks if the value is within the specified bounds. Prints an error message
     ! which kills the analysis if a value is out of bounds.
 
     Use forlog_Mod
@@ -303,7 +303,7 @@ Contains
   End Subroutine verifyAndSaveProperty_dbl
 
   Subroutine verifyAndSaveProperty_int(key, value, min, max, saveTo)
-    ! Checks if the value is within the specifed bounds. Prints an error message
+    ! Checks if the value is within the specified bounds. Prints an error message
     ! which kills the analysis if a value is out of bounds.
 
     Use forlog_Mod

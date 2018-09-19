@@ -51,10 +51,10 @@
 *User material, constants=4
 ** 1              2                  3          4
 ** feature flags, , thickness, 4, 5, 6, 7, 8
-          100000, ,  <length>,  ,  ,  ,  ,  ,
+               0, ,  <length>,  ,  ,  ,  ,  ,
 **
 *Depvar, delete=11
-  28,
+  33,
   1, CDM_d2
   2, CDM_Fb1
   3, CDM_Fb2
@@ -74,15 +74,20 @@
  17, CDM_FIfC
  18, CDM_d1T
  19, CDM_d1C
- 20, CDM_DIRECT11
- 21, CDM_DIRECT21
- 22, CDM_DIRECT31
- 23, CDM_DIRECT12
- 24, CDM_DIRECT22
- 25, CDM_DIRECT32
- 26, CDM_DIRECT13
- 27, CDM_DIRECT23
- 28, CDM_DIRECT33
+ 20, CDM_20
+ 21, CDM_21
+ 22, CDM_22
+ 23, CDM_23
+ 24, CDM_24
+ 25, CDM_DIRECT11
+ 26, CDM_DIRECT21
+ 27, CDM_DIRECT31
+ 28, CDM_DIRECT12
+ 29, CDM_DIRECT22
+ 30, CDM_DIRECT32
+ 31, CDM_DIRECT13
+ 32, CDM_DIRECT23
+ 33, CDM_DIRECT33
 *User defined field
 **
 ** INITIAL CONDITIONS
@@ -91,7 +96,8 @@
 ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0
 *Initial Conditions, Type=Field, Variable=1
 GLOBAL,  0.d0
 **
@@ -106,7 +112,7 @@ GLOBAL,  0.d0
 **
 *STEP, nlgeom=YES, inc=1000
 *Dynamic, application=QUASI-STATIC, initial=NO
- 0.005, <stepDuration>, 5.e-6, 0.005
+ 0.01, <stepDuration>, 5.e-6, 0.01
 **
 ** OUTPUT
 **

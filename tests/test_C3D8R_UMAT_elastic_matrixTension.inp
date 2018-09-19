@@ -37,7 +37,10 @@
 **
 ** PROPERTIES
 **
-*SOLID SECTION, ELSET=ALL_ELEMS, MATERIAL=IM7-8552, controls=C-1
+*Orientation, name=Ori-1
+ 1., 0., 0., 0., 1., 0.
+3, 0.
+*SOLID SECTION, ELSET=ALL_ELEMS, MATERIAL=IM7-8552, controls=C-1, Orientation=Ori-1
 *Section Controls, name=C-1, hourglass=ENHANCED
 **
 ** MATERIALS
@@ -51,7 +54,7 @@
                0, ,  <length>,  ,  ,  ,  ,  ,
 **
 *Depvar, delete=11
-  19,
+  28,
   1, CDM_d2
   2, CDM_Fb1
   3, CDM_Fb2
@@ -71,14 +74,29 @@
  17, CDM_FIfC
  18, CDM_d1T
  19, CDM_d1C
-** *Characteristic Length, definition=USER, components=3
+ 20, CDM_DIRECT11
+ 21, CDM_DIRECT21
+ 22, CDM_DIRECT31
+ 23, CDM_DIRECT12
+ 24, CDM_DIRECT22
+ 25, CDM_DIRECT32
+ 26, CDM_DIRECT13
+ 27, CDM_DIRECT23
+ 28, CDM_DIRECT33
+*User defined field
 **
 ** INITIAL CONDITIONS
 **
 *Initial Conditions, Type=Solution
 ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-            0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
-            0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+*Initial Conditions, Type=Field, Variable=1
+GLOBAL,  0.d0
+**
+** Boundary conditions
+**
 *BOUNDARY
   Y-, 2, 2, 0
   X-, 1, 1, 0

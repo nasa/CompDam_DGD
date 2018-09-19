@@ -44,7 +44,7 @@ Module forlog_Mod
     Generic :: debug => debug_str, debug_int, debug_dbl, debug_mat  ! level=4, Maximum amount of information
     Procedure :: info                                ! level=3, Verbose logging
     Procedure :: warn                                ! level=2, Log issues that may impact accuracy of results
-    Procedure :: error                               ! level=1, Log isses that require termination of analysis
+    Procedure :: error                               ! level=1, Log issues that require termination of analysis
   End Type forlog
 
   Interface str
