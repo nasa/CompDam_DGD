@@ -3,23 +3,27 @@ Module plasticity_mod
 
 Contains
 
-  Subroutine Plasticity(m, sv, ndir, eps, use_temp)
+  Subroutine Plasticity(m, sv, ndir, nshr, eps, eps_old_in, use_temp)
     ! This is the main entry point for plasticity calculations
 
     Use matProp_Mod
     Use stateVar_Mod
+    Use schaefer_Mod
+    use matrixAlgUtil_Mod
 
     ! Arguments
     Type(matProps), intent(IN) :: m
     Type(stateVars), intent(INOUT) :: sv                ! State variables related to plasticity
-    Integer, intent(IN) :: ndir
-    Double Precision, intent(INOUT) :: eps(ndir,ndir)   ! Strain tensor
+    Integer, intent(IN) :: ndir, nshr
+    Double Precision, intent(INOUT) :: eps(ndir,ndir)    ! Strain tensor
+    Double Precision, optional, intent(IN) :: eps_old_in(ndir, ndir)   ! Strain tensor
     Logical, optional :: use_temp                       ! Set to true to use temporary state variables (default=False)
 
     ! Locals
     Logical :: use_temporary_sv
+    Double Precision:: eps_old(ndir, ndir)   ! Strain tensor
 
-    Double Precision, parameter :: one=1.d0, two=2.d0
+    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
     ! -------------------------------------------------------------------- !
 
     ! Set default behavior for use_temp
@@ -27,6 +31,11 @@ Contains
       use_temporary_sv = use_temp
     Else
       use_temporary_sv = .FALSE.
+    End If
+    if (PRESENT(eps_old_in)) THEN
+      eps_old = eps_old_in
+    ELSE 
+      eps_old = zero
     End If
 
     If (m%shearNonlinearity12) Then
@@ -49,8 +58,11 @@ Contains
         eps(1,3) = eps(1,3) - sv%Plas13/two
         eps(3,1) = eps(1,3)
       End IF
-    ! Else If (m%other_plasticity_model)
-      ! TODO
+    Else If (m%schaefer) THEN
+    	! Update Ep_schaefer and f (yield function)
+      CALL schaefer(m, m%a6,  m%b2,  m%n, m%A, eps, eps_old, ndir, nshr, sv%Ep_schaefer, sv%fp)
+      !updated eps subtracting out total plastic strain eps -= sv%Ep_old
+      eps = eps - Vec2Matrix(sv%Ep_schaefer)
     End If
 
     Return

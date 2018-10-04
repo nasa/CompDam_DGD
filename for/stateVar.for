@@ -32,6 +32,8 @@ Module stateVar_Mod
     Double Precision :: gamma
     Double Precision :: Sr            ! Schapery micro-damage state variable, reduced
     Double Precision :: direct(9)
+    Double Precision :: Ep_schaefer(6) ! Total plastic strain for schaefer theory
+    Double Precision :: fp ! yield function value
 
     ! Stored for debugging only
     Double Precision :: d_eps12, d_eps13
@@ -91,12 +93,31 @@ Contains
       sv%Plas12 = zero
       sv%Inel12 = zero
       sv%Sr = stateOld(12)
+
     Else
       sv%Plas12 = zero
       sv%Inel12 = zero
       sv%Sr = one
+
     End If
 
+    IF (m%schaefer) THEN
+      sv%Ep_schaefer(1) = stateOld(27)
+      sv%Ep_schaefer(2) = stateOld(28)
+      sv%Ep_schaefer(3) = stateOld(29)
+      sv%Ep_schaefer(4) = stateOld(30)
+      sv%Ep_schaefer(5) = stateOld(31)
+      sv%Ep_schaefer(6) = stateOld(32)
+      sv%fp = stateOld(33)
+    ELSE
+      sv%Ep_schaefer(1) = zero
+      sv%Ep_schaefer(2) = zero
+      sv%Ep_schaefer(3) = zero
+      sv%Ep_schaefer(4) = zero
+      sv%Ep_schaefer(5) = zero
+      sv%Ep_schaefer(6) = zero
+      sv%fp = zero
+    END IF     
     sv%rfT = MAX(one, stateOld(14))
     sv%slide(1) = stateOld(15)
     sv%slide(2) = stateOld(16)
@@ -167,6 +188,7 @@ Contains
     Else If (m%schapery) Then
       stateNew(12) = sv%Sr
       stateNew(13) = zero
+
     Else
       stateNew(12) = zero
       stateNew(13) = zero
@@ -183,6 +205,24 @@ Contains
     Else If (nstatev >= 19) Then
       stateNew(19) = zero
     End If
+
+    If (m%schaefer) Then
+      stateNew(27) = sv%Ep_schaefer(1)
+      stateNew(28) = sv%Ep_schaefer(2)
+      stateNew(29) = sv%Ep_schaefer(3)
+      stateNew(30) = sv%Ep_schaefer(4)
+      stateNew(31) = sv%Ep_schaefer(5)
+      stateNew(32) = sv%Ep_schaefer(6)
+      stateNew(33) = sv%fp
+    ELSE IF (nstatev == 33) THEN
+      stateNew(27) = zero
+      stateNew(28) = zero
+      stateNew(29) = zero
+      stateNew(30) = zero
+      stateNew(31) = zero
+      stateNew(32) = zero
+      stateNew(33) = zero
+    END IF
 
     If (m%shearNonlinearity13) Then
       stateNew(20) = sv%Plas13

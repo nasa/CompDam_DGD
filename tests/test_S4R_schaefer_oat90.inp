@@ -1,0 +1,131 @@
+*Heading
+ Single element test for matrix tension
+**
+*Parameter
+ length = 0.1
+ displacement = 0.0015
+**
+** NODES
+**
+*NODE, NSET=GLOBAL
+      1,            0.,            0.,            0.
+      2,      <length>,            0.,            0.
+      3,      <length>,      <length>,            0.
+      4,            0.,      <length>,            0.
+*NSET, NSET=X+
+  2, 3
+*NSET, NSET=X-
+  1, 4
+*NSET, NSET=Y+
+  3, 4
+*NSET, NSET=Y-
+  1, 2
+**
+** ELEMENTS
+**
+*ELEMENT, TYPE=S4R, ELSET=ALL_ELEMS
+  1, 1, 2, 3, 4
+**
+** PROPERTIES
+**
+*SHELL SECTION, ELSET=ALL_ELEMS, MATERIAL=fakemat
+<length>
+*TRANSVERSE SHEAR STIFFNESS
+ 5290.0, 2987.0, 0.0
+**
+** MATERIALS
+**
+*Material, name=fakemat
+*Density
+ 1.59d-05,
+*User material, constants=4
+** 1              2                  3          4
+** feature flags, , thickness, 4, 5, 6, 7, 8
+          050000, ,  <length>,  ,  ,  ,  ,  ,
+**
+**
+*Depvar
+  33,
+  1, CDM_d2
+  2, CDM_Fb1
+  3, CDM_Fb2
+  4, CDM_Fb3
+  5, CDM_B
+  6, CDM_Lc1
+  7, CDM_Lc2
+  8, CDM_Lc3
+  9, CDM_FIm
+ 10, CDM_alpha
+ 11, CDM_STATUS
+ 12, CDM_Plas12
+ 13, CDM_Inel12
+ 14, CDM_FIfT
+ 15, CDM_slide1
+ 16, CDM_slide2
+ 17, CDM_FIfC
+ 18, CDM_d1T
+ 19, CDM_d1C
+ 20, CDM_Plas13
+ 21, CDM_Inel13
+ 22, CDM_phi0
+ 23, CDM_gamma
+ 24, CDM_Fm1
+ 25, CDM_Fm2
+ 26, CDM_Fm3
+ 27, CDM_Ep_schaefer11
+ 28, CDM_Ep_schaefer22
+ 29, CDM_Ep_schaefer33
+ 30, CDM_Ep_schaefer12
+ 31, CDM_Ep_schaefer23
+ 32, CDM_Ep_schaefer31
+ 33, CDM_fp
+*Characteristic Length, definition=USER, components=3
+**
+** INITIAL CONDITIONS
+**
+*Initial Conditions, Type=Solution
+***     1i,    2i,    3i,    4i,    5i,    6i,    7i,
+ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0, 0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
+0.d0, 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0, 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0, 0.d0
+*BOUNDARY
+  Y-,     2, 2, 0
+  X-,     1, 1, 0
+  GLOBAL, 3, 3, 0
+**
+*Equation
+ 2
+ 2, 1, 1., 3, 1, -1.
+**
+*Amplitude, name=LoadUp, definition=SMOOTH STEP
+0., 0., 0.1, 1.
+** STEP 1 - TENSION MECHANICAL CYCLE
+**
+*STEP, NLGEOM=YES
+*Dynamic, Explicit
+ , 0.1, ,
+**
+** OUTPUT
+**
+*OUTPUT, FIELD
+*ELEMENT OUTPUT
+  SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U
+*NODE OUTPUT, NSET=Y+
+ RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=LoadUp
+ Y+, 2, 2, <displacement>
+*END STEP

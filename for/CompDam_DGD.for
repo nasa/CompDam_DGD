@@ -17,6 +17,7 @@
 #include "schapery.for"
 #include "stress.for"
 #include "strain.for"
+#include "schaefer.for"
 #include "plasticity.for"
 #include "fiberDamage.for"
 #include "friction.for"
@@ -313,7 +314,7 @@ Subroutine CompDam(  &
   ! Damage initiation prediction
   If (.NOT. (m%matrixDam .AND. sv%d2 > zero) .AND. .NOT. (m%fiberCompDamFKT .AND. sv%d1C > zero)) Then
 
-    Call DGDInit(U,F,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km))
+    Call DGDInit(U,F,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km), F_old)
 
   End IF
 
