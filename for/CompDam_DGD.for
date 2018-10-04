@@ -297,7 +297,7 @@ Subroutine CompDam(  &
 
   End If
 
-  If (totalTime <= DT) Call checkForSnapBack(m, sv%Lc, nElement(km))
+  ! If (totalTime <= DT) Call checkForSnapBack(m, sv%Lc, nElement(km))
 
   ! -------------------------------------------------------------------- !
   !    Initialize phi0                                                   !
