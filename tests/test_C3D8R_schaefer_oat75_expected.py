@@ -19,38 +19,38 @@ parameters = {
             "type": "tabular",
             "identifier": [
                 { 
-                    "av_id": "u_n5",
+                    "label": "u_n5",
                     "symbol": "U1",
                     "position": "Node 5",
                     "nset": "RIGHTEDGE"
                 },
                 { 
-                    "av_id": "rf_n5",
+                    "label": "rf_n5",
                     "symbol": "RF1",
                     "position": "Node 5",
                     "nset": "RIGHTEDGE"
                 },
                 { 
-                    "av_id": "rf_n6",
+                    "label": "rf_n6",
                     "symbol": "RF1",
                     "position": "Node 6",
                     "nset": "RIGHTEDGE"
                 },
                 { 
-                    "av_id": "rf_n7",
+                    "label": "rf_n7",
                     "symbol": "RF1",
                     "position": "Node 7",
                     "nset": "RIGHTEDGE"
                 },
                 { 
-                    "av_id": "rf_n8",
+                    "label": "rf_n8",
                     "symbol": "RF1",
                     "position": "Node 8",
                     "nset": "RIGHTEDGE"
                 },
             ],
-            "x_eval_statement": "d['u_n5'] / {}".format(length),
-            "y_eval_statement": "(d['rf_n5'] + d['rf_n6'] + d['rf_n7'] + d['rf_n8']) / {}".format(area),          
+            "xEvalStatement": "d['u_n5'] / {}".format(length),
+            "yEvalStatement": "(d['rf_n5'] + d['rf_n6'] + d['rf_n7'] + d['rf_n8']) / {}".format(area),          
             "referenceValue": reference_values,
             "tolerance": tolerance
         }

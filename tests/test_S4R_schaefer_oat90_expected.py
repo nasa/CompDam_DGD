@@ -14,24 +14,24 @@ parameters = {
             "type": "tabular",
             "step": "Step-1",
             "identifier": [
-                {   "av_id": "n3_u",
+                {   "label": "n3_u",
                     "symbol": "U2",
                     "nset": "Y+",
                     "position": "Node 3"
                 },
-                {   "av_id": "n3_rf",
+                {   "label": "n3_rf",
                     "symbol": "RF2",
                     "nset": "Y+",
                     "position": "Node 3"
                 },
-                {   "av_id": "n4_rf",
+                {   "label": "n4_rf",
                     "symbol": "RF2",
                     "nset": "Y+",
                     "position": "Node 4"
                 }
             ],
-            "x_eval_statement": "d['n3_u'] / {}".format(length),
-            "y_eval_statement": "(d['n3_rf'] + d['n4_rf']) / {}".format(area),          
+            "xEvalStatement": "d['n3_u'] / {}".format(length),
+            "yEvalStatement": "(d['n3_rf'] + d['n4_rf']) / {}".format(area),          
             "referenceValue": reference_values,
             "tolerance": tolerance
         }
