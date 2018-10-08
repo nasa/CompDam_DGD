@@ -38,11 +38,11 @@
 **
 ** PROPERTIES
 **
-*SOLID SECTION, ELSET=ALL_ELEMS, MATERIAL=fakemat
+*SOLID SECTION, ELSET=ALL_ELEMS, MATERIAL=IM7-8552
 **
 ** MATERIALS
 **
-*Material, name=fakemat
+*Material, name=IM7-8552
 *Density
  1.59d-05,
 *User material, constants=4

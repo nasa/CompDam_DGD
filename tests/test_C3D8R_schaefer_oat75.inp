@@ -35,7 +35,7 @@ _Surf-1_S2, S2
 1., 0., 0., 0., 1., 0.
 3, 75.
 ** Section: LE_Section
-*Solid Section, elset=Element, orientation=Ori-1, material=fakemat
+*Solid Section, elset=Element, orientation=Ori-1, material=IM7-8552
 ,
 *End Part
 **  
@@ -51,7 +51,7 @@ _Surf-1_S2, S2
 ** 
 ** MATERIALS
 ** 
-*Material, name=fakemat
+*Material, name=IM7-8552
 *Density
  1.59d-05,
 *User material, constants=4

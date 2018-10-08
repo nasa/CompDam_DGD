@@ -28,14 +28,14 @@
 **
 ** PROPERTIES
 **
-*SHELL SECTION, ELSET=ALL_ELEMS, MATERIAL=fakemat
+*SHELL SECTION, ELSET=ALL_ELEMS, MATERIAL=IM7-8552
 <length>
 *TRANSVERSE SHEAR STIFFNESS
  5290.0, 2987.0, 0.0
 **
 ** MATERIALS
 **
-*Material, name=fakemat
+*Material, name=IM7-8552
 *Density
  1.59d-05,
 *User material, constants=4

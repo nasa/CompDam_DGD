@@ -24,7 +24,10 @@ Module matProp_Mod
     Double Precision :: cl                                           ! Opt. fiber nonlinearity (defaults to zero, which is no fiber nonlinearity)
     Double Precision :: mu                                               ! Opt. Friction. Defaults to zero
     Double Precision :: es(4), gs(4)
-    Double Precision :: a6, b2, n, A                                       ! Specified parameters for schaefer theory
+    Double Precision :: schaefer_a6
+    Double Precision :: schaefer_b2
+    Double Precision :: schaefer_n
+    Double Precision :: schaefer_A                                       ! Specified parameters for schaefer theory
 
     ! min and max values for acceptable range
     Double Precision, private :: modulus_min, modulus_max
@@ -53,7 +56,10 @@ Module matProp_Mod
     Logical, private :: cl_def
     Logical, private :: mu_def
     Logical, private :: es_def(4), gs_def(4)
-    Logical, private :: a6_def, b2_def, n_def, A_def
+    Logical, private :: schaefer_a6_def
+    Logical, private :: schaefer_b2_def
+    Logical, private :: schaefer_n_def
+    Logical, private :: schaefer_A_def
 
     ! Calculated properties
     Double Precision :: v21, v31, v32
@@ -355,14 +361,14 @@ Contains
           Case ('gs3')
             Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(4), m%gs_def(4))
           ! Schaefer Theory
-          Case ('a6')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%a6, m%a6_def)
-          Case ('b2')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%b2, m%b2_def)
-          Case ('n')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%n, m%n_def)
-          Case ('A')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%A, m%A_def)
+          Case ('schaefer_a6')
+            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_a6, m%schaefer_a6_def)
+          Case ('schaefer_b2')
+            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_b2, m%schaefer_b2_def)
+          Case ('schaefer_n')
+            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_n, m%schaefer_n_def)
+          Case ('schaefer_A')
+            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_A, m%schaefer_A_def)
           Case Default
             Call log%error("loadMatProps: Property not recognized: " // trim(key))
         End Select
@@ -857,10 +863,10 @@ Contains
 
     ! Check is all the parameters for Schaefer theory have been defined
     If (m%schaefer) Then
-      If (.NOT. m%a6_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define a6')
-      If (.NOT. m%b2_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define b2')
-      If (.NOT. m%n_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define n')
-      If (.NOT. m%A_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define A')
+      If (.NOT. m%schaefer_a6_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_a6')
+      If (.NOT. m%schaefer_b2_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_b2')
+      If (.NOT. m%schaefer_n_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_n')
+      If (.NOT. m%schaefer_A_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_A')
       Call log%info('PROPERTY: Schaefer properties have been defined')
     Else
       Call log%info('PROPERTY: Schaefer is disabled')

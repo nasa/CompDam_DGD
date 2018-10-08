@@ -60,7 +60,7 @@ Contains
       End IF
     Else If (m%schaefer) THEN
     	! Update Ep_schaefer and f (yield function)
-      CALL schaefer(m, m%a6,  m%b2,  m%n, m%A, eps, eps_old, ndir, nshr, sv%Ep_schaefer, sv%fp)
+      CALL schaefer(m, m%schaefer_a6,  m%schaefer_b2,  m%schaefer_n, m%schaefer_A, eps, eps_old, ndir, nshr, sv%Ep_schaefer, sv%fp)
       !updated eps subtracting out total plastic strain eps -= sv%Ep_old
       eps = eps - Vec2Matrix(sv%Ep_schaefer)
     End If
