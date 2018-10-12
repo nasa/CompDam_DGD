@@ -45,22 +45,14 @@ Subroutine vucharlength(  &
       End If
       edges = 2 * edges / nnode
 
-      ! Matrix of normalized edges, edges_n(ndim, ndim)
-      Do n = 1, ndim; edges_n(n, :) = edges(n, :) / Length(edges(n, :)); End Do
-
-      ! Matrix of edge components in the material coordinate system
-      edges_m(1, 1) = ABS(DOT_PRODUCT(edges(1, :), direct(k, :, 1)))
-      edges_m(1, 2) = ABS(DOT_PRODUCT(edges(1, :), direct(k, :, 2)))
-      edges_m(2, 1) = ABS(DOT_PRODUCT(edges(2, :), direct(k, :, 1)))
-      edges_m(2, 2) = ABS(DOT_PRODUCT(edges(2, :), direct(k, :, 2)))
-      If (ndim == 3) Then
-        edges_m(3, 1) = ABS(DOT_PRODUCT(edges(3, :), direct(k, :, 1)))
-        edges_m(3, 2) = ABS(DOT_PRODUCT(edges(3, :), direct(k, :, 2)))
-
-        edges_m(1, 3) = ABS(DOT_PRODUCT(edges(1, :), direct(k, :, 3)))
-        edges_m(2, 3) = ABS(DOT_PRODUCT(edges(2, :), direct(k, :, 3)))
-        edges_m(3, 3) = ABS(DOT_PRODUCT(edges(3, :), direct(k, :, 3)))
-      End If
+      ! edges_n is a matrix of normalized edges
+      ! edges_m is a matrix of edge components in the material coordinate system
+      Do n = 1, ndim
+        edges_n(n, :) = edges(n, :) / Length(edges(n, :))
+        Do m = 1, ndim
+          edges_m(n, m) = ABS(DOT_PRODUCT(edges(n, :), direct(k, :, m)))
+        End Do
+      End Do
 
       ! Determine which sets of element edges the thickness, fiber, and matrix material directions are most closely aligned
       !  Evaluate the thickness direction
