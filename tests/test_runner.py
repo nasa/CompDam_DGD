@@ -86,6 +86,29 @@ class ParametricMixedModeMatrix(av.TestCase):
     # beta defines the direction of tensile loading in Step-1 and compressive loading in Step-2
     parameters = {'alpha': range(0,50,10), 'beta': range(0,210,30), 'friction': [0.00, 0.15, 0.30, 0.45, 0.60]}
 
+    @classmethod
+    def setUpClass(cls):
+        copyMatProps()
+
+
+class ParametricElementSize(av.TestCase):
+    """
+    vucharlength() tests.
+    """
+
+    # Specify meta class
+    __metaclass__ = av.ParametricMetaClass
+
+    # Refers to the template input file name
+    baseName = "test_C3D8R_elementSize"
+
+    # Range of parameters to test; all combinations are tested
+    parameters = {'misalignment_angle': range(-15,120,15), 'skew_angle': range(-15,30,15)}
+
+    @classmethod
+    def setUpClass(cls):
+        copyMatProps()
+
 
 class ParametricFailureEnvelope_sig12sig22(av.TestCase):
     """
@@ -378,16 +401,6 @@ class SingleElementTests(av.TestCase):
     def test_C3D8R_elastic_simpleShear12(self):
         """ Elastic simple shear """
         self.runTest("test_C3D8R_elastic_simpleShear12")
-
-
-    def test_C3D8R_elementSize(self):
-        """ User characteristic length """
-        self.runTest("test_C3D8R_elementSize")
-
-
-    def test_S4R_elementSize(self):
-        """ User characteristic length, shell element """
-        self.runTest("test_S4R_elementSize")
 
 
     def test_S4R_simpleShear12(self):
