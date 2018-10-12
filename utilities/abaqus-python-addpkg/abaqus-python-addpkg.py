@@ -328,6 +328,13 @@ def _restore(args):
 	os.chmod(os.path.join(abqpy_cae_path, 'Lib'), stat.S_IRWXU| stat.S_IRWXG| stat.S_IRWXO)
 	shutil.copytree(os.path.join(abqpy_solver_path, rel_path_sp), cae_sp)
 
+	# Revert the conda environment
+	conda_env_name = 'abq_'+args.abaqus_version
+	ce = _get_conda_abq_environments()
+	if conda_env_name in ce:
+		cmd = 'conda env remove --name '+conda_env_name
+		out = subprocess.check_call(cmd, shell=True)
+
 	print('Restored abaqus ' + args.abaqus_version + ' to the original packages')
 	return
 
