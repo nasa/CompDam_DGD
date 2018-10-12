@@ -149,14 +149,14 @@ def _info(args):
 		else:
 			print('')
 			print('No conda environment for Abaqus')
-			print('To install abaqus packages in python try: ')
+			print('To install Abaqus packages in python try: ')
 			print('> abaqus-python-addpkg install package_1, [package_2, ...]')
 			print('')
 
 	# List of conda environments
 	if args.list_envs:
 		ce = _get_conda_abq_environments()
-		print('Conda environments for abaqus:')
+		print('Conda environments for Abaqus:')
 		[print(v) for v in ce]
 		print('')
 
@@ -177,7 +177,7 @@ def _install(args):
 
 	# Make sure at least one package was specified
 	if not args.conda and not args.local and not args.pip:
-		print('Must specify at leasat one package to install. For example, to install scipy, try:')
+		print('Must specify at least one package to install. For example, to install scipy, try:')
 		print('> abaqus-python-addpkg install --conda scipy ')
 		print('')
 		print('To install a package using pip, try:')
@@ -234,7 +234,7 @@ def _install(args):
 
 	# Abaqus version check
 	if args.abaqus_version not in compat.keys():
-		raise ValueError('Abaqus ' + args.abaqus_version + ' is not a supported version of abaqus')
+		raise ValueError('Abaqus ' + args.abaqus_version + ' is not a supported version of Abaqus')
 
 	# Build the conda packages to install
 	if args.conda or install_abq_env:
@@ -349,7 +349,7 @@ if __name__ == "__main__":
 	parser_info.set_defaults(func=_info)
 
 	# install
-	parser_install = subparsers.add_parser('install', help='Install a python packages to the abaqus python environment')
+	parser_install = subparsers.add_parser('install', help='Install python package(s) to the abaqus python environment')
 	parser_install.add_argument('-c', '--conda', action='store', nargs='+', help='Install package(s) from conda to the abaqus python environment')
 	parser_install.add_argument('-l', '--local', action='store', nargs='+', help='Install package(s) stored locally to the abaqus python environment')
 	parser_install.add_argument('-p', '--pip', action='store', nargs='+', help='Install package(s) using pip')
