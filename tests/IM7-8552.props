@@ -123,7 +123,7 @@ gs1 = -1.47d0
 gs2 =  5.05d-1
 gs3 = -1.18d-2
 
-// Schaefer Theory (values below are from Schaefer's PPT)
+// Schaefer Theory 
 // ------------------------------------------------------------
 
 schaefer_a6 = 3.1
