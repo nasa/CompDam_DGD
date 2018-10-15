@@ -5,6 +5,7 @@
 import os
 import shutil
 import abaverify as av
+import math
 
 # Helper for dealing with .props files
 def copyMatProps():
@@ -102,8 +103,21 @@ class ParametricElementSize(av.TestCase):
     # Refers to the template input file name
     baseName = "test_C3D8R_elementSize"
 
-    # Range of parameters to test; all combinations are tested
-    parameters = {'misalignment_angle': range(-15,120,15), 'skew_angle': range(-15,30,15)}
+    # The angle of misaligment is here varied.
+    # A misalignment angle of zero will result in an Abaqus pre error due to an *NMAP rotation command being used in the input deck
+    parameters = {'misalignment_angle': [-45, -30, -15, 1, 15, 30, 45]}
+
+    # elementSize1 = 0.3
+    # elementSize2 = 0.2
+    # elementSize3 = 0.1
+
+    # Closed-form equations for the characteristic element lengths, valid for misalignment angles between -45 and +45 degrees
+    Lc1_eq = lambda m: 0.3*math.cos(math.radians(m))
+    Lc2_eq = lambda m: 0.2*(0.3/0.2*math.sin(abs(math.radians(m))) + math.cos(math.radians(m)))
+
+    # Element sizes are dependent on the misalignment and skew angles
+    expectedpy_parameters = {'Lc1': [Lc1_eq(m) for m in parameters['misalignment_angle']],
+                             'Lc2': [Lc2_eq(m) for m in parameters['misalignment_angle']]}
 
     @classmethod
     def setUpClass(cls):
