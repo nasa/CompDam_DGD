@@ -226,7 +226,7 @@ Contains
       ! Search through range of alphas to find the correct one (alpha=-999 is a flag to run this search)
       If (sv%alpha == -999) Then
         A_min = -alphaQ
-        A_max = -alphaQ + 170
+        A_max = alphaQ
 
         If (-m%alpha0_deg < A_min) Then
           alpha0_deg_2 = 180 - m%alpha0_deg
