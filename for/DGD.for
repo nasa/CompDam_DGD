@@ -4,7 +4,7 @@ Module DGD_Mod
 Contains
 
 
-  Subroutine DGDInit(U, F, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern)
+  Subroutine DGDInit(U, F, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern, F_old)
     ! Checks for the initiation of matrix damage, represented as a DGD
     ! cohesive crack. If the crack orientation is a priori unknown, it
     ! will be determined in this subroutine.
@@ -26,7 +26,7 @@ Contains
     Type(matProps), intent(IN) :: m
     Type(parameters), intent(IN) :: p
     Type(stateVars), intent(INOUT) :: sv
-    Double Precision, intent(IN) :: F(3,3), U(3,3)                         ! Deformation gradient stretch tensor
+    Double Precision, intent(IN) :: F(3,3), U(3,3), F_old(3,3)             ! Deformation gradient stretch tensor
     Integer, intent(IN) :: ndir
     Integer, intent(IN) :: nshr
     Double Precision, intent(IN) :: DT
@@ -37,7 +37,8 @@ Contains
     ! Locals
 
     Double Precision :: Stiff(ndir+nshr,ndir+nshr)                         ! Stiffness
-    Double Precision :: eps(ndir,ndir)                                     ! Strain
+    Double Precision :: eps(ndir,ndir) !Strain
+    Double Precision :: eps_old(ndir, ndir)                          ! Strain
     Double Precision :: stress(ndir,ndir)                                  ! Stress
     Double Precision :: F_inverse_transpose(3,3)                           ! Inverse transpose of the Deformation Gradient Tensor
     Double Precision :: X(3,3)                                             ! Reference configuration
@@ -95,6 +96,8 @@ Contains
 
     ! Compute the Green-Lagrange strain tensor: eps
     Call Strains(F, m, DT, ndir, eps)
+    ! Compute the Green-Lagrange strain tensor: previous step
+    Call Strains(F_old, m, DT, ndir, eps_old)
 
     ! Check fiber tension or fiber compression damage
     If (eps(1,1) >= zero) Then    ! Fiber tension
@@ -105,7 +108,7 @@ Contains
       End If
 
       ! Compute the plastic strains and remove from the strain tensor
-      Call Plasticity(m, sv, ndir, eps)
+      Call Plasticity(m, sv, ndir, nshr, eps, eps_old, .FALSE.)
 
       ! Evaluate fiber tension failure criteria and damage variable
       If (m%fiberTenDam) Then
@@ -147,7 +150,7 @@ Contains
         eps = MATMUL(TRANSPOSE(R_phi0), MATMUL(eps, R_phi0))
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, ndir, eps)
+        Call Plasticity(m, sv, ndir, nshr, eps, eps_old)
 
         ! Get total 1,2 strain component
         gamma_rphi0 = two*(eps(1,2) + sv%Plas12/two)
@@ -188,7 +191,7 @@ Contains
       Else
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, ndir, eps)
+        Call Plasticity(m, sv, ndir, nshr, eps, eps_old)
 
         If (m%fiberCompDamBL) Then
           Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), sv%rfT, sv%rfC, sv%d1T, sv%d1C, sv%STATUS)
@@ -223,7 +226,7 @@ Contains
       ! Search through range of alphas to find the correct one (alpha=-999 is a flag to run this search)
       If (sv%alpha == -999) Then
         A_min = -alphaQ
-        A_max = -alphaQ + 170
+        A_max = alphaQ
 
         If (-m%alpha0_deg < A_min) Then
           alpha0_deg_2 = 180 - m%alpha0_deg
@@ -378,6 +381,7 @@ Contains
     Double Precision :: Stiff(ndir+nshr,ndir+nshr)                           ! Stiffness
     Double Precision :: stress(ndir,ndir)                                    ! Stress (energy conjugate to strain definition)
     Double Precision :: eps(ndir,ndir)                                       ! Strain
+    Double Precision :: eps_old(ndir,ndir)                                   ! Strain
 
     ! Cohesive surface
     Double Precision :: alpha_rad                                            ! alpha in radians
@@ -651,7 +655,7 @@ Contains
         Call Strains(F_bulk, m, DT, ndir, eps)
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, ndir, eps, use_temp=.TRUE.)
+        Call Plasticity(m, sv, ndir, nshr, eps, use_temp=.TRUE.)
 
         ! -------------------------------------------------------------------- !
         !    Evaluate the CDM fiber failure criteria and damage variable:      !
@@ -1171,7 +1175,7 @@ Contains
       ! -------------------------------------------------------------------- !
       Call Strains(Fkb, m, DT, ndir, epskb)
       epskb = MATMUL(TRANSPOSE(R_phi0), MATMUL(epskb, R_phi0))
-      Call Plasticity(m, sv, ndir, epskb, use_temp=.TRUE.)
+      Call Plasticity(m, sv, ndir, nshr, epskb, use_temp=.TRUE.)
       gamma_rphi0 = two*(epskb(1,2) + sv%Plas12_temp/two)
       Call StiffFuncNL(m, ndir, nshr, d1, zero, zero, epskb, Stiff, sv%Sr)
       pk2_fiberDirkb = Hooke(Stiff, epskb, nshr) ! 2PK in the fiber direction

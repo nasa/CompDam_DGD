@@ -24,6 +24,10 @@ Module matProp_Mod
     Double Precision :: cl                                           ! Opt. fiber nonlinearity (defaults to zero, which is no fiber nonlinearity)
     Double Precision :: mu                                               ! Opt. Friction. Defaults to zero
     Double Precision :: es(4), gs(4)
+    Double Precision :: schaefer_a6
+    Double Precision :: schaefer_b2
+    Double Precision :: schaefer_n
+    Double Precision :: schaefer_A                                       ! Specified parameters for schaefer theory
 
     ! min and max values for acceptable range
     Double Precision, private :: modulus_min, modulus_max
@@ -38,6 +42,7 @@ Module matProp_Mod
     Double Precision, private :: alpha0_min, alpha0_max
     Double Precision, private :: mu_min, mu_max
     Double Precision, private :: schapery_min, schapery_max
+    Double Precision, private :: schaefer_min, schaefer_max
 
     ! Flags that indicate if values have been set
     Logical, private :: E1_def, E2_def, G12_def, v12_def, v23_def
@@ -51,6 +56,10 @@ Module matProp_Mod
     Logical, private :: cl_def
     Logical, private :: mu_def
     Logical, private :: es_def(4), gs_def(4)
+    Logical, private :: schaefer_a6_def
+    Logical, private :: schaefer_b2_def
+    Logical, private :: schaefer_n_def
+    Logical, private :: schaefer_A_def
 
     ! Calculated properties
     Double Precision :: v21, v31, v32
@@ -63,6 +72,7 @@ Module matProp_Mod
     Logical :: shearNonlinearity12
     Logical :: shearNonlinearity13
     Logical :: schapery
+    Logical :: schaefer
     Logical :: fiberTenDam
     Logical :: fiberCompDamBL
     Logical :: fiberCompDamFKT
@@ -350,7 +360,15 @@ Contains
             Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(3), m%gs_def(3))
           Case ('gs3')
             Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(4), m%gs_def(4))
-
+          ! Schaefer Theory
+          Case ('schaefer_a6')
+            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_a6, m%schaefer_a6_def)
+          Case ('schaefer_b2')
+            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_b2, m%schaefer_b2_def)
+          Case ('schaefer_n')
+            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_n, m%schaefer_n_def)
+          Case ('schaefer_A')
+            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_A, m%schaefer_A_def)
           Case Default
             Call log%error("loadMatProps: Property not recognized: " // trim(key))
         End Select
@@ -428,11 +446,13 @@ Contains
                   m%shearNonlinearity12 = .TRUE.
                   m%shearNonlinearity13 = .FALSE.
                   m%schapery = .FALSE.
-                  Call log%info("loadMatProps: Shear nonlinearity (1-2 plane) ENABLED")
+                  m%schaefer = .FALSE.
+                  Call log%info("loadMatProps: Shear nonlinearity ENABLED")
                 Else If (featureFlags(j:j) == '2') Then
                   m%shearNonlinearity12 = .FALSE.
                   m%shearNonlinearity13 = .FALSE.
                   m%schapery = .TRUE.
+                  m%schaefer = .FALSE.
                   Call log%info("loadMatProps: Schapery micro-damage ENABLED")
                 Else If (featureFlags(j:j) == '3') Then
                   m%shearNonlinearity12 = .TRUE.
@@ -444,10 +464,17 @@ Contains
                   m%shearNonlinearity13 = .TRUE.
                   m%schapery = .FALSE.
                   Call log%info("loadMatProps: Shear nonlinearity (1-3 plane) ENABLED")
+                Else If (featureFlags(j:j) == '5') THEN 
+                  m%shearNonlinearity12 = .FALSE.
+                  m%shearNonlinearity13 = .FALSE.
+                  m%schapery = .FALSE.
+                  m%schaefer = .TRUE.		
+                  Call log%info("loadMatProps: Schaefer non-linearity ENABLED")
                 Else
                   m%shearNonlinearity12 = .FALSE.
                   m%shearNonlinearity13 = .FALSE.
                   m%schapery = .FALSE.
+                  m%schaefer = .FALSE.		
                   Call log%info("loadMatProps: pre-peak nonlinearity DISABLED")
                 End If
 
@@ -659,6 +686,9 @@ Contains
     m%schapery_min = -Huge(zero)
     m%schapery_max = Huge(zero)
 
+    m%schaefer_min = -Huge(zero)
+    m%schaefer_max = Huge(zero)
+
     Return
   End Subroutine initializeMinMaxValues
 
@@ -829,6 +859,18 @@ Contains
       m%es(1) = one
       m%gs = zero
       m%gs(1) = one
+    End If
+
+    ! Check is all the parameters for Schaefer theory have been defined
+    If (m%schaefer) Then
+      If (.NOT. m%schaefer_a6_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_a6')
+      If (.NOT. m%schaefer_b2_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_b2')
+      If (.NOT. m%schaefer_n_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_n')
+      If (.NOT. m%schaefer_A_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_A')
+      Call log%info('PROPERTY: Schaefer properties have been defined')
+    Else
+      Call log%info('PROPERTY: Schaefer is disabled')
+      ! Default values that will cause no pre-peak nonlinearity
     End If
 
     ! Check if fiber tensile damage properties have been defined
