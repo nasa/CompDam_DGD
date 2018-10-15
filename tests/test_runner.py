@@ -4,6 +4,8 @@
 
 import os
 import shutil
+import sys
+sys.path.insert(0, r"C:\Users\fs668d\workspace\abaverify2")
 import abaverify as av
 
 # Helper for dealing with .props files
@@ -291,6 +293,39 @@ class ParametricKinkBandWidth_singleElement(av.TestCase):
     expectedpy_ignore = ('x_at_peak_in_xy')
 
 
+class SingleElementSchaeferTests(av.TestCase):
+    """
+    Single element models to tests the DGD code base for Schaefer theory
+    """
+
+    # Class-wide methods
+    @classmethod
+    def setUpClass(cls):
+        copyMatProps()
+
+    # -----------------------------------------------------------------------------------------
+    # Test methods
+    def test_C3D8R_schaefer_oat90(self):
+        """ Simple tension applied in the matrix direction, solid element. Tests Schaefer theory """
+        self.runTest("test_C3D8R_schaefer_oat90")
+
+    def test_C3D8R_schaefer_oat30(self):
+        """ Off Axis Tension (30 deg) solid element. Tests Schaefer theory """
+        self.runTest("test_C3D8R_schaefer_oat30")
+
+    def test_C3D8R_schaefer_oat60(self):
+        """ Off Axis Tension (60 deg) solid element. Tests Schaefer theory """
+        self.runTest("test_C3D8R_schaefer_oat60")
+
+    def test_C3D8R_schaefer_oat75(self):
+        """ Off Axis Tension (75 deg) solid element.  Tests Schaefer theory """
+        self.runTest("test_C3D8R_schaefer_oat75")
+
+    def test_S4R_schaefer_oat90(self):
+        """Off Axis Tension (90 deg) shell element. Tests schaefer theory"""
+        self.runTest("test_S4R_schaefer_oat90")
+
+     
 class SingleElementTests(av.TestCase):
     """
     Single element models to tests the DGD code base

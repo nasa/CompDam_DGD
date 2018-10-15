@@ -230,6 +230,23 @@ Matrix nonlinearity in the 1-2 plane can also be modeled using Schapery theory, 
 
 where *S<sub>r</sub>* is the micro-damage reduced internal state variable. These eight material properties must be defined in an [external material properties file](#defining-the-material-properties-in-a-props-file). *S<sub>r</sub>* is stored in the 12<sup>th</sup> state variable slot, replacing `CDM_Plas12`, when Schapery theory is used in a model. The 13<sup>th</sup> state variable slot is not used when Schapery micro-damage is used.
 
+#### Schaefer
+Shear nonlinearity in the 1-2 plane can be modeled using the Schaefer prepeak model. In this model, effective plastic strain is related to effective plastic stress through the power law:
+
+*&epsilon;*<sub>plastic</sub> = *A &sigma;*<sup>*n*</sup> 
+
+Additionally, a yield criterion function (effective stress) is defined as:
+
+*f* = *&sigma;* = (*S*<sub>22</sub> + *a*<sub>6</sub> *S*<sub>12</sub><sup>2</sup>)<sup>1/2</sup> + *b*<sub>2</sub> *S*<sub>22</sub>
+
+where *a*<sub>6</sub>, *b*<sub>2</sub>, *A* and *n* are material constants needed for the Schaefer prepeak material model. These four material properties must be defined in an [external material properties file](#defining-the-material-properties-in-a-props-file). Additionally, when definining  *a*<sub>6</sub>, *b*<sub>2</sub>, *A* and *n* in the external material properties file the variables are prefixed with schaefer_ (to disambiguate the otherwise nondescript material property names and symbols). 
+
+The above two equations are used in concert to determine plastic strain through the relationship:
+
+*&epsilon;* <sub>plastic</sub> = *n A f* <sup>*n* - 1</sup> &part;*f* / &part;*S*<sub>*i*</sub> &part;*f* / &part;*S*<sub>j</sub>
+
+*f* (i.e., schaefer_f) and the tensorial plastic strain determined by the nonlinearity model are stored as state variables (27 through 32 for plastic strain and 33 for *f*)
+
 ### Fiber tensile damage
 A continuum damage mechanics model similar to the work of [Maimí et al. (2007)](http://doi.org/10.1016/j.mechmat.2007.03.005) is used to model tensile fiber damage evolution. The model utilizes a non-interacting maximum strain failure criterion, and bilinear softening after the initiation of failure. The area under the stress-strain curve is equal to the fracture toughness divided by the element length normal to fracture, i.e., `CDM_Lc1`. The required material properties are: XT, fXT, GXT, and fGXT, where fXT and fGXT are ratios of strength and fracture toughness for bilinear softening, defined as the *n* and *m* terms in equations (25) and (26) of [Dávila et al. (2009)](http://doi.org/10.1007/s10704-009-9366-z). To model a linear softening response, both fXT and fGXT should be set equal to 0.5.
 
@@ -372,7 +389,7 @@ Model features can be enabled or disabled by two methods. The first method is sp
 The second method is by specifying the status of each feature directly as a material property in the input deck. Each feature of the subroutine is controlled by a position in an integer, where 0 is disabled and 1 is enabled.
 The positions correspond to the features as follows:
 - Position 1: Matrix damage
-- Position 2: Shear nonlinearity (1=Ramberg-Osgood 1-2 plane, 2=Schapery, 3=Ramberg-Osgood 3-D, 4=Ramberg-Osgood 1-3 plane, || more information [here](#shear-nonlinearity))
+- Position 2: Shear nonlinearity (1=Ramberg-Osgood 1-2 plane, 2=Schapery, 3=Ramberg-Osgood 3-D, 4=Ramberg-Osgood 1-3 plane, 5=Schaefer || more information [here](#shear-nonlinearity))
 - Position 3: Fiber tensile damage
 - Position 4: Fiber compression damage (1=max strain, 2=N/A, 3=FKT || more information [here](#fiber-compression-damage))
 - Position 5: *reserved*
@@ -416,7 +433,15 @@ The table below lists all of the state variables in the model. The model require
 | 23| `CDM_gamma`      | Current rotation of the fibers due to loading (radians)               |
 | 24| `CDM_Fm1`        | Fm1                                                                   |
 | 25| `CDM_Fm2`        | Fm2                                                                   |
-| 26| `CDM_Fm3`        | Fm3                                                                   ||
+| 26| `CDM_Fm3`        | Fm3                                                                   |
+|---|------------------|-----------------------------------------------------------------------|
+| 27| `CDM_Ep1`        | Plastic strain in 11 direction calculated using Schaefer Theory       |
+| 28| `CDM_Ep2`        | Plastic strain in 22 direction calculated using Schaefer Theory       |
+| 29| `CDM_Ep3`        | Plastic strain in 33 direction calculated using Schaefer Theory       |
+| 30| `CDM_Ep4`        | Plastic strain in 12 direction calculated using Schaefer Theory       |
+| 31| `CDM_Ep5`        | Plastic strain in 23 direction calculated using Schaefer Theory       |
+| 32| `CDM_Ep6`        | Plastic strain in 31 direction calculated using Schaefer Theory       |
+| 33| `CDM_fp1`        | Yield criterion (effective stress) calculated using Schaefer Theory   |
 
 ### Initial conditions
 All state variables should be initialized using the `*Initial conditions` command. As a default, all state variables should be initialized as zero, except `CDM_alpha`, `CDM_STATUS`, and `CDM_phi0`.
