@@ -6,10 +6,8 @@ plot_height = '300'
 plot_width = ''
 
 # For grouping tests together on same axes
-test_group_prefixes = ['test_C3D8R_failureEnvelope_sig11sig22', 
-					'test_S4R_failureEnvelope_sig11sig22', 
+test_group_prefixes = ['test_C3D8R_failureEnvelope_sig11sig22',
 					'test_C3D8R_failureEnvelope_sig12sig22',
-					'test_S4R_failureEnvelope_sig12sig22',
 					'test_C3D8R_failureEnvelope_sig12sig23',
 					'test_C3D8R_mixedModeMatrix',
 					'test_C3D8R_fiberCompression_DGD_wkbToTotal',
@@ -18,12 +16,8 @@ test_group_prefixes = ['test_C3D8R_failureEnvelope_sig11sig22',
 # Grouping charts into subsections
 chart_groups = dict()
 chart_groups['failure-envelopes-C3D8R'] = {
-	'name_pretty': 'Failure Envelopes, C3D8R', 
+	'name_pretty': 'Failure Envelopes, C3D8R',
 	'charts': ['test_C3D8R_failureEnvelope_sig11sig22', 'test_C3D8R_failureEnvelope_sig12sig22', 'test_C3D8R_failureEnvelope_sig12sig23']
-}
-chart_groups['failure-envelopes-S4R'] = {
-	'name_pretty': 'Failure Envelopes, S4R',
-	'charts': ['test_S4R_failureEnvelope_sig11sig22', 'test_S4R_failureEnvelope_sig12sig22']
 }
 chart_groups['single-element-C3D8R'] = {
 	'name_pretty': 'Single Element, C3D8R',
@@ -32,10 +26,6 @@ chart_groups['single-element-C3D8R'] = {
 chart_groups['Fiber-Compression-DGD'] = {
 	'name_pretty': 'Fiber Compression, DGD',
 	'charts': ['test_C3D8R_fiberCompression_DGD', 'test_C3D8R_twoElement_fiberCompression_DGD']
-}
-chart_groups['Single_Element_S4R'] = {
-	'name_pretty': 'Single Element, S4R',
-	'charts': ['test_S4R_elementSize', 'test_S4R_fiberCompression_CDM', 'test_S4R_fiberLoadReversal', 'test_S4R_fiberTension', 'test_S4R_matrixCompression', 'test_S4R_matrixTension', 'test_S4R_nonlinearShear12', 'test_S4R_simpleShear12', 'test_S4R_simpleShear12friction']
 }
 
 

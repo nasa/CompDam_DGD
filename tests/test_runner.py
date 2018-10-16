@@ -112,31 +112,6 @@ class ParametricFailureEnvelope_sig12sig22(av.TestCase):
         plotFailureEnvelope(baseName=cls.baseName, abscissaIdentifier='S22', ordinateIdentifier='S12', abcissaStrengths=cls.abcissaStrengths, ordinateStrengths=cls.ordinateStrengths)
 
 
-class ParametricFailureEnvelope_sig12sig22_shell(av.TestCase):
-    """
-    Generate failure envelope in the sigma12 - sigma22 space with a S4R element
-    """
-
-    # Specify meta class
-    __metaclass__ = av.ParametricMetaClass
-
-    # Refers to the template input file name
-    baseName = "test_S4R_failureEnvelope_sig12sig22"
-
-    # Range of parameters to test; all combinations are tested
-    abcissaStrengths = [-199.8, 62.3]
-    ordinateStrengths = [92.3]
-    parameters = {'loadRatio':  [x/100. for x in range(0,101,5)], 'matrixStrength': abcissaStrengths}
-
-    @classmethod
-    def setUpClass(cls):
-        copyMatProps()
-
-    @classmethod
-    def tearDownClass(cls):
-        plotFailureEnvelope(baseName=cls.baseName, abscissaIdentifier='S22', ordinateIdentifier='S12', abcissaStrengths=cls.abcissaStrengths, ordinateStrengths=cls.ordinateStrengths)
-
-
 class ParametricFailureEnvelope_sig12sig23(av.TestCase):
     """
     Generate failure envelope in the sigma12 - sigma23 space
@@ -173,32 +148,6 @@ class ParametricFailureEnvelope_sig11sig22(av.TestCase):
 
     # Refers to the template input file name
     baseName = "test_C3D8R_failureEnvelope_sig11sig22"
-
-    # Range of parameters to test; all combinations are tested
-    abcissaStrengths = [-1200.1, 2326.2]
-    ordinateStrengths = [-199.8, 62.3]
-    parameters = {'loadRatio':  [x/100. for x in range(0,101,10)], 'ordinateStrength': ordinateStrengths, 'abcissaStrength': abcissaStrengths}
-
-
-    @classmethod
-    def setUpClass(cls):
-        copyMatProps()
-
-    @classmethod
-    def tearDownClass(cls):
-        plotFailureEnvelope(baseName=cls.baseName, abscissaIdentifier='S11', ordinateIdentifier='S22', abcissaStrengths=cls.abcissaStrengths, ordinateStrengths=cls.ordinateStrengths)
-
-
-class ParametricFailureEnvelope_sig11sig22_shell(av.TestCase):
-    """
-    Generate failure envelope in the sigma11 - sigma22 space with a S4R element
-    """
-
-    # Specify meta class
-    __metaclass__ = av.ParametricMetaClass
-
-    # Refers to the template input file name
-    baseName = "test_S4R_failureEnvelope_sig11sig22"
 
     # Range of parameters to test; all combinations are tested
     abcissaStrengths = [-1200.1, 2326.2]
@@ -330,11 +279,6 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_fiberLoadReversal")
 
 
-    def test_S4R_matrixTension(self):
-        """ Simple tension applied in the matrix direction, shell element """
-        self.runTest("test_S4R_matrixTension")
-
-
     def test_C3D8R_nonlinearShear12(self):
         """ Nonlinear shear model, loading and unloading in 1-2 plane """
         self.runTest("test_C3D8R_nonlinearShear12")
@@ -383,52 +327,6 @@ class SingleElementTests(av.TestCase):
     def test_C3D8R_elementSize(self):
         """ User characteristic length """
         self.runTest("test_C3D8R_elementSize")
-
-
-    def test_S4R_elementSize(self):
-        """ User characteristic length, shell element """
-        self.runTest("test_S4R_elementSize")
-
-
-    def test_S4R_simpleShear12(self):
-        """ Simple shear in the 1-2 plane, shell element"""
-        self.runTest("test_S4R_simpleShear12")
-
-
-    def test_S4R_simpleShear12friction(self):
-        """ Compression followed by simple shear in the 1-2 plane, shell element """
-        self.runTest("test_S4R_simpleShear12friction")
-
-
-    def test_S4R_nonlinearShear12(self):
-        """ Nonlinear shear model, loading and unloading, shell element """
-        self.runTest("test_S4R_nonlinearShear12")
-
-
-    def test_S4R_schapery12(self):
-        """ Schapery micro-damage model, loading and unloading in 1--2 plane, shell element"""
-        self.runTest("test_S4R_schapery12")
-
-
-    def test_S4R_matrixCompression(self):
-        """ Matrix compression """
-        self.runTest("test_S4R_matrixCompression")
-
-
-    def test_S4R_fiberTension(self):
-        """ Fiber tension, shell element """
-        self.runTest("test_S4R_fiberTension")
-
-
-    def test_S4R_fiberCompression_BL(self):
-        """ Fiber compression: Bilinear softening based model, shell element """
-        self.runTest("test_S4R_fiberCompression_BL")
-
-
-    def test_S4R_fiberLoadReversal(self):
-        """ Fiber damage model, Maimi: load reversal, shell element """
-        self.runTest("test_S4R_fiberLoadReversal")
-
 
 
 if __name__ == "__main__":
