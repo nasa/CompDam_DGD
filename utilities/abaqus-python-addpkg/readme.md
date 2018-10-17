@@ -2,7 +2,7 @@
 
 A command line tool for managing python packages in the python installation used by Abaqus/CAE
 
-Abaqus/CAE uses a relatively old version of python (2.7.3) that is separate from other installations of python. While the Abaqus python installation includes `numpy` it does not include other python packages that provide helpful functionality in python scripts for Abaqus/CAE, e.g. `scipy`. This script utilizes [anaconda](https://www.anaconda.com/download/) to install a mirror of the Abaqus python environment so that conda automatically manages the versions and dependency requirements in order to facilitate installing python packages into the Abaqus/CAE python installation.
+Abaqus/CAE uses a relatively old version of python (2.7.3) that is separate from other installations of python. While the Abaqus python installation includes `numpy` it does not include other python packages that provide helpful functionality in python scripts for Abaqus/CAE, e.g. `scipy`. This script utilizes [anaconda](https://www.anaconda.com/download/) to install a mirror of the Abaqus python environment so that anaconda automatically manages the versions and dependency requirements in order to facilitate installing python packages into the Abaqus/CAE python installation.
 
 
 ## Installation
@@ -11,11 +11,15 @@ Abaqus/CAE uses a relatively old version of python (2.7.3) that is separate from
 
 
 ## Usage
-Python packages can be installed using any of three different methods: conda, pip, or local. In all cases, a conda environment named `abq_2017` is created with the same versions of python and numpy as used by Abaqus.
+Python packages can be installed using any of three different methods: conda, pip, or local. In all cases, a conda environment named `abq_2017` (or for Abaqus 2018, `abq_2018`) is created with the same versions of python and numpy as used by Abaqus.
 
 To install a package using conda, try:
 ```
 abaqus-python-addpkg install --conda scipy
+```
+By default, the script assumes you are using Abaqus 2017. If you use Abaqus 2018, specify this directly as:
+```
+abaqus-python-addpkg -a 2018 install --conda scipy
 ```
 
 To install a package using pip, try:
@@ -37,7 +41,7 @@ Note, dependencies in local packages must already be installed to the Abaqus pyt
 
 
 ## Caveats
-The script was developed and tested using Abaqus 2017; it may not work properly with other versions of Abaqus.
+The script was developed and tested using Abaqus 2017. Limited testing has been conducted using Abaqus 2018. The script may not work properly with other versions of Abaqus.
 
 The script requires conda and is currently only for use on Windows.
 

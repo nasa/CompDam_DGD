@@ -2,7 +2,7 @@
 TODO: add option to remove a specific package from abaqus environment
 TODO: add support for 'install_requires' in local package setup files --> search for packages in conda
 TODO: add option to sync packages from abaqus to conda environment
-TODO: only for abaqus 2017; add capability for 2016 and 2018
+TODO: only for abaqus 2017 and 2018; add capability for earlier versions
 """
 
 import sys
@@ -226,6 +226,11 @@ def _install(args):
 		# '6.14': #TODO
 		# '2016': #TODO
 		'2017': {
+			'python': '2.7.3',
+			'numpy': '1.6.2',
+			'matplotlib': '1.1'
+		},
+		'2018': {
 			'python': '2.7.3',
 			'numpy': '1.6.2',
 			'matplotlib': '1.1'
