@@ -3,17 +3,17 @@ Lc2 = 0
 
 parameters = {
 	"results": [
-        {
-            "type": "max",
-            "identifier":
-                {
-                    "symbol": "SDV_CDM_Lc1",
-                    "elset": "SINGLEELEMENT",
-                    "position": "Element 1 Int Point 1"
-                },
-            "referenceValue": Lc1,
-            "tolerance": Lc1*0.001
-        },
+        # {
+        #     "type": "max",
+        #     "identifier":
+        #         {
+        #             "symbol": "SDV_CDM_Lc1",
+        #             "elset": "SINGLEELEMENT",
+        #             "position": "Element 1 Int Point 1"
+        #         },
+        #     "referenceValue": Lc1,
+        #     "tolerance": Lc1*0.001
+        # },
         {
             "type": "max",
             "identifier":

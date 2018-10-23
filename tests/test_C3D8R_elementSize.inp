@@ -13,7 +13,8 @@
  skew_angle = 0.0
 **
  Pi = 2.0 * acos(0.0)
- skew = length2 * sin(Pi * skew_angle / 180.0)
+ skew_1 = length2 * sin(Pi * skew_angle / 180.0)
+ skew_2 = length2 * (1.0 - cos(Pi * skew_angle / 180.0))
 **
 *Node, nset=AllNodes
       1,            0.,             0.,             0.
@@ -38,7 +39,10 @@
   1, 2, 3, 4
 *NMAP, type=TRANSLATION, nset=Y+
  0., 0., 0., 1., 0., 0.
- <skew>
+ <skew_1>
+*NMAP, type=TRANSLATION, nset=Y+
+ 0., 0., 0., 0., 1., 0.
+ -<skew_2>
 *NMAP, type=ROTATION, nset=AllNodes
  0., 0., 0., 0., 0., 1.
  1., 0., 0.
