@@ -4,7 +4,10 @@
 
 import os
 import shutil
+import sys
+sys.path.insert(0, r"C:\Users\fs668d\workspace\abaverify2")
 import abaverify as av
+import math
 
 # Helper for dealing with .props files
 def copyMatProps():
@@ -86,6 +89,42 @@ class ParametricMixedModeMatrix(av.TestCase):
     # beta defines the direction of tensile loading in Step-1 and compressive loading in Step-2
     parameters = {'alpha': range(0,50,10), 'beta': range(0,210,30), 'friction': [0.00, 0.15, 0.30, 0.45, 0.60]}
 
+    # Class-wide methods
+    @classmethod
+    def setUpClass(cls):
+        copyMatProps()
+
+
+class ParametricElementSize(av.TestCase):
+    """
+    vucharlength() tests for solid elements not necessarily aligned with fiber material direction.
+    """
+
+    # Specify meta class
+    __metaclass__ = av.ParametricMetaClass
+
+    # Refers to the template input file name
+    baseName = "test_C3D8R_elementSize"
+
+    # The angle of misaligment is here varied.
+    # A misalignment angle of zero will result in an Abaqus pre error due to an *NMAP rotation command being used in the input deck
+    parameters = {'misalignment_angle': [-45, -30, -15, 1, 15, 30, 45]}
+
+    # elementSize1 = 0.3
+    # elementSize2 = 0.2
+    # elementSize3 = 0.1
+
+    # Closed-form equations for the characteristic element lengths, valid for misalignment angles between -45 and +45 degrees
+    Lc2_eq = lambda m: 0.2*(0.3/0.2*math.sin(abs(math.radians(m))) + math.cos(math.radians(m)))
+
+    # Element sizes are dependent on the misalignment and skew angles
+    expectedpy_parameters = {'Lc2': [Lc2_eq(m) for m in parameters['misalignment_angle']]}
+
+    # Class-wide methods
+    @classmethod
+    def setUpClass(cls):
+        copyMatProps()
+
 
 class ParametricFailureEnvelope_sig12sig22(av.TestCase):
     """
@@ -103,6 +142,7 @@ class ParametricFailureEnvelope_sig12sig22(av.TestCase):
     ordinateStrengths = [92.3]
     parameters = {'loadRatio':  [x/100. for x in range(0,101,5)], 'matrixStrength': abcissaStrengths}
 
+    # Class-wide methods
     @classmethod
     def setUpClass(cls):
         copyMatProps()
@@ -128,7 +168,7 @@ class ParametricFailureEnvelope_sig12sig23(av.TestCase):
     ordinateStrengths = [75.3]
     parameters = {'loadRatio':  [x/100. for x in range(0,101,5)], 'matrixStrength': abcissaStrengths}
 
-
+    # Class-wide methods
     @classmethod
     def setUpClass(cls):
         copyMatProps()
@@ -154,7 +194,7 @@ class ParametricFailureEnvelope_sig11sig22(av.TestCase):
     ordinateStrengths = [-199.8, 62.3]
     parameters = {'loadRatio':  [x/100. for x in range(0,101,10)], 'ordinateStrength': ordinateStrengths, 'abcissaStrength': abcissaStrengths}
 
-
+    # Class-wide methods
     @classmethod
     def setUpClass(cls):
         copyMatProps()
@@ -217,6 +257,35 @@ class ParametricKinkBandWidth_singleElement(av.TestCase):
     expectedpy_ignore = ('x_at_peak_in_xy')
 
 
+class SingleElementSchaeferTests(av.TestCase):
+    """
+    Single element models to tests the DGD code base for Schaefer theory
+    """
+
+    # Class-wide methods
+    @classmethod
+    def setUpClass(cls):
+        copyMatProps()
+
+    # -----------------------------------------------------------------------------------------
+    # Test methods
+    def test_C3D8R_schaefer_oat90(self):
+        """ Simple tension applied in the matrix direction, solid element. Tests Schaefer theory """
+        self.runTest("test_C3D8R_schaefer_oat90")
+
+    def test_C3D8R_schaefer_oat30(self):
+        """ Off Axis Tension (30 deg) solid element. Tests Schaefer theory """
+        self.runTest("test_C3D8R_schaefer_oat30")
+
+    def test_C3D8R_schaefer_oat60(self):
+        """ Off Axis Tension (60 deg) solid element. Tests Schaefer theory """
+        self.runTest("test_C3D8R_schaefer_oat60")
+
+    def test_C3D8R_schaefer_oat75(self):
+        """ Off Axis Tension (75 deg) solid element.  Tests Schaefer theory """
+        self.runTest("test_C3D8R_schaefer_oat75")
+
+
 class SingleElementTests(av.TestCase):
     """
     Single element models to tests the DGD code base
@@ -230,22 +299,22 @@ class SingleElementTests(av.TestCase):
     # -----------------------------------------------------------------------------------------
     # Test methods
     def test_C3D8R_matrixTension(self):
-        """ Simple tension applied in the matrix direction, solid element """
+        """ Simple tension in the matrix direction, with damage """
         self.runTest("test_C3D8R_matrixTension")
 
 
     def test_C3D8R_simpleShear12(self):
-        """ Simple shear in the 1-2 plane, solid element """
+        """ Simple shear in the 1-2 plane, with damage """
         self.runTest("test_C3D8R_simpleShear12")
 
 
     def test_C3D8R_simpleShear12friction(self):
-        """ Compression followed by simple shear in the 1-2 plane, solid element """
+        """ Compression followed by simple shear in the 1-2 plane """
         self.runTest("test_C3D8R_simpleShear12friction")
 
 
     def test_C3D8R_nonlinearShear12(self):
-        """ Nonlinear shear model, loading and unloading, solid """
+        """ Nonlinear shear model, loading and unloading """
         self.runTest("test_C3D8R_nonlinearShear12")
 
 
@@ -255,27 +324,27 @@ class SingleElementTests(av.TestCase):
 
 
     def test_C3D8R_fiberTension(self):
-        """ Fiber tension, solid element """
+        """ Simple tension in fiber direction, with damage """
         self.runTest("test_C3D8R_fiberTension")
 
 
     def test_C3D8R_fiberCompression_FKT(self):
-        """ Fiber compression: Fiber kinking theory based model, solid element """
+        """ Fiber compression: Fiber kinking theory based model """
         self.runTest("test_C3D8R_fiberCompression_FKT")
 
 
     def test_C3D8R_fiberCompression_FKT_FN(self):
-        """ Fiber compression: Fiber kinking theory based model, solid element, fiber nonlinearity """
+        """ Fiber compression: Fiber kinking theory based model, fiber nonlinearity """
         self.runTest("test_C3D8R_fiberCompression_FKT_FN")
 
 
     def test_C3D8R_fiberCompression_BL(self):
-        """ Fiber compression: Bilinear softening based model, solid element """
+        """ Fiber compression: Bilinear softening based model """
         self.runTest("test_C3D8R_fiberCompression_BL")
 
 
     def test_C3D8R_fiberLoadReversal(self):
-        """ Fiber damage model, Maimi: load reversal, solid element """
+        """ Fiber damage model, Maimi: load reversal """
         self.runTest("test_C3D8R_fiberLoadReversal")
 
 
@@ -300,33 +369,33 @@ class SingleElementTests(av.TestCase):
 
 
     def test_C3D8R_schapery12(self):
-        """ Schapery micro-damage model, loading and unloading in 1--2 plane"""
+        """ Schapery micro-damage model, loading and unloading in 1-2 plane"""
         self.runTest("test_C3D8R_schapery12")
 
 
     def test_C3D8R_matrixCompression(self):
-        """ Matrix compression """
+        """ Simple compression in the matrix direction """
         self.runTest("test_C3D8R_matrixCompression")
 
 
     def test_C3D8R_elastic_matrixTension(self):
-        """ Elastic matrix tension """
+        """ Simple tension in the matrix direction, no damage """
         self.runTest("test_C3D8R_elastic_matrixTension")
 
 
     def test_C3D8R_elastic_fiberTension(self):
-        """ Elastic fiber tension """
+        """ Simple tension in the fiber direction, no damage """
         self.runTest("test_C3D8R_elastic_fiberTension")
 
 
     def test_C3D8R_elastic_simpleShear12(self):
-        """ Elastic simple shear """
+        """ Simple shear in the 1-2 plane, no damage """
         self.runTest("test_C3D8R_elastic_simpleShear12")
 
 
-    def test_C3D8R_elementSize(self):
-        """ User characteristic length """
-        self.runTest("test_C3D8R_elementSize")
+    def test_CPS4R_elementSize(self):
+        """ Characteristic element size test, plane stress element """
+        self.runTest("test_CPS4R_elementSize")
 
 
 if __name__ == "__main__":
