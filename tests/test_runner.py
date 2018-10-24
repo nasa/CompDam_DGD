@@ -114,12 +114,10 @@ class ParametricElementSize(av.TestCase):
     # elementSize3 = 0.1
 
     # Closed-form equations for the characteristic element lengths, valid for misalignment angles between -45 and +45 degrees
-    Lc1_eq = lambda m: 0.3*math.cos(math.radians(m))
     Lc2_eq = lambda m: 0.2*(0.3/0.2*math.sin(abs(math.radians(m))) + math.cos(math.radians(m)))
 
     # Element sizes are dependent on the misalignment and skew angles
-    expectedpy_parameters = {'Lc1': [Lc1_eq(m) for m in parameters['misalignment_angle']],
-                             'Lc2': [Lc2_eq(m) for m in parameters['misalignment_angle']]}
+    expectedpy_parameters = {'Lc2': [Lc2_eq(m) for m in parameters['misalignment_angle']]}
 
     @classmethod
     def setUpClass(cls):
@@ -339,7 +337,7 @@ class SingleElementSchaeferTests(av.TestCase):
         """Off Axis Tension (90 deg) shell element. Tests schaefer theory"""
         self.runTest("test_S4R_schaefer_oat90")
 
-     
+
 class SingleElementTests(av.TestCase):
     """
     Single element models to tests the DGD code base
