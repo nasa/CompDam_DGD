@@ -301,7 +301,7 @@ By default, fiber nonlinearity is disabled by setting c<sub>*l*</sub> = 0.
 
 
 ## Elements
-CompDam_DGD has been developed and tested using the Abaqus three-dimensional, reduced-integration `C3D8R` solid and `S4R` shell elements. Limited testing has been performed using the `CPS4R` plane stress element, the `SC8R` continuum shell element, and the fully-integrated `C3D8` solid element.
+CompDam_DGD has been developed and tested using the Abaqus three-dimensional, reduced-integration `C3D8R` solid elements. Limited testing has been performed using the `CPS4R` plane stress element, the `SC8R` continuum shell element, and the fully-integrated `C3D8` solid element.
 
 Because CompDam_DGD is a material model, it is expected to be compatible with structural elements generally. However, users are advised to perform tests with any previously untested element types before proceeding to use CompDam_DGD in larger structural models.
 
@@ -465,7 +465,7 @@ Pre-existing damage can be modeled by creating an element set for the damaged re
 </pre>
 
 ## Using CompDam with Abaqus/Standard
-The repository includes a developmental capability to run the CompDam VUMAT in an Abaqus/Standard analysis using a wrapper, `for/vumatWrapper.for`, that translates between the UMAT and VUMAT user subroutine interfaces. The intended usage is for Abaqus/Standard runs with little or no damage. 
+The repository includes a developmental capability to run the CompDam VUMAT in an Abaqus/Standard analysis using a wrapper, `for/vumatWrapper.for`, that translates between the UMAT and VUMAT user subroutine interfaces. The intended usage is for Abaqus/Standard runs with little or no damage.
 
 ### Usage
 To run an analysis with CompDam in Abaqus/Standard, the following input deck template is provided. Note that 9 additional state variables are required.
@@ -542,7 +542,7 @@ GLOBAL,  0.d0
 ** In each step, NLGEOM=YES must be used. This is NOT the default setting.
 </pre>
 
-### Current limitations 
+### Current limitations
 As the `vumatWrapper` is a developmental capability, several important limitations exist at present:
 1. The material Jacobian tensor is hard-coded in `for/vumatWrapper.for` for IM7/8552 elastic stiffnesses. A more general Jacobian is needed.
 2. The material response can become inaccurate for large increments in rotations. If large rotations occur, small increments must be used. A cut-back scheme based on rotation increment size is needed.
@@ -580,9 +580,9 @@ The python extension module requires some additional dependencies. First, the pr
 Using [Conda](https://conda.io/docs/user-guide/getting-started.html) significant simplifies the setup process, so it is assumed that you have a recent version of Conda available (see the [Conda installation guide](https://conda.io/docs/user-guide/install/index.html)). Add the Conda-Forge channel by typing:
 ```
 $ conda config --add channels conda-forge
-``` 
+```
 
-Conda stores python packages in containers called environments. Create a new environment: 
+Conda stores python packages in containers called environments. Create a new environment:
 ```
 $ conda create --name testing_pyextmod
 ```
