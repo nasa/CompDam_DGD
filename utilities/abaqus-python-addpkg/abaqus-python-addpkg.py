@@ -300,7 +300,9 @@ def _install(args):
 
 
 	# Copy the site-packages directory contents
-	src_dir = os.path.join(os.path.expanduser("~"), 'AppData\\Local\\Continuum\\anaconda3\\envs\\'+conda_env_name+'\\Lib\\site-packages')
+	p = subprocess.Popen('conda info --base', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	stdout, stderr = p.communicate()
+	src_dir = os.path.join(stdout.decode().rstrip()+'\\envs\\'+conda_env_name+'\\Lib\\site-packages')
 	(abqpy_cae_path, abqpy_solver_path) = _get_abaqus_python_loc(args.abaqus_version)
 	dest_dir = os.path.join(abqpy_cae_path, 'Lib\\site-packages')
 	_copy_contents_recursively_no_overwrite(src_dir, dest_dir)
