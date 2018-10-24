@@ -2,7 +2,7 @@
 TODO: add option to remove a specific package from abaqus environment
 TODO: add support for 'install_requires' in local package setup files --> search for packages in conda
 TODO: add option to sync packages from abaqus to conda environment
-TODO: only for abaqus 2017; add capability for 2016 and 2018
+TODO: only for abaqus 2017 and 2018; add capability for earlier versions
 """
 
 import sys
@@ -229,6 +229,11 @@ def _install(args):
 			'python': '2.7.3',
 			'numpy': '1.6.2',
 			'matplotlib': '1.1'
+		},
+		'2018': {
+			'python': '2.7.3',
+			'numpy': '1.6.2',
+			'matplotlib': '1.1'
 		}
 	}
 
@@ -295,7 +300,9 @@ def _install(args):
 
 
 	# Copy the site-packages directory contents
-	src_dir = os.path.join(os.path.expanduser("~"), 'AppData\\Local\\Continuum\\anaconda3\\envs\\'+conda_env_name+'\\Lib\\site-packages')
+	p = subprocess.Popen('conda info --base', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	stdout, stderr = p.communicate()
+	src_dir = os.path.join(stdout.decode().rstrip()+'\\envs\\'+conda_env_name+'\\Lib\\site-packages')
 	(abqpy_cae_path, abqpy_solver_path) = _get_abaqus_python_loc(args.abaqus_version)
 	dest_dir = os.path.join(abqpy_cae_path, 'Lib\\site-packages')
 	_copy_contents_recursively_no_overwrite(src_dir, dest_dir)
