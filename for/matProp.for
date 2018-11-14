@@ -1035,13 +1035,18 @@ Contains
 
     Else If (phi0 == one) Then   ! 1-D variation
       ! Set index to be integer count of row
-      index = NINT(position(1)/Lc(1))
+      index = FLOOR(position(1)/Lc(1))
 
       ! Wrap in a loop if there are more rows than randomNumbers is long
       rnsize = SIZE(randomNumbers, 1)
       If (index > rnsize) Then
         index = MOD(index, rnsize)
         Call log%warn('Random fiber misalignments are being wrapped in a loop. Increase randomNumberCount in vexternaldb.')
+      End If
+
+      ! In case the position is negative
+      If (index < 0) Then
+        index = rnsize+index
       End If
 
       ! Get the random number (0 to 1)
