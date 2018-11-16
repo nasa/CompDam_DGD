@@ -272,14 +272,6 @@ Subroutine CompDam(  &
   ! -------------------------------------------------------------------- !
   sv = loadStateVars(nstatev, stateOld(km,:), m)
 
-  ! The sign of the change in shear strain, used in the shear nonlinearity subroutine. Previously was a state variable.
-  If (m%shearNonlinearity12) Then
-    sv%d_eps12 = Sign(one, (F(1,1)*F(1,2) + F(2,1)*F(2,2) + F(3,2)*F(3,1)) - (F_old(1,1)*F_old(1,2) + F_old(2,1)*F_old(2,2) + F_old(3,2)*F_old(3,1)))
-  End If
-  If (m%shearNonlinearity13) Then
-    sv%d_eps13 = Sign(one, (F(1,1)*F(1,3) + F(2,1)*F(2,3) + F(3,1)*F(3,3)) - (F_old(1,1)*F_old(1,3) + F_old(2,1)*F_old(2,3) + F_old(3,2)*F_old(3,3)))
-  End If
-
   ! -------------------------------------------------------------------- !
   !    Define the characteristic element lengths                         !
   ! -------------------------------------------------------------------- !

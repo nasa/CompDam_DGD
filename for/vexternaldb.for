@@ -22,7 +22,7 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   ! Locals
   Integer :: kStep                                     ! Current step number
   Integer :: kInc                                      ! Current increment number
-  Integer, parameter :: randomNumberCount = 1000
+  Integer, parameter :: randomNumberCount = 10000
   Double Precision :: randomNumbers(randomNumberCount)
 
   ! Common
