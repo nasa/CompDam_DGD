@@ -1,6 +1,6 @@
 *Parameter
 l = 0.5
-t = 0.5
+t = 0.25
 stepDuration = 0.1
 loadRatio = 0.8
 abcissaStrength = 2326.2
