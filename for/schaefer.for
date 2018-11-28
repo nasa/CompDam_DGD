@@ -179,92 +179,14 @@ Contains
           Return
         END IF
         J1(:, i) = eye(:, i) - schaefer_n * schaefer_A * (J1a + J1b + J1c)
-        IF ((J1(1, i) .ne. J1(1, i)) .or. (J1(2, i) .ne. J1(2, i)) .or. (J1(3, i) .ne. J1(3, i)) .or. (J1(4, i) .ne. J1(4, i)) .or. (J1(5, i) .ne. J1(5, i)) .or. (J1(6, i) .ne. J1(6, i))) THEN
-          PRINT *, '***************************************************'
-          PRINT *, '***************************************************'
-          PRINT *, 'th'
-          PRINT *, th
-          PRINT *, 'th**2'
-          PRINT *, th**2
-          PRINT *, 'th**3'
-          PRINT *, th**3
-          PRINT *, 'dfdSdfdSd22Ep'
-          PRINT *, dfdSdfdSd22Ep
-          PRINT *, 'dfdSdfdSd24Ep'
-          PRINT *, dfdSdfdSd24Ep
-          PRINT *, 'dfdSdfdSd44Ep'
-          PRINT *, dfdSdfdSd44Ep
-          PRINT *, 'dfdSdfdSdEp'
-          PRINT *, dfdSdfdSdEp
-          PRINT *, 'dSddEp(2)'
-          PRINT *, dSddEp(2)
-          PRINT *, 'dSddEp(ndir + 1)'
-          PRINT *, dSddEp(ndir + 1)
-          PRINT *, 'J1a'
-          PRINT *, J1a
-          PRINT *, 'J1b'
-          PRINT *, J1b
-          PRINT *, 'J1c'
-          PRINT *, J1c
-          PRINT *, 'eye(:, i)'
-          PRINT *, eye(:, i)
-          PRINT *, 'J1(:, i)'
-          PRINT *, J1(:, i)
-          PRINT *, '***************************************************'
-          PRINT *, '***************************************************'
-        END IF
       END DO
       ! update according dEp according to newton raphson
       IF (ndir + nshr .eq. 6) THEN
         dEpUpdate = MATMUL(MInverse6x6(J1), J0)
-        ! check that numbers arent na
+        ! check that numbers arent NaN in calculated incremntal strain (this will lead to infinite loop)
         IF (dEpUpdate(2) .ne. dEpUpdate(2) .or. dEpUpdate(4) .ne. dEpUpdate(4)) THEN
           Call log%debug_str('a NaN was calculated this is whack')
-          PRINT *, 'counter'
-          PRINT *, counter
-          PRINT *, 'residual'
-          PRINT *, residual
-          PRINT *, 'eps'
-          PRINT *, eps
-          ! J0 = GetJ0(schaefer_n, schaefer_A, f, dfdSdfdS, dS, dEp, ndir, nshr)
-          PRINT *, 'schaefer_n'
-          PRINT *, schaefer_n
-          PRINT *, 'schaefer_A'
-          PRINT *, schaefer_A
-          PRINT *, 'f'
-          PRINT *, f
-          PRINT *, 'dfdS'
-          PRINT *, dfdS
-          PRINT *, 'dfdSdfdS'
-          PRINT *, dfdSdfdS
-          PRINT *, 'dS'
-          PRINT *, dS
-          PRINT *, 'J0'
-          PRINT *, J0
-          PRINT *, 'J1'
-          PRINT *, J1
-          PRINT *, 'ndir'
-          PRINT *, ndir
-          PRINT *, 'nshr'
-          PRINT *, nshr
-          PRINT *, 'S '
-          PRINT *, S 
-          ! dfdS(2) = S22 / (f - schaefer_b2 * S22) + schaefer_b2
-          ! dfdS(ndir + 1) = schaefer_a6 * S12 / (f - schaefer_b2 * S22)
-          PRINT *, 'S22 '
-          PRINT *, S22 
-          PRINT *, 'S12 '
-          PRINT *, S12 
-          PRINT *, 'schaefer_b2'
-          PRINT *, schaefer_b2
-          PRINT *, 'schaefer_a6'
-          PRINT *, schaefer_a6
-          PRINT *, 'dEp'
-          PRINT *, dEp
-          PRINT *, 'dEpUpdate'
-          PRINT *, dEpUpdate
           Call log%error('A Na was calculated. Break out')
-
         END IF
         dEp = dEp - MATMUL(MInverse6x6(J1), J0)
       ELSE IF (ndir + nshr .eq. 4) THEN
