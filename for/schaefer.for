@@ -95,14 +95,12 @@ Contains
       ! get yield FUNCTION from components of S and fitting parameters
       f = Getf(S, schaefer_a6, schaefer_b2, ndir, nshr)
       ! f is zero more than likely indicates a 0 stress state.
-      ! In this case j predict that no new plastic strain (no update to eps_plastic)
+      ! In this case predict that there is no new plastic strain (no update to eps_plastic)
       ! and break sub
       IF (f .eq. zero) THEN
         fp_old = f
         Return
       END IF
-
-
 
       ! get terms of f deriviates wtih respect to S 
       ! Partial of f with respect to Stress
@@ -123,6 +121,7 @@ Contains
       dS12ddEp = -C(ndir + 1, :) 
 
       ! for convenience defined th (theta) to be f - schaefer_b2 * S22. This term shows up a bunch
+      ! additionally the square and cube of this term show up repeatedly. Create locals of these as well
       th = f- schaefer_b2 * S22
       th2 = th ** 2
       th3 = th ** 3
@@ -171,8 +170,8 @@ Contains
         ! has the potenial to drive the result to inf (NaN)
         ! This occurs primarily because th is squared and cubed
         ! and thus reduces potenially small numbers to even smaller numbers.
-        ! Whent this is the case, just predict no changed in plasticity
-        ! if th^3 is the most likely to be zero compared to th^2 or th because its a higher exponent.
+        ! Whent this is the case, just predict no changed in plasticity.
+        ! th^3 is the most likely to be zero compared to th^2 or th because its a higher exponent
         ! and if its zero then there will be issues
         IF ((th3 .eq. zero)) THEN
           fp_old = f
@@ -185,8 +184,7 @@ Contains
         dEpUpdate = MATMUL(MInverse6x6(J1), J0)
         ! check that numbers arent NaN in calculated incremntal strain (this will lead to infinite loop)
         IF (dEpUpdate(2) .ne. dEpUpdate(2) .or. dEpUpdate(4) .ne. dEpUpdate(4)) THEN
-          Call log%debug_str('a NaN was calculated this is whack')
-          Call log%error('A Na was calculated. Break out')
+          Call log%error('a NaN was calculated within the schaefer plastic strain calculation. This will lead to an infinite loop. End simulation')
         END IF
         dEp = dEp - MATMUL(MInverse6x6(J1), J0)
       ELSE IF (ndir + nshr .eq. 4) THEN
@@ -210,7 +208,7 @@ Contains
         Return
       END IF
       IF (MODULO(counter, counter_limit) .eq. 0) THEN
-        Call log%debug_str('Maybe too many iterations occurred during newton-raphson convergence in schaefer sub')
+        Call log%debug_str('The number of iterations exceeded the specified counter. This indicates that possibly too many iterations occurred during newton raphson iteration of schaefer function')
         Call log%debug_int('counter', counter)
       END IF
     END DO
