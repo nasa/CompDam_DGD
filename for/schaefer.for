@@ -31,6 +31,8 @@ Contains
     ! additional terms
     Double PRECISION :: C(ndir + nshr, ndir + nshr) ! Stiffness Matrix
     Double PRECISION :: th ! theta is a variable defined for convenenience. The term f - schaefer_b2 * S22 shows up frequently. This term helps save typing
+    Double PRECISION :: th2 ! th ** 2 (captured for convenience)
+    Double PRECISION :: th3 ! th ** 3 (captured for convenience)
     Double PRECISION :: S(ndir + nshr) ! vector of stress matrix S 
     Double PRECISION :: dS(ndir + nshr) ! vector of incremental stress 
     Double PRECISION :: dfdS(ndir + nshr) ! derivative of scalar FUNCTION with respect to S
@@ -40,6 +42,7 @@ Contains
     Double PRECISION:: dfddEp(ndir + nshr) ! derivative of yield criterion with respect to incremental plastic strain
     Double PRECISION:: eye(ndir + nshr, ndir + nshr) ! identity matrix
     Double PRECISION:: dEp(ndir + nshr) ! incremental plastic strain
+    Double PRECISION:: dEpUpdate(ndir + nshr) ! incremental plastic strain
     Double PRECISION:: eps_vec(ndir + nshr) ! strain matrix represented as vector (green-lagrange)
     Double PRECISION:: eps_old_vec(ndir + nshr) ! strain matrix represented as vector from previous iteration (green-lagrange)
     Double PRECISION:: dE(ndir + nshr) ! total incremental strain as vector
@@ -89,9 +92,15 @@ Contains
       ! get components of stress vector for convenience
       S22 = S(2)
       S12 = S(ndir + 1) 
-
       ! get yield FUNCTION from components of S and fitting parameters
       f = Getf(S, schaefer_a6, schaefer_b2, ndir, nshr)
+      ! f is zero more than likely indicates a 0 stress state.
+      ! In this case predict that there is no new plastic strain (no update to eps_plastic)
+      ! and break sub
+      IF (f .eq. zero) THEN
+        fp_old = f
+        Return
+      END IF
 
       ! get terms of f deriviates wtih respect to S 
       ! Partial of f with respect to Stress
@@ -112,7 +121,10 @@ Contains
       dS12ddEp = -C(ndir + 1, :) 
 
       ! for convenience defined th (theta) to be f - schaefer_b2 * S22. This term shows up a bunch
+      ! additionally the square and cube of this term show up repeatedly. Create locals of these as well
       th = f- schaefer_b2 * S22
+      th2 = th ** 2
+      th3 = th ** 3
 
       ! Partial of f with respect to plastic strain. 
       dfddEp = (S22 / th + schaefer_b2) * dS22ddEp + ((schaefer_a6 * S12) / th) * dS12ddEp
@@ -136,14 +148,14 @@ Contains
         ! get the the term corresponding to the ith partial derivative of dfdSdfdS
         ! with respeoct to Epi
         ! this derivative corresponds to the (2, 2) 
-        dfdSdfdSd22Ep = (schaefer_b2 + S22 / th) * ( (2 * dS22) / th + (2 * (schaefer_b2 * dS22 -df) * S22) / th**2) 
+        dfdSdfdSd22Ep = (schaefer_b2 + S22 / th) * ( (2 * dS22) / th + (2 * (schaefer_b2 * dS22 -df) * S22) / th2) 
         ! this derivative corresponds to the (2, 4) 
         dfdSdfdSd24Ep = (schaefer_a6 * dS12/th) * (schaefer_b2 + S22/th) +&
-            (schaefer_a6 * S12 / th**2) * (schaefer_b2 + S22 / th) * (schaefer_b2 * dS22 - df) +&
-            (schaefer_a6 * S12 / th) * (dS22 / th + (schaefer_b2 * dS22 - df)* S22 / th**2)
+            (schaefer_a6 * S12 / th2) * (schaefer_b2 + S22 / th) * (schaefer_b2 * dS22 - df) +&
+            (schaefer_a6 * S12 / th) * (dS22 / th + (schaefer_b2 * dS22 - df)* S22 / th2)
         ! this derivative corresponds to the (4, 4) 
-        dfdSdfdSd44Ep =  (2 * schaefer_a6**2 * S12 * dS12) / th**2 +&
-            (schaefer_a6**2 * (2 * schaefer_b2 * dS22 - 2 * df ) * S12**2) / th**3
+        dfdSdfdSd44Ep =  (2 * schaefer_a6**2 * S12 * dS12) / th2 +&
+            (schaefer_a6**2 * (2 * schaefer_b2 * dS22 - 2 * df ) * S12**2) / th3
         ! Fill with all zeros and then fill its componenets as theyre calculated
         dfdSdfdSdEp = zero
         dfdSdfdSdEp(2, 2) = dfdSdfdSd22Ep
@@ -154,10 +166,26 @@ Contains
         J1a = (schaefer_n - 1) * f**(schaefer_n - 2) * df * MATMUL(dfdSdfdS, dS)
         J1b = f**(schaefer_n - 1) * MATMUL(dfdSdfdSdEp, dS) 
         J1c = f**(schaefer_n - 1) * MATMUL(dfdSdfdS, dSddEp)
+        ! th is used upstream in calculation of J1 and because its in the denominator
+        ! has the potenial to drive the result to inf (NaN)
+        ! This occurs primarily because th is squared and cubed
+        ! and thus reduces potenially small numbers to even smaller numbers.
+        ! Whent this is the case, just predict no changed in plasticity.
+        ! th^3 is the most likely to be zero compared to th^2 or th because its a higher exponent
+        ! and if its zero then there will be issues
+        IF ((th3 .eq. zero)) THEN
+          fp_old = f
+          Return
+        END IF
         J1(:, i) = eye(:, i) - schaefer_n * schaefer_A * (J1a + J1b + J1c)
       END DO
       ! update according dEp according to newton raphson
       IF (ndir + nshr .eq. 6) THEN
+        dEpUpdate = MATMUL(MInverse6x6(J1), J0)
+        ! check that numbers arent NaN in calculated incremntal strain (this will lead to infinite loop)
+        IF (dEpUpdate(2) .ne. dEpUpdate(2) .or. dEpUpdate(4) .ne. dEpUpdate(4)) THEN
+          Call log%error('a NaN was calculated within the schaefer plastic strain calculation. This will lead to an infinite loop. End simulation')
+        END IF
         dEp = dEp - MATMUL(MInverse6x6(J1), J0)
       ELSE IF (ndir + nshr .eq. 4) THEN
         dEp = dEp - MATMUL(MInverse4x4(J1), J0)
@@ -180,7 +208,7 @@ Contains
         Return
       END IF
       IF (MODULO(counter, counter_limit) .eq. 0) THEN
-        Call log%debug_str('Maybe too many iterations occurred during newton-raphson convergence in schaefer sub')
+        Call log%debug_str('The number of iterations exceeded the specified counter. This indicates that possibly too many iterations occurred during newton raphson iteration of schaefer function')
         Call log%debug_int('counter', counter)
       END IF
     END DO
