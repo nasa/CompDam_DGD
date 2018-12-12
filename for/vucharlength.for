@@ -20,7 +20,7 @@ Subroutine vucharlength(  &
   Double Precision :: thick_test, fiber_test, da_max_matrix, da_avg_matrix
 
   ! Parameters
-  Double Precision, parameter :: zero=0.d0, Pi=ACOS(-1.d0)
+  Double Precision, parameter :: zero=0.d0, Pi=ACOS(-1.d0), two=2.d0
 
   ! Evaluate vucharlength() only when element length state variables are undefined.
   runOnce: If ( stateOld(1, 6) == zero ) Then
@@ -34,7 +34,7 @@ Subroutine vucharlength(  &
         charLength(k, 6) = DOT_PRODUCT(coordMp(k,:), direct(k,:,3))
       End If
 
-      elementShape: If (nnnode == 6 .OR. nnode == 3) Then
+      elementShape: If (nnode == 6 .OR. nnode == 3) Then
         ! Center is the geometric center of the nodes
         center = zero
         Do n = 1, nnode
