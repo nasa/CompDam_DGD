@@ -1014,7 +1014,7 @@ Contains
 
     ! Locals
     Double Precision :: shearInstabilityPhi0
-    Double Precision :: randomNumbers(1000)
+    Double Precision :: randomNumbers(10000)
     Double Precision :: rn
     Integer :: index, rnsize
     Double Precision, parameter :: zero=0.d0, half=0.5d0, one=1.d0, two=2.d0
@@ -1033,15 +1033,26 @@ Contains
     Else If (phi0 <= half) Then   ! Use initial condition value of phi0
       initializePhi0 = phi0
 
-    Else If (phi0 == one) Then   ! 1-D variation
+    Else If (phi0 >= one) Then   ! 1-D variation
       ! Set index to be integer count of row
-      index = NINT(position(1)/Lc(1))
+      If (phi0 == one) Then ! 1-D variation
+        index = NINT(position(1)/0.05d0) + offset
+      Else If (phi0 == two) Then ! 2-D variation (different 1-D variation for each ply)
+        index = NINT((position(1)/0.05d0) + (100.d0*position(3))) + offset
+      Else
+        Call log%error('Invalid initial condition received for phi0. Found ' // trim(str(phi0)))
+      End If
 
       ! Wrap in a loop if there are more rows than randomNumbers is long
       rnsize = SIZE(randomNumbers, 1)
       If (index > rnsize) Then
         index = MOD(index, rnsize)
         Call log%warn('Random fiber misalignments are being wrapped in a loop. Increase randomNumberCount in vexternaldb.')
+      End If
+
+      ! In case the position is negative
+      If (index < 0) Then
+        index = rnsize+index
       End If
 
       ! Get the random number (0 to 1)
