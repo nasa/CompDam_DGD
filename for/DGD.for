@@ -90,14 +90,6 @@ Contains
     sv%Fb3   = zero
     pk2_fiberDir = zero
 
-    ! The sign of the change in shear strain, used in the shear nonlinearity subroutine. Previously was a state variable.
-    If (m%shearNonlinearity12) Then
-      sv%d_eps12 = Sign(one, (F(1,1)*F(1,2) + F(2,1)*F(2,2) + F(3,2)*F(3,1)) - (F_old(1,1)*F_old(1,2) + F_old(2,1)*F_old(2,2) + F_old(3,2)*F_old(3,1)))
-    End If
-    If (m%shearNonlinearity13) Then
-      sv%d_eps13 = Sign(one, (F(1,1)*F(1,3) + F(2,1)*F(2,3) + F(3,1)*F(3,3)) - (F_old(1,1)*F_old(1,3) + F_old(2,1)*F_old(2,3) + F_old(3,2)*F_old(3,3)))
-    End If
-
     ! Reference configuration
     X = zero; X(1,1) = sv%Lc(1); X(2,2) = sv%Lc(2); X(3,3) = sv%Lc(3)
     F_inverse_transpose = MInverse(TRANSPOSE(F))
@@ -116,7 +108,7 @@ Contains
       End If
 
       ! Compute the plastic strains and remove from the strain tensor
-      Call Plasticity(m, sv, ndir, nshr, eps, eps_old, .FALSE.)
+      Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old, .FALSE.)
 
       ! Evaluate fiber tension failure criteria and damage variable
       If (m%fiberTenDam) Then
@@ -158,7 +150,7 @@ Contains
         eps = MATMUL(TRANSPOSE(R_phi0), MATMUL(eps, R_phi0))
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, ndir, nshr, eps, eps_old)
+        Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old)
 
         ! Get total 1,2 strain component
         gamma_rphi0 = two*(eps(1,2) + sv%Plas12/two)
@@ -199,7 +191,7 @@ Contains
       Else
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, ndir, nshr, eps, eps_old)
+        Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old)
 
         If (m%fiberCompDamBL) Then
           Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), sv%rfT, sv%rfC, sv%d1T, sv%d1C, sv%STATUS)
@@ -663,7 +655,7 @@ Contains
         Call Strains(F_bulk, m, DT, ndir, eps)
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, ndir, nshr, eps, use_temp=.TRUE.)
+        Call Plasticity(m, sv, p, ndir, nshr, eps, use_temp=.TRUE.)
 
         ! -------------------------------------------------------------------- !
         !    Evaluate the CDM fiber failure criteria and damage variable:      !
@@ -1183,7 +1175,7 @@ Contains
       ! -------------------------------------------------------------------- !
       Call Strains(Fkb, m, DT, ndir, epskb)
       epskb = MATMUL(TRANSPOSE(R_phi0), MATMUL(epskb, R_phi0))
-      Call Plasticity(m, sv, ndir, nshr, epskb, use_temp=.TRUE.)
+      Call Plasticity(m, sv, p, ndir, nshr, epskb, use_temp=.TRUE.)
       gamma_rphi0 = two*(epskb(1,2) + sv%Plas12_temp/two)
       Call StiffFuncNL(m, ndir, nshr, d1, zero, zero, epskb, Stiff, sv%Sr)
       pk2_fiberDirkb = Hooke(Stiff, epskb, nshr) ! 2PK in the fiber direction
@@ -1521,6 +1513,8 @@ Contains
     write(101, nameValueFmt) '    "penStiffMult": ', p%penStiffMult, ','
     write(101, nameValueFmt) '    "cutback_amount": ', p%cutback_amount, ','
     write(101, nameValueFmt) '    "tol_divergence": ', p%tol_divergence
+    write(101, nameValueFmt) '    "schaefer_nr_tolerance": ', p%schaefer_nr_tolerance
+    write(101, nameValueFmt) '    "schaefer_nr_counter_limit": ', p%schaefer_nr_counter_limit
     write(101, "(A)") '}'
     write(101, "(A)") 'sv = {'
     write(101, nameValueFmt) '    "d2": ', sv%d2, ','

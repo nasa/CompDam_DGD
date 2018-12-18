@@ -3,17 +3,19 @@ Module plasticity_mod
 
 Contains
 
-  Subroutine Plasticity(m, sv, ndir, nshr, eps, eps_old_in, use_temp)
+  Subroutine Plasticity(m, sv, p, ndir, nshr, eps, eps_old_in, use_temp)
     ! This is the main entry point for plasticity calculations
 
     Use matProp_Mod
     Use stateVar_Mod
     Use schaefer_Mod
     use matrixAlgUtil_Mod
+    Use parameters_Mod
 
     ! Arguments
     Type(matProps), intent(IN) :: m
     Type(stateVars), intent(INOUT) :: sv                ! State variables related to plasticity
+    Type(parameters), intent(IN) :: p                    ! parameters object (contains information like convergence tolerance which can dictate behavior of subroutines)
     Integer, intent(IN) :: ndir, nshr
     Double Precision, intent(INOUT) :: eps(ndir,ndir)    ! Strain tensor
     Double Precision, optional, intent(IN) :: eps_old_in(ndir, ndir)   ! Strain tensor
@@ -60,7 +62,7 @@ Contains
       End IF
     Else If (m%schaefer) THEN
     	! Update Ep_schaefer and f (yield function)
-      CALL schaefer(m, m%schaefer_a6,  m%schaefer_b2,  m%schaefer_n, m%schaefer_A, eps, eps_old, ndir, nshr, sv%Ep_schaefer, sv%fp)
+      CALL schaefer(m, p, m%schaefer_a6,  m%schaefer_b2,  m%schaefer_n, m%schaefer_A, eps, eps_old, ndir, nshr, sv%Ep_schaefer, sv%fp)
       !updated eps subtracting out total plastic strain eps -= sv%Ep_old
       eps = eps - Vec2Matrix(sv%Ep_schaefer)
     End If
