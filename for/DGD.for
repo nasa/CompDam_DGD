@@ -90,6 +90,14 @@ Contains
     sv%Fb3   = zero
     pk2_fiberDir = zero
 
+    ! The sign of the change in shear strain, used in the shear nonlinearity subroutine. Previously was a state variable.
+    If (m%shearNonlinearity12) Then
+      sv%d_eps12 = Sign(one, (F(1,1)*F(1,2) + F(2,1)*F(2,2) + F(3,2)*F(3,1)) - (F_old(1,1)*F_old(1,2) + F_old(2,1)*F_old(2,2) + F_old(3,2)*F_old(3,1)))
+    End If
+    If (m%shearNonlinearity13) Then
+      sv%d_eps13 = Sign(one, (F(1,1)*F(1,3) + F(2,1)*F(2,3) + F(3,1)*F(3,3)) - (F_old(1,1)*F_old(1,3) + F_old(2,1)*F_old(2,3) + F_old(3,2)*F_old(3,3)))
+    End If
+
     ! Reference configuration
     X = zero; X(1,1) = sv%Lc(1); X(2,2) = sv%Lc(2); X(3,3) = sv%Lc(3)
     F_inverse_transpose = MInverse(TRANSPOSE(F))
