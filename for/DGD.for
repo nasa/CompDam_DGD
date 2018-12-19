@@ -116,7 +116,7 @@ Contains
       End If
 
       ! Compute the plastic strains and remove from the strain tensor
-      Call Plasticity(m, sv, ndir, nshr, eps, eps_old, .FALSE.)
+      Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old, .FALSE.)
 
       ! Evaluate fiber tension failure criteria and damage variable
       If (m%fiberTenDam) Then
@@ -158,7 +158,7 @@ Contains
         eps = MATMUL(TRANSPOSE(R_phi0), MATMUL(eps, R_phi0))
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, ndir, nshr, eps, eps_old)
+        Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old)
 
         ! Get total 1,2 strain component
         gamma_rphi0 = two*(eps(1,2) + sv%Plas12/two)
@@ -199,7 +199,7 @@ Contains
       Else
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, ndir, nshr, eps, eps_old)
+        Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old)
 
         If (m%fiberCompDamBL) Then
           Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), sv%rfT, sv%rfC, sv%d1T, sv%d1C, sv%STATUS)
@@ -663,7 +663,7 @@ Contains
         Call Strains(F_bulk, m, DT, ndir, eps)
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, ndir, nshr, eps, use_temp=.TRUE.)
+        Call Plasticity(m, sv, p, ndir, nshr, eps, use_temp=.TRUE.)
 
         ! -------------------------------------------------------------------- !
         !    Evaluate the CDM fiber failure criteria and damage variable:      !
@@ -1183,7 +1183,7 @@ Contains
       ! -------------------------------------------------------------------- !
       Call Strains(Fkb, m, DT, ndir, epskb)
       epskb = MATMUL(TRANSPOSE(R_phi0), MATMUL(epskb, R_phi0))
-      Call Plasticity(m, sv, ndir, nshr, epskb, use_temp=.TRUE.)
+      Call Plasticity(m, sv, p, ndir, nshr, epskb, use_temp=.TRUE.)
       gamma_rphi0 = two*(epskb(1,2) + sv%Plas12_temp/two)
       Call StiffFuncNL(m, ndir, nshr, d1, zero, zero, epskb, Stiff, sv%Sr)
       pk2_fiberDirkb = Hooke(Stiff, epskb, nshr) ! 2PK in the fiber direction
@@ -1521,6 +1521,8 @@ Contains
     write(101, nameValueFmt) '    "penStiffMult": ', p%penStiffMult, ','
     write(101, nameValueFmt) '    "cutback_amount": ', p%cutback_amount, ','
     write(101, nameValueFmt) '    "tol_divergence": ', p%tol_divergence
+    write(101, nameValueFmt) '    "schaefer_nr_tolerance": ', p%schaefer_nr_tolerance
+    write(101, nameValueFmt) '    "schaefer_nr_counter_limit": ', p%schaefer_nr_counter_limit
     write(101, "(A)") '}'
     write(101, "(A)") 'sv = {'
     write(101, nameValueFmt) '    "d2": ', sv%d2, ','

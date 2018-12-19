@@ -3,15 +3,17 @@ Module schaefer_Mod
 
 Contains
 
-  subroutine schaefer(m, schaefer_a6, schaefer_b2, schaefer_n, schaefer_A, eps, eps_old, ndir, nshr, eps_vec_p_old, fp_old) 
+  subroutine schaefer(m, p, schaefer_a6, schaefer_b2, schaefer_n, schaefer_A, eps, eps_old, ndir, nshr, eps_vec_p_old, fp_old) 
 
     use matProp_Mod
     use matrixAlgUtil_Mod
     use stress_Mod
     Use forlog_Mod
+    Use parameters_Mod
     
     ! Inputs only
     Type(matProps), intent(IN) :: m
+    Type(parameters), intent(IN) :: p                    ! parameters object (contains information like convergence tolerance which can dictate behavior of subroutines)
     Double PRECISION, intent(IN) :: schaefer_a6    ! Schaefer Method material property 
     Double PRECISION, intent(IN) :: schaefer_b2    ! Schaefer Method material property 
     Double PRECISION, intent(IN) :: schaefer_n ! fitting parameters for schaefre
@@ -58,8 +60,6 @@ Contains
     Double PRECISION:: dS12 ! local variable used in ith column calc of J1 matrix. its a deriv val with respect to incremental plastic strain
     Double PRECISION:: dS22 ! local variable used in ith column calc of J1 matrix. its a deriv val with respect to incremental plastic strain
     Double PRECISION:: df! local variable used in ith column calc of J1 matrix. its a deriv val with respect to incremental plastic strain
-    Double PRECISION:: schaefer_nr_tolerance ! tolerance value used to determine if convergence has occurred in newton raphson loop
-    Integer :: counter_limit ! maximum number of Newton-Raphson loops before divergence is assumed
     Integer :: counter ! counter of iterations done thus far in newton raphson
     ! newton raphson equation updates dEp according to the following
     ! dEp = dEp - inv(J1) * J0
@@ -69,8 +69,6 @@ Contains
 
     Double PRECISION, Parameter :: zero=0.d0, one=1.d0, two=2.d0, three=3.d0, four=4.d0, six=6.d0
 
-    schaefer_nr_tolerance = 1e-6
-    counter_limit = 10000000
     ! Build the stiffness matrix
     C = StiffFunc(ndir+nshr, m%E1, m%E2, m%E3, m%G12, m%G13, m%G23, m%v12, m%v13, m%v23, zero, zero, zero)
     eye = zero; Do I = 1,ndir+nshr; eye(I,I) = one; End Do ! Identity Matrix 
@@ -197,7 +195,7 @@ Contains
       ! approach 0. Determine its norm (and refer to this as the residual)
       residual = SQRT(DOT_PRODUCT(J0, J0))
       ! once we're within a certain tolerance break the loop
-      if (residual .lt. schaefer_nr_tolerance) THEN
+      if (residual .lt. p%schaefer_nr_tolerance) THEN
         ! If f is larger than previous step then additional plastic strain is predicted
         if (f > fp_old) THEN
           eps_vec_p_old = eps_vec_p_old + dEp
@@ -207,8 +205,8 @@ Contains
         END IF
         Return
       END IF
-      IF (MODULO(counter, counter_limit) .eq. 0) THEN
-        Call log%debug_str('The number of iterations exceeded the specified counter. This indicates that possibly too many iterations occurred during newton raphson iteration of schaefer function')
+      IF (MODULO(counter, p%schaefer_nr_counter_limit) .eq. 0) THEN
+	Call log%debug_str('The number of iterations exceeded the specified counter. This indicates that possibly too many iterations occurred during newton raphson iteration of schaefer function')
         Call log%debug_int('counter', counter)
       END IF
     END DO

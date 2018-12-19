@@ -5,7 +5,6 @@
 import os
 import shutil
 import sys
-sys.path.insert(0, r"C:\Users\fs668d\workspace\abaverify2")
 import abaverify as av
 import math
 

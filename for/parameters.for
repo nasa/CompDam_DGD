@@ -15,6 +15,7 @@ Module parameters_Mod
     Integer :: MD_max                                             ! maximum number of damage increments per solution increment
     Integer :: EQ_max                                             ! maximum number of equilibrium iterations
     Integer :: alpha_inc                                          ! increment, in degrees, for which the matrix failure criterion is evaluated
+    Integer :: schaefer_nr_counter_limit                          ! maximum number of Newton-Raphson loops before divergence is assumed
     Double Precision :: tol_DGD_f                                 ! tol_DGD_f = tol_DGD/YT
     Double Precision :: dGdGc_min                                 ! minimum amount of damage dissipated per MD increment
     Double Precision :: compLimit                                 ! minimum accepted det(F_bulk)
@@ -23,6 +24,7 @@ Module parameters_Mod
     Double Precision :: tol_divergence                            ! Tolerance for divergence of internal Newton Raphson loop
     Double Precision :: gamma_max                                 ! Maximum shear strain; when this value is exceeded, the element is deleted
     Double Precision :: kb_decompose_thres                        ! Ratio of kink band size to element length at which to decompose the element
+    Double Precision :: schaefer_nr_tolerance                     ! Tolerance value used to determine if convergence has occurred in newton raphson loop
 
     ! min and max values for acceptable range
     Integer, private :: logLevel_min, logLevel_max
@@ -31,6 +33,7 @@ Module parameters_Mod
     Integer, private :: MD_max_min, MD_max_max
     Integer, private :: EQ_max_min, EQ_max_max
     Integer, private :: alpha_inc_min, alpha_inc_max
+    Integer, private :: schaefer_nr_counter_limit_min, schaefer_nr_counter_limit_max
     Double Precision, private :: tol_DGD_f_min, tol_DGD_f_max
     Double Precision, private :: dGdGc_min_min, dGdGc_min_max
     Double Precision, private :: compLimit_min, compLimit_max
@@ -39,6 +42,7 @@ Module parameters_Mod
     Double Precision, private :: tol_divergence_min, tol_divergence_max
     Double Precision, private :: gamma_max_min, gamma_max_max
     Double Precision, private :: kb_decompose_thres_min, kb_decompose_thres_max
+    Double Precision, private :: schaefer_nr_tolerance_min, schaefer_nr_tolerance_max
 
   End Type parameters
 
@@ -186,6 +190,12 @@ Contains
           Case ('kb_decompose_thres')
             Call verifyAndSaveProperty_dbl(trim(key), value, p%kb_decompose_thres_min, p%kb_decompose_thres_max, p%kb_decompose_thres)
 
+          Case ('schaefer_nr_tolerance')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%schaefer_nr_tolerance_min, p%schaefer_nr_tolerance_max, p%schaefer_nr_tolerance)
+
+          Case ('schaefer_nr_counter_limit')
+            Call verifyAndSaveProperty_int(trim(key), value, p%schaefer_nr_counter_limit_min, p%schaefer_nr_counter_limit_max, p%schaefer_nr_counter_limit)
+
           Case Default
             Call log%error("loadParameters: Parameter not recognized: " // trim(key))
         End Select
@@ -220,6 +230,8 @@ Contains
     p%tol_divergence = 0.1d0
     p%gamma_max      = 4.d0
     p%kb_decompose_thres = 0.99d0
+    p%schaefer_nr_tolerance = 1.d-6
+    p%schaefer_nr_counter_limit = 10000000
 
 
     ! Maximum and minimum values for parameters to be read from CompDam.parameters file
@@ -265,6 +277,11 @@ Contains
     p%kb_decompose_thres_min = zero
     p%kb_decompose_thres_max = one
 
+    p%schaefer_nr_tolerance_min = Tiny(zero)
+    p%schaefer_nr_tolerance_max = one
+
+    p%schaefer_nr_counter_limit_min = 0
+    p%schaefer_nr_counter_limit_max = 100000000000
     Return
   End Subroutine initializeParameters
 
