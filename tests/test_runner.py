@@ -21,6 +21,22 @@ def copyMatProps():
         shutil.copyfile(os.path.join(os.getcwd(), propsFile), os.path.join(os.getcwd(),'testOutput', propsFile))
 
 
+def copyParametersFile():
+    '''
+    Helper for dealing with .parameters files
+    '''
+    # If testOutput doesn't exist, create it
+    testOutputPath = os.path.join(os.getcwd(), 'testOutput')
+    if not os.path.isdir(testOutputPath):
+        os.makedirs(testOutputPath)
+
+    # Put a copy of the properties file in the testOutput directory
+    parameterName = 'CompDam.parameters'
+    parameterPath = os.path.join(os.getcwd(), parameterName)
+    if os.path.exists(parameterPath):
+        shutil.copyfile(parameterPath, os.path.join(os.getcwd(), 'testOutput', parameterName))
+
+
 def plotFailureEnvelope(baseName, abscissaIdentifier, ordinateIdentifier, abcissaStrengths, ordinateStrengths):
     """
     Create a plot of the failure envelope. Does noting if matplotlib import fails.
@@ -92,6 +108,7 @@ class ParametricMixedModeMatrix(av.TestCase):
     @classmethod
     def setUpClass(cls):
         copyMatProps()
+        copyParametersFile()
 
 
 class ParametricElementSize(av.TestCase):
@@ -123,6 +140,7 @@ class ParametricElementSize(av.TestCase):
     @classmethod
     def setUpClass(cls):
         copyMatProps()
+        copyParametersFile()
 
 
 class ParametricFailureEnvelope_sig12sig22(av.TestCase):
@@ -145,6 +163,7 @@ class ParametricFailureEnvelope_sig12sig22(av.TestCase):
     @classmethod
     def setUpClass(cls):
         copyMatProps()
+        copyParametersFile()
 
     @classmethod
     def tearDownClass(cls):
@@ -171,6 +190,7 @@ class ParametricFailureEnvelope_sig12sig23(av.TestCase):
     @classmethod
     def setUpClass(cls):
         copyMatProps()
+        copyParametersFile()
 
     @classmethod
     def tearDownClass(cls):
@@ -197,6 +217,7 @@ class ParametricFailureEnvelope_sig11sig22(av.TestCase):
     @classmethod
     def setUpClass(cls):
         copyMatProps()
+        copyParametersFile()
 
     @classmethod
     def tearDownClass(cls):
@@ -213,6 +234,7 @@ class ParametricKinkBandWidth_twoElement(av.TestCase):
     @classmethod
     def setUpClass(cls):
         copyMatProps()
+        copyParametersFile()
 
     # Specify meta class
     __metaclass__ = av.ParametricMetaClass
@@ -239,6 +261,7 @@ class ParametricKinkBandWidth_singleElement(av.TestCase):
     @classmethod
     def setUpClass(cls):
         copyMatProps()
+        copyParametersFile()
 
     # Specify meta class
     __metaclass__ = av.ParametricMetaClass
@@ -265,6 +288,7 @@ class SingleElementSchaeferTests(av.TestCase):
     @classmethod
     def setUpClass(cls):
         copyMatProps()
+        copyParametersFile()
 
     # -----------------------------------------------------------------------------------------
     # Test methods
@@ -294,6 +318,7 @@ class SingleElementTests(av.TestCase):
     @classmethod
     def setUpClass(cls):
         copyMatProps()
+        copyParametersFile()
 
     # -----------------------------------------------------------------------------------------
     # Test methods
