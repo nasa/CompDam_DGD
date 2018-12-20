@@ -73,7 +73,7 @@ Contains
 
     ! Locals
     Double Precision :: E1
-    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
+    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0, four=4.d0
     ! -------------------------------------------------------------------- !
 
     If (m%Schapery) Then
@@ -83,7 +83,23 @@ Contains
     End If
 
     ! Elastic fiber nonlinearity
-    E1 = m%E1*(1+m%cl*eps(1,1))
+    If (d1 > 0) Then
+      ! Use secant stiffness when fiber nonlinearity is enabled
+      If (m%cl > 0) Then
+        If (eps(1,1) < 0) Then
+          eps_0 = -(-m%E1+SQRT(m%E1**two-four*m%E1*m%cl*m%XC))/(two*m%E1*m%cl)
+          E1 = m%XC/eps_0
+        Else
+          eps_0 = (-m%E1+SQRT(m%E1**two+four*m%E1*m%cl*m%XT))/(two*m%E1*m%cl)
+          E1 = m%XT/eps_0
+        End If
+      Else
+        E1 = m%E1
+      End If
+    Else
+      ! Fiber nonlinearity
+      E1 = m%E1*(1+m%cl*eps(1,1))
+    End If
 
     ! Update stiffness matrix
     stiff = StiffFunc(ndir+nshr, E1, m%E2*Schapery_reduction(sr, m%es), m%E3, m%G12*Schapery_reduction(sr, m%gs), m%G13, m%G23, m%v12, m%v13, m%v23, d1, d2, d3)

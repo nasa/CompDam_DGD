@@ -327,6 +327,11 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_fiberTension")
 
 
+    def test_C3D8R_fiberTension_FN(self):
+        """ Simple tension in fiber direction, with damage and fiber nonlinearity """
+        self.runTest("test_C3D8R_fiberTension_FN")
+
+
     def test_C3D8R_fiberCompression_FKT(self):
         """ Fiber compression: Fiber kinking theory based model """
         self.runTest("test_C3D8R_fiberCompression_FKT")
@@ -342,9 +347,19 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_fiberCompression_BL")
 
 
+    def test_C3D8R_fiberCompression_BL_FN(self):
+        """ Fiber compression: Bilinear softening based model, fiber nonlinearity """
+        self.runTest("test_C3D8R_fiberCompression_BL_FN")
+
+
     def test_C3D8R_fiberLoadReversal(self):
         """ Fiber damage model, Maimi: load reversal """
         self.runTest("test_C3D8R_fiberLoadReversal")
+
+
+    def test_C3D8R_fiberLoadReversal_FN(self):
+        """ Fiber damage model, Maimi: load reversal, fiber nonlinearity """
+        self.runTest("test_C3D8R_fiberLoadReversal_FN")
 
 
     def test_C3D8R_nonlinearShear12(self):

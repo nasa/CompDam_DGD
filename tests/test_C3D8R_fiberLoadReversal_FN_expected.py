@@ -40,7 +40,7 @@ parameters = {
                 "elset": "ALL",
                 "position": "Element 1 Int Point 1"
             },
-            "referenceValue": 925,
+            "referenceValue": 1045,
             "tolerance": 5.0
         },
         {
@@ -62,7 +62,7 @@ parameters = {
                 "elset": "ALL",
                 "position": "Element 1 Int Point 1"
             },
-            "referenceValue": 430,
+            "referenceValue": 455,
             "tolerance": 5.0
         },
         {

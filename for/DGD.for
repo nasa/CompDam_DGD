@@ -120,7 +120,7 @@ Contains
 
       ! Evaluate fiber tension failure criteria and damage variable
       If (m%fiberTenDam) Then
-        Call FiberTenDmg(eps, ndir, m%E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), sv%rfT, sv%d1T, sv%d1C, sv%STATUS)
+        Call FiberTenDmg(eps, ndir, m%E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), m%cl, sv%rfT, sv%d1T, sv%d1C, sv%STATUS)
         Call log%debug('Computed fiber damage variable, d1T ' // trim(str(sv%d1T)))
 
         d1 = sv%d1T
@@ -202,10 +202,15 @@ Contains
         Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old)
 
         If (m%fiberCompDamBL) Then
-          Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), sv%rfT, sv%rfC, sv%d1T, sv%d1C, sv%STATUS)
+          Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), m%cl, sv%rfT, sv%rfC, sv%d1T, sv%d1C, sv%STATUS)
           Call log%debug('Computed fiber damage variable, d1C ' // trim(str(sv%d1C)))
 
           d1 = sv%d1C
+
+          ! Load reversal
+          If (d1 > sv%d1T) Then
+            sv%d1T = d1
+          End If
         End If
 
         ! Build the stiffness matrix
@@ -669,11 +674,11 @@ Contains
         !    Evaluate the CDM fiber failure criteria and damage variable:      !
         ! -------------------------------------------------------------------- !
         If (eps(1,1) >= zero) Then
-          If (m%fiberTenDam) Call FiberTenDmg(eps, ndir, m%E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), rfT_temp, d1T_temp, d1C_temp, sv%STATUS)
+          If (m%fiberTenDam) Call FiberTenDmg(eps, ndir, m%E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), m%cl, rfT_temp, d1T_temp, d1C_temp, sv%STATUS)
           d1 = d1T_temp
           d1C_temp = sv%d1C
         Else If (m%fiberCompDamBL) Then
-          Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), rfT_temp, rfC_temp, d1T_temp, d1C_temp, sv%STATUS)
+          Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), m%cl, rfT_temp, rfC_temp, d1T_temp, d1C_temp, sv%STATUS)
           d1 = d1C_temp
         End If
 

@@ -675,7 +675,7 @@ Contains
     m%w_kb_max = Huge(zero)
 
     m%cl_min = zero
-    m%cl_max = 1000.d0
+    m%cl_max = 33.d0   ! Ensures that the tangent stiffness is > 0 up to 1.5% strain in compression
 
     m%alpha0_min = zero
     m%alpha0_max = pi/two
@@ -784,6 +784,7 @@ Contains
     Logical, intent(IN) :: issueWarnings
 
     ! Locals
+    Double Precision :: eps_0tanstiff, eps_0_fn
     Double Precision, Parameter :: zero=0.d0, one=1.d0, two=2.d0, four=4.d0
     ! -------------------------------------------------------------------- !
 
@@ -915,8 +916,18 @@ Contains
 
     ! check if fiber nonlinearity has been defined
     If (m%cl_def) Then
+      ! Check that the tangent stiffness does not go to zero before fiber failure
+      If (m%fiberCompDamBL) Then
+        eps_0tanstiff = one/(two*m%cl)
+        eps_0_fn = (-m%E1+SQRT(m%E1**two-four*m%E1*m%cl*m%XC))/(two*m%E1*m%cl)  ! Strain at fiber compression failure
+        If (eps_0tanstiff < eps_0_fn) Then
+          Call log%error('PROPERTY ERROR: Tangent stiffness goes (eps11 =  ' // trim(str(eps_0tanstiff)) // ')to zero before fiber compression failure strain is reached(eps11 = ' // &
+            trim(str(eps_0_fn)) // '). Adjust cl, E1, and/or XC.')
+        End If
+      End If
       Call log%info('PROPERTY: fiber nonlinearity has been defined')
     Else
+      Call log%info('PROPERTY: fiber nonlinearity has not been defined. Setting cl = 0')
       m%cl = zero
     End If
 

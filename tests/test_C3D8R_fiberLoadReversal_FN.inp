@@ -67,10 +67,26 @@ Part-1-1.loadApp, 1, 1.
 *Material, name=IM7-8552
 *Density
 1.57e-09,
-*User material, constants=4
+*User material, constants=40
 ** 1              2                  3          4
 ** feature flags, , thickness, 4, 5, 6, 7, 8
           101100, ,       <t>,  ,  ,  ,  ,  ,
+**
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+    171420.0, 9080.0,   5290.0,   0.32,     0.52,     62.3,     92.30,    0.277,
+**
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,     
+    0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
+**
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,     
+    -5.5d-6,  2.58d-5,  4.412d-10, 5.934,   2326.2,   0.75,    133.3,    0.375,
+**
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     cl,    w_kb,     ,         mu
+    1200.1,   0.75,     47.5,     0.375,    10.0,      ,     ,         0.3
 *Depvar
   19,
   1, CDM_d2
