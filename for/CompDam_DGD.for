@@ -90,6 +90,7 @@ Subroutine CompDam(  &
   Use stateVar_Mod
   Use parameters_Mod
   Use DGD_Mod
+  Use plasticity_mod
 
   Implicit Double Precision (a-h, o-z)
   Parameter (j_sys_Dimension = 2, n_vec_Length = 136, maxblk = n_vec_Length)
@@ -297,6 +298,15 @@ Subroutine CompDam(  &
   ! -------------------------------------------------------------------- !
   If (totalTime <= DT .AND. m%fiberCompDamFKT) Then
     sv%phi0 = initializePhi0(sv%phi0, m%G12, m%XC, m%aPL, m%nPL, sv%Lc, charLength(km, 4:6))
+  End If
+
+  ! -------------------------------------------------------------------- !
+  !    Initialize fiber failure                                          !
+  ! -------------------------------------------------------------------- !
+  If (m%fiberCompDamFKT .AND. p%fkt_fiber_failure_angle > zero) Then
+    sv%Inel12c = intializeFiberFailure(sv%phi0, p%fkt_fiber_failure_angle, m%G12, m%aPL, m%nPL)
+  Else
+    sv%Inel12c = Huge(zero)   ! Turn off fiber failure by setting the associate inelastic strain to a very large number
   End If
 
   ! -------------------------------------------------------------------- !

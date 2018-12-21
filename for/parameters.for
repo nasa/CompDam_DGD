@@ -24,6 +24,7 @@ Module parameters_Mod
     Double Precision :: tol_divergence                            ! Tolerance for divergence of internal Newton Raphson loop
     Double Precision :: gamma_max                                 ! Maximum shear strain; when this value is exceeded, the element is deleted
     Double Precision :: kb_decompose_thres                        ! Ratio of kink band size to element length at which to decompose the element
+    Double Precision :: fkt_fiber_failure_angle                   ! Angle at which fiber failure occurs; no further plastic shear deformation allowed
     Double Precision :: schaefer_nr_tolerance                     ! Tolerance value used to determine if convergence has occurred in newton raphson loop
 
     ! min and max values for acceptable range
@@ -42,6 +43,7 @@ Module parameters_Mod
     Double Precision, private :: tol_divergence_min, tol_divergence_max
     Double Precision, private :: gamma_max_min, gamma_max_max
     Double Precision, private :: kb_decompose_thres_min, kb_decompose_thres_max
+    Double Precision, private :: fkt_fiber_failure_angle_min, fkt_fiber_failure_angle_max
     Double Precision, private :: schaefer_nr_tolerance_min, schaefer_nr_tolerance_max
 
   End Type parameters
@@ -190,6 +192,9 @@ Contains
           Case ('kb_decompose_thres')
             Call verifyAndSaveProperty_dbl(trim(key), value, p%kb_decompose_thres_min, p%kb_decompose_thres_max, p%kb_decompose_thres)
 
+          Case ('fkt_fiber_failure_angle')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_fiber_failure_angle_min, p%fkt_fiber_failure_angle_max, p%fkt_fiber_failure_angle)
+
           Case ('schaefer_nr_tolerance')
             Call verifyAndSaveProperty_dbl(trim(key), value, p%schaefer_nr_tolerance_min, p%schaefer_nr_tolerance_max, p%schaefer_nr_tolerance)
 
@@ -230,9 +235,9 @@ Contains
     p%tol_divergence = 0.1d0
     p%gamma_max      = 4.d0
     p%kb_decompose_thres = 0.99d0
+    p%fkt_fiber_failure_angle = -1.d0
     p%schaefer_nr_tolerance = 1.d-6
     p%schaefer_nr_counter_limit = 10000000
-
 
     ! Maximum and minimum values for parameters to be read from CompDam.parameters file
     p%logLevel_min = 0
@@ -276,6 +281,9 @@ Contains
 
     p%kb_decompose_thres_min = zero
     p%kb_decompose_thres_max = one
+
+    p%fkt_fiber_failure_angle_min = -1*Huge(zero)
+    p%fkt_fiber_failure_angle_max = 45.d0
 
     p%schaefer_nr_tolerance_min = Tiny(zero)
     p%schaefer_nr_tolerance_max = one

@@ -14,10 +14,10 @@ Publications that describe the theories used in this code:
 - Cheryl A. Rose, et al. ["Analysis Methods for Progressive Damage of Composite Structures"](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20140001002.pdf) NASA/TM-2013-218024, July 2013.
 
 Examples of this code being applied can be found in the following publications:
-- Andrew C. Bergan and Wade C. Jackson, "Validation of a Mesoscale Fiber Kinking Model through Test and Analysis of Double Edge Notch Compression Specimens" *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
-- Imran Hyder, et al., "Implementation of a Matrix Crack Spacing Parameter in a Continuum Damage Mechanics Finite Element Model" *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
-- Frank A. Leone Jr., et al., "Benchmarking Mixed Mode Matrix Failure in Progressive Damage and Failure Analysis Methods" *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
-- Brian Justusson, et al., et al., "Quantification of Error Associated with Using Misaligned Meshes in Continuum Damage Mechanics Material Models for Matrix Crack Growth Predictions in Composites" *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
+- Andrew C. Bergan and Wade C. Jackson, ["Validation of a Mesoscale Fiber Kinking Model through Test and Analysis of Double Edge Notch Compression Specimens"](http://dpi-proceedings.com/index.php/asc33/article/view/26003) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
+- Imran Hyder, et al., ["Implementation of a Matrix Crack Spacing Parameter in a Continuum Damage Mechanics Finite Element Model"](http://dpi-proceedings.com/index.php/asc33/article/view/26052) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
+- Frank A. Leone Jr., et al., ["Benchmarking Mixed Mode Matrix Failure in Progressive Damage and Failure Analysis Methods"](http://dpi-proceedings.com/index.php/asc33/article/view/26030) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
+- Brian Justusson, et al., et al., ["Quantification of Error Associated with Using Misaligned Meshes in Continuum Damage Mechanics Material Models for Matrix Crack Growth Predictions in Composites"](http://www.dpi-proceedings.com/index.php/asc33/article/view/26097) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
 - Kyongchan Song, et al. ["Continuum Damage Mechanics Models for the Analysis of Progressive Damage in Cross-Ply and Quasi-Isotropic Panels Subjected to Static Indentation"](https://arc.aiaa.org/doi/10.2514/6.2018-1466) *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
 - Imran Hyder, et al. ["Assessment of Intralaminar Progressive Damage and Failure Analysis Using an Efficient Evaluation Framework"](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20170010326.pdf) *32nd American Society for Composites (ASC) Annual Technical Conference*, West Lafayette, Indiana, 22-25 October 2017.
 - Frank A. Leone Jr., et al. ["Fracture-Based Mesh Size Requirements for Matrix Cracks in Continuum Damage Mechanics Models"](https://doi.org/10.2514/6.2017-0198) *AIAA SciTech Forum*, Grapevine, Texas, 9-13 January 2017.
@@ -268,9 +268,9 @@ Load reversal assumptions from [Maimí et al. (2007)](http://doi.org/10.1016/j.m
 #### Model 2: Placeholder
 
 #### Model 3: Fiber kinking theory (FKT)
-A model based on Budiansky's fiber kinking theory from [Budiansky 1983](https://doi.org/10.1016/0045-7949(83)90141-4), [Budiansky and Fleck 1993](https://doi.org/10.1016/0022-5096(93)90068-Q), and [Budiansky et al. 1998](https://doi.org/10.1016/S0022-5096(97)00042-2) implemented using the DGD framework to model in-plane (1-2) kinking. The model is described in detail in [Bergan et al. 2018](https://arc.aiaa.org/doi/10.2514/6.2018-1221) and Bergan and Jackson 2018. The model accounts for fiber kinking due to shear instability by considering an initial fiber misalignment, nonlinear shear stress-strain behavior via Ramberg-Osgood, and geometric nonlinearity.
+A model based on Budiansky's fiber kinking theory from [Budiansky 1983](https://doi.org/10.1016/0045-7949(83)90141-4), [Budiansky and Fleck 1993](https://doi.org/10.1016/0022-5096(93)90068-Q), and [Budiansky et al. 1998](https://doi.org/10.1016/S0022-5096(97)00042-2) implemented using the DGD framework to model in-plane (1-2) kinking. The model is described in detail in [Bergan et al. 2018](https://arc.aiaa.org/doi/10.2514/6.2018-1221) and [Bergan and Jackson 2018](http://dpi-proceedings.com/index.php/asc33/article/view/26003). The model accounts for fiber kinking due to shear instability by considering an initial fiber misalignment, nonlinear shear stress-strain behavior via Ramberg-Osgood, and geometric nonlinearity. Fiber failure can be introduced by specifying a critical fiber rotation angle.
 
-The required material properties are: XC, YC, wkb, alpha0, alpha_PL, and n_PL. The [feature flag](#controlling-which-features-are-enabled) for fiber compression should be set to '3' to activate this model feature. This feature requires all 26 state variables to be defined and initialized. The relevant state variables are:
+The required material properties are: XC, YC, wkb, alpha0, alpha_PL, and n_PL. The [feature flag](#controlling-which-features-are-enabled) for fiber compression should be set to '3' to activate this model feature. This feature requires 26 state variables to be defined and initialized. The relevant state variables are:
 - `CDM_phi0`: initial fiber misalignment (radians).
 - `CDM_gamma`: rotation of the fibers due to loading (radians). The current fiber misalignment is `CDM_phi0 + CDM_gamma`.
 - `CDM_FIfC`: failure index for fiber kinking (0 to 1). The calculation for this failure index is simplistic and is accurate for unconstrained elements. It is possible for cases to arise where `CDM_FIfC = 1` but the element is not kinked. A better definition of the failure index for fiber kinking is needed. Interpret the value of `CDM_FIfC` with caution.
@@ -278,11 +278,19 @@ The required material properties are: XC, YC, wkb, alpha0, alpha_PL, and n_PL. T
 
 The initial condition for the state variable `CDM_phi0` determines the initial fiber misalignment as described in [initial conditions](#initial-conditions).
 
+A fiber failure criterion described in [Bergan and Jackson 2018](http://dpi-proceedings.com/index.php/asc33/article/view/26003) is implemented to represent the material behavior in confined conditions under large strains (post failure). The fiber failure criterion is satisfied when
+
+*&phi;* &ge; *&phi;*<sub>ff,c</sub>
+
+where *&phi;* is the current fiber rotation. Once the fiber failure critierion is satisfied, the plastic shear strain is held constant. The value for *&phi;*<sub>ff,c</sub> is defined as the parameter `fkt_fiber_failure_angle` since it is not a well-defined material property. The fiber failure criterion is disabled when *&phi;*<sub>ff,c</sub> < 0.
+
 The fiber kinking theory model implemented here is preliminary and has some known shortcomings and caveats:
 - The model has only been tested for C3D8R. Limited application with C3D6 demonstrated issues. No testing has been completed for other element types.
-- The model does not account for out-of-plane kinking. FKT expects that Ramberg-Osgood nonlinearity is enabled in the 1-2 plane (i.e. feature flag: `x1x3xx`)
+- The model does not account for out-of-plane kinking. FKT expects that Ramberg-Osgood nonlinearity is enabled in the 1-2 plane (i.e. feature flag: `x1x3xx`). The model may not perform as intended if shear nonlinearity is enabled in the 1-3 plane.
 - Other mechanisms of fiber compressive failure (e.g., shear driven fiber breaks) are not accounted for. An outcome of this is that the model predicts the material does not fail if shear deformation is fully constrained.
 - No special consideration for load reversal has been included.
+
+Relevant single element tests are named starting with `test_C3D8R_fiberCompression_FKT`.
 
 Relevant example problems: UNC0_C3D8R_FKT
 
@@ -636,7 +644,7 @@ This section includes a brief summary of each test implemented in the `tests` fo
 - *failureEnvelope_sig12sig22*: A parametric model in which *&tau;<sub>12</sub>* is swept from *0* to *S<sub>L</sub>* and *&sigma;<sub>22</sub>* is swept from *-Y<sub>C</sub>* to *Y<sub>T</sub>* in order to re-create the corresponding failure envelope.
 - *failureEnvelope_sig12sig23*: A parametric model in which *&tau;<sub>12</sub>* is swept from *0* to *S<sub>L</sub>* and *&tau;<sub>23</sub>* is swept from *0* to *S<sub>T</sub>* in order to re-create the corresponding failure envelope.
 - *fiberCompression_CDM*: Demonstrates the constitutive response in the 1-direction under prescribed shortening. The 1-direction stress-strain curve is trilinear. A conventional CDM approach to material degradation is used.
-- *fiberCompression_DGD*: Demonstrates the constitutive response in the 1-direction under prescribed shortening. The fiber kink band model is used.
+- *fiberCompression_FKT*: Demonstrates the constitutive response in the 1-direction under prescribed shortening. The fiber kink band model is used. `FF` indicates that the fiber failure criterion is enabled. `FN` indicates that fiber nonlinearity is enabled.
 - *fiberLoadReversal*: Demonstrates the constitutive response in the 1-direction under prescribed extension and shortening reversals. The 1-direction stress-strain curve shows the intended behavior under load reversal.
 - *fiberTension*: Demonstrates the constitutive response in the 1-direction under prescribed extension. The 1-direction stress-strain curve is trilinear.
 - *matrixCompression*: Demonstrates the constitutive response in the 2-direction under prescribed compression displacement.

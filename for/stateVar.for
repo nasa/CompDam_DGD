@@ -35,6 +35,10 @@ Module stateVar_Mod
     Double Precision :: Ep_schaefer(6) ! Total plastic strain for schaefer theory
     Double Precision :: fp ! yield function value
 
+    ! Calculated once at the start of the analysis, not passed to abaqus
+    ! Since this value depends on phi0, it needs to be a state variable and not global calculated parameter
+    Double Precision :: Inel12c       ! Critical plastic strain for fiber failure
+
     ! Stored for debugging only
     Double Precision :: d_eps12, d_eps13
 

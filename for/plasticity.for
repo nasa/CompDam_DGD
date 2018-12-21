@@ -42,21 +42,21 @@ Contains
 
     If (m%shearNonlinearity12) Then
       If (use_temporary_sv) Then
-        Call ro_plasticity(two*eps(1,2), sv%d_eps12_temp, m%G12, m%aPL, m%nPL, sv%Plas12_temp, sv%Inel12_temp)
+        Call ro_plasticity(two*eps(1,2), sv%d_eps12_temp, m%G12, m%aPL, m%nPL, sv%Inel12c, sv%Plas12_temp, sv%Inel12_temp)
         eps(1,2) = eps(1,2) - sv%Plas12_temp/two
         eps(2,1) = eps(1,2)
       Else
-        Call ro_plasticity(two*eps(1,2), sv%d_eps12, m%G12, m%aPL, m%nPL, sv%Plas12, sv%Inel12)
+        Call ro_plasticity(two*eps(1,2), sv%d_eps12, m%G12, m%aPL, m%nPL, sv%Inel12c, sv%Plas12, sv%Inel12)
         eps(1,2) = eps(1,2) - sv%Plas12/two
         eps(2,1) = eps(1,2)
       End IF
     Else If (m%shearNonlinearity13) Then
       If (use_temporary_sv) Then
-        Call ro_plasticity(two*eps(1,3), sv%d_eps13_temp, m%G13, m%aPL, m%nPL, sv%Plas13_temp, sv%Inel13_temp)
+        Call ro_plasticity(two*eps(1,3), sv%d_eps13_temp, m%G13, m%aPL, m%nPL, Huge(zero), sv%Plas13_temp, sv%Inel13_temp)
         eps(1,3) = eps(1,3) - sv%Plas13_temp/two
         eps(3,1) = eps(1,3)
       Else
-        Call ro_plasticity(two*eps(1,3), sv%d_eps13, m%G13, m%aPL, m%nPL, sv%Plas13, sv%Inel13)
+        Call ro_plasticity(two*eps(1,3), sv%d_eps13, m%G13, m%aPL, m%nPL, Huge(zero), sv%Plas13, sv%Inel13)
         eps(1,3) = eps(1,3) - sv%Plas13/two
         eps(3,1) = eps(1,3)
       End IF
@@ -71,7 +71,7 @@ Contains
   End Subroutine Plasticity
 
 
-  Subroutine ro_plasticity(strain, d_strain_sign, modulus, aPL, nPL, Plas, Inel)
+  Subroutine ro_plasticity(strain, d_strain_sign, modulus, aPL, nPL, inel_max, Plas, Inel)
     ! The purpose of this subroutine is to calculate the plastic and inelastic strains
     ! for the given total strain state and nonlinear stress-strain curve.
 
@@ -81,12 +81,13 @@ Contains
     Double Precision, intent(IN) :: modulus                 ! Elastic modulus (eg G12)
     Double Precision, intent(IN) :: strain, d_strain_sign   ! Strain
     Double Precision, intent(IN) :: aPL, nPL                ! NL shear strain properties
+    Double Precision, intent(IN) :: inel_max                ! Maximum inelastic shear strain, for fiber failure criterion
     Double Precision, intent(INOUT) :: Plas, Inel
 
     ! Locals
     Double Precision :: epsEff,tau,Inel_trial,ff0,ff1,tol
     Integer :: E, E_max
-    Double Precision, parameter :: one=1.d0
+    Double Precision, parameter :: zero=0.d0, one=1.d0
     ! -------------------------------------------------------------------- !
 
     ! effective strain (used to account for unloading and reloading)
@@ -98,6 +99,9 @@ Contains
     ! Compute the inelastic strain (independent of unloading/reloading) and plastic strain (depends on loading direction) 
     Inel_trial = epsEff - tau/Modulus
     If (Inel_trial > Inel) Then
+      If (Inel_trial > inel_max) Then
+        Inel_trial = inel_max
+      End If
       Plas = Plas + (Inel_trial - Inel)*d_strain_sign
       Inel = Inel_trial
     End If
@@ -140,5 +144,40 @@ Contains
 
     Return
   End Function ramberg_osgood
+
+
+  Function intializeFiberFailure(phi0, phiff, G12, aPL, nPL)
+    ! Determines the critical plastic strain for fiber failure
+    ! Since inelastic strain is used, the direction is ignored and the absolute value is returned
+
+    Use forlog_Mod
+
+    ! Arguments
+    Double Precision, intent(IN) :: phi0                         ! Initial fiber misalignment
+    Double Precision, intent(IN) :: phiff                        ! Angle for fiber failure
+    Double Precision, intent(IN) :: G12, aPL, nPL                ! Shear nonlinearity
+
+    ! Output
+    Double Precision :: intializeFiberFailure
+
+    ! Locals
+    Double Precision :: phiff_radians, gamma12c, tau
+    Double Precision, parameter :: one=1.d0
+    ! -------------------------------------------------------------------- !
+
+    ! Convert to radians
+    phiff_radians = (ATAN(one)/45.d0)*phiff
+
+    ! Assume the same direction as phi0
+    phiff_radians = SIGN(phiff_radians, phi0)
+
+    ! Compute the critical plastic strain for fiber failure
+    gamma12c = phiff_radians - phi0
+    tau = ramberg_osgood(gamma12c, G12, aPL, nPL)
+    tau = SIGN(phiff_radians, tau)  ! Account for sign of tau
+    intializeFiberFailure = ABS(gamma12c - tau/G12)
+
+    Return
+  End Function intializeFiberFailure
 
 End Module plasticity_mod

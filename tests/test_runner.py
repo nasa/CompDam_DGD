@@ -7,6 +7,7 @@ import shutil
 import sys
 import abaverify as av
 import math
+import re
 
 # Helper for dealing with .props files
 def copyMatProps():
@@ -35,6 +36,38 @@ def copyParametersFile():
     parameterPath = os.path.join(os.getcwd(), parameterName)
     if os.path.exists(parameterPath):
         shutil.copyfile(parameterPath, os.path.join(os.getcwd(), 'testOutput', parameterName))
+
+def copyAdditionalFiles(files):
+    '''
+    Helper for copying supporting files to testOutput
+    '''
+
+    # If testOutput doesn't exist, create it
+    testOutputPath = os.path.join(os.getcwd(), 'testOutput')
+    if not os.path.isdir(testOutputPath):
+        os.makedirs(testOutputPath)
+
+    # Copy files
+    for f in files:
+        shutil.copyfile(f, os.path.join(os.getcwd(), 'testOutput', f))
+
+
+def modifyParametersFile(**kwargs):
+    '''
+    For modifying the parameters file
+    Input dictionary should have key, value pairs that correspond to entries in CompDam.parameters
+    '''
+
+    # Copy/modify parameters file
+    with open(os.path.join(os.getcwd(), 'CompDam.parameters'), 'r') as f:
+        data = f.read()
+
+    for key, value in kwargs.items():
+        data = re.sub(key + r' ?= ?[-0-9\.d]*', key + ' = ' + value, data)
+
+    # Write to testOutput directory
+    with open(os.path.join(os.getcwd(), 'testOutput', 'CompDam.parameters'), 'w') as f:
+        f.write(data)
 
 
 def plotFailureEnvelope(baseName, abscissaIdentifier, ordinateIdentifier, abcissaStrengths, ordinateStrengths):
@@ -365,6 +398,21 @@ class SingleElementTests(av.TestCase):
     def test_C3D8R_fiberCompression_FKT(self):
         """ Fiber compression: Fiber kinking theory based model """
         self.runTest("test_C3D8R_fiberCompression_FKT")
+
+
+    def test_C3D8R_fiberCompression_FKT_FF(self):
+        """ Fiber compression: Fiber kinking theory based model, fiber failure """
+        copyAdditionalFiles(files=['test_C3D8R_fiberCompression_FKT.inp'])
+        modifyParametersFile(fkt_fiber_failure_angle = '10.d0')
+        self.runTest("test_C3D8R_fiberCompression_FKT_FF")
+        modifyParametersFile(fkt_fiber_failure_angle = '-1.d0')
+
+
+    def test_C3D8R_fiberCompression_FKT_FF_negphi0(self):
+        """ Fiber compression: Fiber kinking theory based model, fiber failure """
+        modifyParametersFile(fkt_fiber_failure_angle = '10.d0')
+        self.runTest("test_C3D8R_fiberCompression_FKT_FF_negphi0")
+        modifyParametersFile(fkt_fiber_failure_angle = '-1.d0')
 
 
     def test_C3D8R_fiberCompression_FKT_FN(self):

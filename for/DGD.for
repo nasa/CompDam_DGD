@@ -1079,6 +1079,8 @@ Contains
     Double Precision :: tol_DGD
     Double Precision :: err, err_old
     Double Precision :: aid
+    Logical :: Cutback
+    Double Precision :: cutbacks
 
     ! Jacobian
     Double Precision :: Jac(3,3)
@@ -1094,11 +1096,13 @@ Contains
     Double Precision :: dCauchykb_dFkb1(3,3,3)
     Double Precision :: dTkb_dFkb1(3,3)
     Double Precision :: Ym(3,3), Ykb(3,3)
+    Double Precision :: dplas12, dinel12
 
     ! -------------------------------------------------------------------- !
 
     ! Initialize
     aid = one
+    d1 = zero
     sv%gamma = zero
     X = zero; X(1,1) = sv%Lc(1); X(2,2) = sv%Lc(2); X(3,3) = sv%Lc(3) ! Ref. Config.
     eye = zero; DO I = 1,3; eye(I,I) = one; end DO ! Identity Matrix
@@ -1133,6 +1137,8 @@ Contains
     ! -------------------------------------------------------------------- !
     err = Huge(zero)
     EQk = 0
+    Cutback = .False.
+    cutbacks = 0  ! Cut-back counter
 
     Equilibrium: Do ! Loop to determine the current Fkb(:,1)
       EQk = EQk + 1
@@ -1143,6 +1149,19 @@ Contains
         Exit Equilibrium
       End If
       Call log%debug('Equilibrium Start.')
+
+      ! Reduce aid if cutting back
+      If (Cutback) Then
+
+        ! Reset the Cutback flag
+          Cutback = .False.
+
+          ! Advance the cutback counter
+          cutbacks = cutbacks + 1
+          Call log%info('Cutting back, Cutbacks: ' // trim(str(cutbacks)))
+
+          aid = p%cutback_amount**cutbacks
+      End If
 
       ! -------------------------------------------------------------------- !
       ! Initialize all temporary state variables for use in Equilibrium loop:
@@ -1213,7 +1232,7 @@ Contains
       err_old = err
       err = Length(Residual)
       percentChangeInErr = (err - err_old)/err_old
-      Call log%debug('The error is: ' // trim(str(err)))
+      Call log%debug('err: ' // trim(str(err)) // ', errchange: ' // trim(str(percentChangeInErr)) // ', aid: ' // trim(str(aid)))
 
       ! Do not bother to attempt to find equilibrium if the element was deleted in Strains
       If (sv%STATUS == 0) Then
@@ -1222,9 +1241,30 @@ Contains
 
       ! Check for any inside-out deformation or an overly compressed bulk material
       If (err < tol_DGD .AND. MDet(Fkb) < p%compLimit) Then
-        Call log%info('Deleting failed element for which no solution could be found.')
+        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
+        Call log%warn('Deleting failed element for which no solution could be found.')
         sv%STATUS = 0
         EXIT Equilibrium
+      End If
+
+      ! Check for a diverging solution
+      If (percentChangeInErr > 0.1d0) Then
+        Call log%info('Solution is diverging, err: ' // trim(str(err)) // ' > ' // trim(str(err_old)))
+
+        ! Cut-back using the current starting point
+        If (cutbacks < p%cutbacks_max) Then
+          Cutback = .True.
+
+        ! Quit
+        Else
+          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
+          Call log%warn('Reached max cutback limit, deleting element.')
+          sv%STATUS = 0
+          EXIT Equilibrium
+        End If
+
+        Cycle Equilibrium
+
       End If
 
       ! If converged,
@@ -1235,6 +1275,8 @@ Contains
 
         ! Update shear nonlinearity state variables
         Call finalizeTemp(sv, m)
+
+        Call log%debug('Successfully converged. Iterations: ' // trim(str(EQk)))
 
         EXIT Equilibrium
       End If
@@ -1251,6 +1293,8 @@ Contains
       dCauchym_dFkb1 = zero
       dTm_dFkb1 = zero
       dEkb_dFkb1 = zero
+      dplas12 = zero
+      dinel12 = zero
       dSkb_dFkb1 = zero
       dCauchykb_dFkb1 = zero
       dTkb_dFkb1 = zero
@@ -1283,6 +1327,11 @@ Contains
         ! Kink band bulk
         dEkb_dFkb1(:,:,I) = (MATMUL(TRANSPOSE(dFkb_dFkb1(:,:,I)), Fkb) + MATMUL(TRANSPOSE(Fkb), dFkb_dFkb1(:,:,I)))/two
         dEkb_dFkb1(:,:,I) = MATMUL(TRANSPOSE(R_phi0), MATMUL(dEkb_dFkb1(:,:,I), R_phi0))
+        dplas12 = sv%Plas12_temp
+        dinel12 = sv%Inel12_temp
+        Call ro_plasticity(two*dEkb_dFkb1(1,2,I), sv%d_eps12_temp, m%G12, m%aPL, m%nPL, sv%Inel12c, dplas12, dinel12)
+        dEkb_dFkb1(1,2,I) = dEkb_dFkb1(1,2,I) - dplas12/two
+        dEkb_dFkb1(2,1,I) = dEkb_dFkb1(1,2,I)
         dSkb_dFkb1(:,:,I) = Hooke(Stiff, dEkb_dFkb1(:,:,I), nshr)
         dSkb_dFkb1(:,:,I) = MATMUL(R_phi0, MATMUL(dSkb_dFkb1(:,:,I), TRANSPOSE(R_phi0)))
         Ykb = MATMUL(MInverse(Fkb), dFkb_dFkb1(:,:,I))

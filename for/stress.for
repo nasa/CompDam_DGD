@@ -84,7 +84,8 @@ Contains
 
     ! Elastic fiber nonlinearity
     If (d1 > 0) Then
-      ! Use secant stiffness when fiber nonlinearity is enabled
+      ! Use secant stiffness when fiber nonlinearity is enabled for traditional fiber CDM model
+      ! This is necessary since once damage occurs, the strains become large
       If (m%cl > 0) Then
         If (eps(1,1) < 0) Then
           eps_0 = -(-m%E1+SQRT(m%E1**two-four*m%E1*m%cl*m%XC))/(two*m%E1*m%cl)

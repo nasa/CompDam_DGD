@@ -7,7 +7,7 @@ import re
 
 class Points():
 
-    def __init__(self, lc, alpha, F, F_bulk):
+    def __init__(self, lc, alpha, F, F_bulk, Fkb=np.eye(3), Fm=np.eye(3), w_kb=0):
 
         self.F = F
         self.F_bulk = F_bulk
@@ -28,6 +28,30 @@ class Points():
                 [0,   0,   lc3],
                 [lc1, 0,   lc3],
                 [lc1, lc2, lc3],
+                [0,   lc2, lc3]
+            ])
+
+        # Initial configuration of the kink band
+        self.initial['kb'] = np.array([
+                [lc1-w_kb,   0,   0],
+                [lc1, 0,   0],
+                [lc1, lc2, 0],
+                [lc1-w_kb,   lc2, 0],
+                [lc1-w_kb,   0,   lc3],
+                [lc1, 0,   lc3],
+                [lc1, lc2, lc3],
+                [lc1-w_kb,   lc2, lc3]
+            ])
+
+        # Initial configuration of the material neighboring the kink band
+        self.initial['m'] = np.array([
+                [0,   0,   0],
+                [lc1-w_kb, 0,   0],
+                [lc1-w_kb, lc2, 0],
+                [0,   lc2, 0],
+                [0,   0,   lc3],
+                [lc1-w_kb, 0,   lc3],
+                [lc1-w_kb, lc2, lc3],
                 [0,   lc2, lc3]
             ])
 
@@ -72,6 +96,8 @@ class Points():
         self.deformed['b2'] = np.transpose(np.matmul(F_bulk, np.transpose(self.initial['b2'])))
         self.deformed['b2'][:,1] = self.deformed['b2'][:,1] + self.deformed['total'][3,1] - self.deformed['b2'][3,1]
         self.deformed['b2'][:,2] = self.deformed['b2'][:,2] + self.deformed['total'][3,2] - self.deformed['b2'][3,2]
+        self.deformed['kb'] = np.transpose(np.matmul(Fkb, np.transpose(self.initial['kb'])))
+        self.deformed['m'] = np.transpose(np.matmul(Fm, np.transpose(self.initial['m'])))
 
         self.deformed['coh'] = np.array([
                 self.deformed['b1'][3,:],
@@ -84,6 +110,19 @@ class Points():
                 self.deformed['b2'][1,:]
         ])
 
+
+def vis_kinkband(lc, alpha, F, Fkb, Fm):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    points = Points(lc, alpha, F, F_bulk=np.eye(3), Fkb=Fkb, Fm=Fm, w_kb=0.05)
+    _plot_parallelpiped(ax, points.initial['total'], alpha=0, edgecolor='k')
+    _plot_parallelpiped(ax, points.deformed['kb'], facecolor=[0.5, 0.5, 1], edgecolor='r')
+    _plot_parallelpiped(ax, points.deformed['m'], facecolor=[0.5, 0.5, 1], edgecolor='b')
+    # Axis label
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.show()
 
 def visualize(lc, alpha, F, pathToLogFile, initMD=1, initEQk=1):
     # Load the data

@@ -55,6 +55,9 @@ gamma_max = 4.d0 // Default value: 4.d0
 // Ratio of kink band width to element size at which decomposition is used. Set to 0 to turn off decomposition for kinking.
 kb_decompose_thres = 0.99d0 // Default value: 0.99d0
 
+// Fiber failure angle [degrees]. Set to < 0 to disable.
+fkt_fiber_failure_angle = -1.d0
+
 // Schaefer Theory Parameters
 
 // Schaefer Newton Raphson Tolerance. The convergence loop calculates a J0 vector (which should tend towards the zero vector).

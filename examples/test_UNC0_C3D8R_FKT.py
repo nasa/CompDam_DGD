@@ -206,72 +206,76 @@ m.keywordBlock.synchVersions(storeNodesAndElements=False)
 position = m.keywordBlock.sieBlocks.index('*Material, name=IM7-8552-Elastic') + 2
 m.keywordBlock.insert(position,
     '*Depvar\n' +
-    ' 24,\n' +
+    ' 26,\n' +
     '  1, CDM_d2\n' +
     '  2, CDM_Fb1\n' +
     '  3, CDM_Fb2\n' +
     '  4, CDM_Fb3\n' +
     '  5, CDM_B\n' +
-    '  6, CDM_Lc\n' +
-    '  7, CDM_FIfT\n' +
-    '  8, CDM_d1\n' +
-    '  9, CDM_FIm\n' +
+    '  6, CompDam_Lc1\n' +
+    '  7, CompDam_Lc2\n' +
+    '  8, CompDam_Lc3\n' +
+    '  9, CompDam_FC_matrix\n' +
     ' 10, CDM_alpha\n' +
     ' 11, CDM_STATUS\n' +
     ' 12, CDM_Plas12\n' +
     ' 13, CDM_Inel12\n' +
-    ' 14, CDM_eps12\n' +
+    ' 14, CompDam_FC_fiberTension\n' +
     ' 15, CDM_slide1\n' +
     ' 16, CDM_slide2\n' +
-    ' 17, CDM_FIfC\n' +
+    ' 17, CompDam_FC_fiberCompression\n' +
     ' 18, CDM_d1T\n' +
     ' 19, CDM_d1C\n' +
-    ' 20, CDM_phi\n' +
-    ' 21, CDM_gamma\n' +
-    ' 22, CDM_Fm1\n' +
-    ' 23, CDM_Fm2\n' +
-    ' 24, CDM_Fm3\n' +
+    ' 20, CompDam_Plas13\n' +
+    ' 21, CompDam_Inel13\n' +
+    ' 22, CompDam_phi0_12\n' +
+    ' 23, CompDam_gamma_12\n' +
+    ' 24, CompDam_Fm1\n' +
+    ' 25, CompDam_Fm2\n' +
+    ' 26, CompDam_Fm3\n' +
     '*Characteristic Length, definition=USER, components=6\n' +
     '*Initial Conditions, Type=Solution\n'+
     ' orphanMeshPart-1.elastic,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
     ' 0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
     ' 0.d0,  0.d0,  0.d0,  0.d0, 0.d0,  0.d0,  0.d0,  0.d0,\n'+
-    ' 0.d0,')
+    ' 0.d0,  0.d0,  0.d0')
 
 position = m.keywordBlock.sieBlocks.index('*Material, name=IM7-8552') + 2
 m.keywordBlock.insert(position,
     '*Depvar\n' +
-    ' 24,\n' +
+    ' 26,\n' +
     '  1, CDM_d2\n' +
     '  2, CDM_Fb1\n' +
     '  3, CDM_Fb2\n' +
     '  4, CDM_Fb3\n' +
     '  5, CDM_B\n' +
-    '  6, CDM_Lc\n' +
-    '  7, CDM_FIfT\n' +
-    '  8, CDM_d1\n' +
-    '  9, CDM_FIm\n' +
+    '  6, CompDam_Lc1\n' +
+    '  7, CompDam_Lc2\n' +
+    '  8, CompDam_Lc3\n' +
+    '  9, CompDam_FC_matrix\n' +
     ' 10, CDM_alpha\n' +
     ' 11, CDM_STATUS\n' +
     ' 12, CDM_Plas12\n' +
     ' 13, CDM_Inel12\n' +
-    ' 14, CDM_eps12\n' +
+    ' 14, CompDam_FC_fiberTension\n' +
     ' 15, CDM_slide1\n' +
     ' 16, CDM_slide2\n' +
-    ' 17, CDM_FIfC\n' +
+    ' 17, CompDam_FC_fiberCompression\n' +
     ' 18, CDM_d1T\n' +
     ' 19, CDM_d1C\n' +
-    ' 20, CDM_phi\n' +
-    ' 21, CDM_gamma\n' +
-    ' 22, CDM_Fm1\n' +
-    ' 23, CDM_Fm2\n' +
-    ' 24, CDM_Fm3\n' +
+    ' 20, CompDam_Plas13\n' +
+    ' 21, CompDam_Inel13\n' +
+    ' 22, CompDam_phi0_12\n' +
+    ' 23, CompDam_gamma_12\n' +
+    ' 24, CompDam_Fm1\n' +
+    ' 25, CompDam_Fm2\n' +
+    ' 26, CompDam_Fm3\n' +
     '*Characteristic Length, definition=USER, components=6\n' +
     '*Initial Conditions, Type=Solution\n'+
     ' orphanMeshPart-1.damageable,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
     ' 0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
-    ' 0.d0,  0.d0,  0.d0,  0.d0,  1.0d0,  0.d0,  0.d0,  0.d0,\n'+
-    ' 0.d0,')
+    ' 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  1.d0,  0.d0,\n'+
+    ' 0.d0,  0.d0,  0.d0')
 
 
 # Create job

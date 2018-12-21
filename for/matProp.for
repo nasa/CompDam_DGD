@@ -1043,6 +1043,9 @@ Contains
     Common randomNumbers
     ! -------------------------------------------------------------------- !
 
+    ! Initialization
+    index = 0
+    initializePhi0 = 0.d0
 
     shearInstabilityPhi0 = (nPL-one)/G12*((G12-XC)/(XC*nPL*aPL**(one/nPL)))**(nPL/(nPL-one))
 
@@ -1056,9 +1059,9 @@ Contains
     Else If (phi0 >= one) Then   ! 1-D variation
       ! Set index to be integer count of row
       If (phi0 == one) Then ! 1-D variation
-        index = NINT(position(1)/0.05d0) + offset
+        index = NINT(position(1)/0.05d0)
       Else If (phi0 == two) Then ! 2-D variation (different 1-D variation for each ply)
-        index = NINT((position(1)/0.05d0) + (100.d0*position(3))) + offset
+        index = NINT((position(1)/0.05d0) + (100.d0*position(3)))
       Else
         Call log%error('Invalid initial condition received for phi0. Found ' // trim(str(phi0)))
       End If

@@ -60,7 +60,7 @@ PATH_TO_FOR = ../for/
 #=======================================================================
 
 # names (without suffix)
-LIBSRC_SOURCES = forlog matrixUtil stress matProp stateVar parameters strain friction cohesive fiberDamage schapery DGD
+LIBSRC_SOURCES = forlog matrixUtil matProp schapery stress stateVar parameters strain friction cohesive fiberDamage schaefer plasticity DGD
 
 # file names
 LIBSRC_FILES = $(addsuffix .f90,${LIBSRC_SOURCES})
@@ -76,7 +76,7 @@ LIBSRC_FPP_FILES = $(addsuffix .fpp,${LIBSRC_SOURCES})
 #=======================================================================
 
 # names (without suffix)
-LIBSRC_WRAP_SOURCES = matrixUtil stress matProp stateVar parameters strain DGD
+LIBSRC_WRAP_SOURCES = matrixUtil matProp stress stateVar parameters strain plasticity DGD
 
 # file names
 LIBSRC_WRAP_FILES = $(addsuffix .f90,${LIBSRC_WRAP_SOURCES})
