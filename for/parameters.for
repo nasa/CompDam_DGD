@@ -281,7 +281,7 @@ Contains
     p%schaefer_nr_tolerance_max = one
 
     p%schaefer_nr_counter_limit_min = 0
-    p%schaefer_nr_counter_limit_max = 100000000000
+    p%schaefer_nr_counter_limit_max = Huge(0)
     Return
   End Subroutine initializeParameters
 
