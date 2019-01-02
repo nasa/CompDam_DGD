@@ -169,6 +169,9 @@ Example 2, using an [input deck command](#defining-the-material-properties-in-th
 **  33        34        35        36        37        38        39        40
 **  XC,       fXC,      GXC,      fGXC,       cl,     w_kb,     None,     mu
     1200.1,      ,         ,          ,         ,     0.1,          ,     0.3
+** For spacing below a6=schaefer_a6, b2=schaefer_b2, n=schaefer_n and A=schaefer_A
+**  41        42        43        44
+**  a6,       b2,       n,        A
 **
 *Initial Conditions, type=SOLUTION
  elset_name,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,

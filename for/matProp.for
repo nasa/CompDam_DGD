@@ -627,8 +627,17 @@ Contains
         Case (40)
           Call verifyAndSaveProperty_double('mu', props(i), m%mu_min, m%mu_max, m%mu, m%mu_def)
 
-        ! TODO: add schapery micro-damage input properties to the input file parser -- currently only works with
-        ! external properties file.
+        Case (41)
+          Call verifyAndSaveProperty_double('schaefer_a6', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_a6, m%schaefer_a6_def)
+
+        Case (42)
+          Call verifyAndSaveProperty_double('schaefer_b2', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_b2, m%schaefer_b2_def)
+
+        Case (43)
+          Call verifyAndSaveProperty_double('schaefer_n', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_n, m%schaefer_n_def)
+
+        Case (44)
+          Call verifyAndSaveProperty_double('schaefer_A', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_A, m%schaefer_A_def)
 
         Case Default
           Call log%error("loadMatProps: Unknown property #"//trim(str(i))//" found. Expecting nprops <= 40")
