@@ -56,8 +56,13 @@ gamma_max = 4.d0 // Default value: 4.d0
 kb_decompose_thres = 0.99d0 // Default value: 0.99d0
 
 // Schaefer Theory Parameters
-schaefer_nr_tolerance = 1.d-6 //Default 1.d-6.
 
-schaefer_nr_counter_limit = 10000000 // Default 10000000. 
+// Schaefer Newton Raphson Tolerance. The convergence loop calculates a J0 vector (which should tend towards the zero vector).
+// A residual is calculated with the norm of that vector. Newton Raphson loop convergence is defined as when the residual is less than the below tolerance value:
+schaefer_nr_tolerance = 1.d-6 //Default 1.d-6
+
+// The Schaefer Newton Raphson loop counter limit. If a Schaefer Newton Raphson takes more than this number of loops, then a warning message is printed.
+// A high number of iterations might indicate that Newton Raphson loop won't converge
+schaefer_nr_counter_limit = 10000000 // Default 10000000
 
 // End of file (Do not remove me)
