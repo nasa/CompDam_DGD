@@ -658,7 +658,7 @@ If you use CompDam, please cite using the following BibTex entry:
 
 <pre>
   @misc{CompDam,
-  title={CompDam - Deformation Gradient Decomposition (DGD), v2.2.0},
+  title={CompDam - Deformation Gradient Decomposition (DGD), v2.3.1},
   author={Leone Jr., F. A., Bergan, A. C., D\'avila, C. G. },
   note={https://github.com/nasa/CompDam_DGD},
   year={2018}
