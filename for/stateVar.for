@@ -142,8 +142,8 @@ Contains
 
     If (m%fiberCompDamFKT) Then
       sv%d1C = MAX(zero, stateOld(19))
-      sv%phi0 = stateOld(22)  ! State variable 20
-      sv%gamma = zero  ! State variable 21
+      sv%phi0 = stateOld(22)
+      sv%gamma = zero
       sv%Fm1 = stateOld(24)
       sv%Fm2 = stateOld(25)
       sv%Fm3 = stateOld(26)
