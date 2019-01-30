@@ -108,7 +108,7 @@ Contains
     Call Strains(F_old, m, DT, ndir, eps_old)
 
     ! Check fiber tension or fiber compression damage
-    If (eps(1,1) >= zero) Then    ! Fiber tension
+    If (eps(1,1) >= -1d-6) Then    ! Fiber tension
 
       ! Set rfC for failure index output
       If (sv%rfC == one) Then

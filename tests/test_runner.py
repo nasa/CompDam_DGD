@@ -342,6 +342,11 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_nonlinearShear12")
 
 
+    def test_C3D8R_nonlinearShear12_withFKT(self):
+        """ Nonlinear shear model, loading and unloading, with FKT """
+        self.runTest("test_C3D8R_nonlinearShear12_withFKT")
+
+
     def test_C3D8R_nonlinearShear12_loadReversal(self):
         """ Nonlinear shear model, loading and unloading, no damage, including full load reversal """
         self.runTest("test_C3D8R_nonlinearShear12_loadReversal")
