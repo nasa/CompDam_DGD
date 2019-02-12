@@ -207,7 +207,7 @@ for match in matches:
     position = m.keywordBlock.sieBlocks.index(match)
     m.keywordBlock.insert(position,
         '*Depvar\n' +
-        ' 24,\n' +
+        ' 26,\n' +
         '  1, CDM_d2\n' +
         '  2, CDM_Fb1\n' +
         '  3, CDM_Fb2\n' +
@@ -227,17 +227,19 @@ for match in matches:
         ' 17, CDM_FIfC\n' +
         ' 18, CDM_d1T\n' +
         ' 19, CDM_d1C\n' +
-        ' 20, CDM_phi\n' +
-        ' 21, CDM_gamma\n' +
-        ' 22, CDM_Fm1\n' +
-        ' 23, CDM_Fm2\n' +
-        ' 24, CDM_Fm3\n' +
+        ' 20, CDM_Plas13\n' +
+        ' 21, CDM_Inel13\n' +
+        ' 22, CDM_phi\n' +
+        ' 23, CDM_gamma\n' +
+        ' 24, CDM_Fm1\n' +
+        ' 25, CDM_Fm2\n' +
+        ' 26, CDM_Fm3\n' +
         '*Damping, alpha=1.d+4\n'+
         '*Initial Conditions, Type=Solution\n'+
         ' orphanMeshPart-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
         ' 0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
         ' 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
-        ' 0.d0,')
+        ' 0.d0,  0.d0,  0.d0')
 
 # pattern = re.compile(r'\*Node Output,')
 # matches = [x for x in m.keywordBlock.sieBlocks if pattern.match(x)]

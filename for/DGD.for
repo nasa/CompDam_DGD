@@ -582,13 +582,17 @@ Contains
                 Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
                 Call log%error('Invalid alpha. Check value for alpha in the initial conditions.')
               End If
-              Call log%warn('Deleting failed element for which no solution could be found.')
-              sv%STATUS = 0
+              If (p%terminate_on_no_convergence) Then
+                Call log%error('DGDEvolve failed to converge, terminating analysis.')
+              Else
+                Call log%warn('Deleting failed element for which no solution could be found (DGDEvolve).')
+                sv%STATUS = 0
+              End If
               Exit MatrixDamage
             End If
             ! ...raise an error and halt the subroutine.
             Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
-            Call log%error('No starting points produced a valid solution.')
+            Call log%error('No starting points produced a valid solution (DGDEvolve).')
           End If
 
           cutbacks = 0
@@ -1079,8 +1083,8 @@ Contains
     Double Precision :: tol_DGD
     Double Precision :: err, err_old
     Double Precision :: aid
-    Logical :: Cutback
-    Double Precision :: cutbacks
+    Logical :: Cutback, Restart
+    Double Precision :: cutbacks, restarts
 
     ! Jacobian
     Double Precision :: Jac(3,3)
@@ -1139,16 +1143,18 @@ Contains
     EQk = 0
     Cutback = .False.
     cutbacks = 0  ! Cut-back counter
+    Restart = .False.
+    restarts = 0  ! Restart counter
 
     Equilibrium: Do ! Loop to determine the current Fkb(:,1)
       EQk = EQk + 1
-      If (EQk > p%EQ_max) Then
-        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
-        Call log%warn('Equilibrium loop reached maximum number of iterations.')
-        sv%STATUS = 0
-        Exit Equilibrium
+
+      ! Reset counters if restart
+      If (Restart) Then
+        EQk = 0
+        cutbacks = 0
+        Restart = .False.
       End If
-      Call log%debug('Equilibrium Start.')
 
       ! Reduce aid if cutting back
       If (Cutback) Then
@@ -1162,6 +1168,9 @@ Contains
 
           aid = p%cutback_amount**cutbacks
       End If
+
+      Call log%debug('Equilibrium Start EQk: ' // trim(str(EQk)) // ' cutbacks: ' // trim(str(cutbacks)) // ' restarts: ' // trim(str(restarts)))
+
 
       ! -------------------------------------------------------------------- !
       ! Initialize all temporary state variables for use in Equilibrium loop:
@@ -1242,29 +1251,13 @@ Contains
       ! Check for any inside-out deformation or an overly compressed bulk material
       If (err < tol_DGD .AND. MDet(Fkb) < p%compLimit) Then
         Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
-        Call log%warn('Deleting failed element for which no solution could be found.')
-        sv%STATUS = 0
-        EXIT Equilibrium
-      End If
-
-      ! Check for a diverging solution
-      If (percentChangeInErr > 0.1d0) Then
-        Call log%info('Solution is diverging, err: ' // trim(str(err)) // ' > ' // trim(str(err_old)))
-
-        ! Cut-back using the current starting point
-        If (cutbacks < p%cutbacks_max) Then
-          Cutback = .True.
-
-        ! Quit
+        If (p%terminate_on_no_convergence) Then
+          Call log%error('Highly distorted element (DGDKinkband).')
         Else
-          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
-          Call log%warn('Reached max cutback limit, deleting element.')
+          Call log%warn('Deleting highly distorted element (DGDKinkband).')
           sv%STATUS = 0
-          EXIT Equilibrium
         End If
-
-        Cycle Equilibrium
-
+        EXIT Equilibrium
       End If
 
       ! If converged,
@@ -1280,6 +1273,53 @@ Contains
 
         EXIT Equilibrium
       End If
+
+      ! Check for maximum number of iterations
+      If (EQk > p%EQ_max) Then
+        If (restarts < 1) Then
+          restarts = restarts + 1
+          Restart = .True.  ! One restart is allowed; modified jacobian is used
+          Call log%info('Restarting with modified jacobian.')
+          Cycle Equilibrium
+        Else
+          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
+          If (p%terminate_on_no_convergence) Then
+            Call log%error('Equilibrium loop reached maximum number of iterations (DGDKinkband).')
+          Else
+            Call log%warn('Deleting element for which equilibrium loop reached maximum number of iterations (DGDKinkband).')
+            sv%STATUS = 0
+          End If
+          Exit Equilibrium
+        End If
+      End If
+
+      ! Check for a diverging solution
+      If (percentChangeInErr > 0.1d0) Then
+        Call log%info('Solution is diverging, err: ' // trim(str(err)) // ' > ' // trim(str(err_old)))
+
+        ! Cut-back using the current starting point
+        If (cutbacks < p%cutbacks_max) Then
+          Cutback = .True.
+
+        ! Quit
+        Else If (restarts < 1) Then
+          restarts = restarts + 1
+          Restart = .True.  ! One restart is allowed; modified jacobian is used
+          Call log%info('Restarting with modified jacobian.')
+        Else
+          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
+          If (p%terminate_on_no_convergence) Then
+            Call log%error('Reached max cutback limit (DGDKinkband).')
+          Else
+            Call log%warn('Reached max cutback limit, deleting element (DGDKinkband).')
+            sv%STATUS = 0
+          End If
+          EXIT Equilibrium
+        End If
+
+        Cycle Equilibrium
+      End If
+
 
       ! -------------------------------------------------------------------- !
       !    Find the derivative of the Cauchy stress tensor.                  !
@@ -1327,11 +1367,13 @@ Contains
         ! Kink band bulk
         dEkb_dFkb1(:,:,I) = (MATMUL(TRANSPOSE(dFkb_dFkb1(:,:,I)), Fkb) + MATMUL(TRANSPOSE(Fkb), dFkb_dFkb1(:,:,I)))/two
         dEkb_dFkb1(:,:,I) = MATMUL(TRANSPOSE(R_phi0), MATMUL(dEkb_dFkb1(:,:,I), R_phi0))
-        dplas12 = sv%Plas12_temp
-        dinel12 = sv%Inel12_temp
-        Call ro_plasticity(two*dEkb_dFkb1(1,2,I), sv%d_eps12_temp, m%G12, m%aPL, m%nPL, sv%Inel12c, dplas12, dinel12)
-        dEkb_dFkb1(1,2,I) = dEkb_dFkb1(1,2,I) - dplas12/two
-        dEkb_dFkb1(2,1,I) = dEkb_dFkb1(1,2,I)
+        If (restarts .EQ. 1) Then
+          dplas12 = sv%Plas12_temp
+          dinel12 = sv%Inel12_temp
+          Call ro_plasticity(two*dEkb_dFkb1(1,2,I), sv%d_eps12_temp, m%G12, m%aPL, m%nPL, sv%Inel12c, dplas12, dinel12)
+          dEkb_dFkb1(1,2,I) = dEkb_dFkb1(1,2,I) - dplas12/two
+          dEkb_dFkb1(2,1,I) = dEkb_dFkb1(1,2,I)
+        End If
         dSkb_dFkb1(:,:,I) = Hooke(Stiff, dEkb_dFkb1(:,:,I), nshr)
         dSkb_dFkb1(:,:,I) = MATMUL(R_phi0, MATMUL(dSkb_dFkb1(:,:,I), TRANSPOSE(R_phi0)))
         Ykb = MATMUL(MInverse(Fkb), dFkb_dFkb1(:,:,I))

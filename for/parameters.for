@@ -26,6 +26,7 @@ Module parameters_Mod
     Double Precision :: kb_decompose_thres                        ! Ratio of kink band size to element length at which to decompose the element
     Double Precision :: fkt_fiber_failure_angle                   ! Angle at which fiber failure occurs; no further plastic shear deformation allowed
     Double Precision :: schaefer_nr_tolerance                     ! Tolerance value used to determine if convergence has occurred in newton raphson loop
+    Logical :: terminate_on_no_convergence                        ! Set to false to trigger an error, delete the element, and allow the analysis to continue when no converged solution can be found
 
     ! min and max values for acceptable range
     Integer, private :: logLevel_min, logLevel_max
@@ -201,6 +202,9 @@ Contains
           Case ('schaefer_nr_counter_limit')
             Call verifyAndSaveProperty_int(trim(key), value, p%schaefer_nr_counter_limit_min, p%schaefer_nr_counter_limit_max, p%schaefer_nr_counter_limit)
 
+          Case ('terminate_on_no_convergence')
+            Call verifyAndSaveProperty_logical(trim(key), adjustl(value), p%terminate_on_no_convergence)
+
           Case Default
             Call log%error("loadParameters: Parameter not recognized: " // trim(key))
         End Select
@@ -238,6 +242,7 @@ Contains
     p%fkt_fiber_failure_angle = -1.d0
     p%schaefer_nr_tolerance = 1.d-6
     p%schaefer_nr_counter_limit = 10000000
+    p%terminate_on_no_convergence = .TRUE.
 
     ! Maximum and minimum values for parameters to be read from CompDam.parameters file
     p%logLevel_min = 0
@@ -359,6 +364,34 @@ Contains
 
     Return
   End Subroutine verifyAndSaveProperty_int
+
+  Subroutine verifyAndSaveProperty_logical(key, value, saveTo)
+    ! Checks if the value is true or false. Prints an error message
+    ! which kills the analysis if a value is not true or false.
+
+    Use forlog_Mod
+
+    !Arguments
+    Character(len=*), intent(IN) :: key, value
+    Logical, intent(OUT) :: saveTo
+
+    ! Locals
+    Logical :: valueLogical
+    ! -------------------------------------------------------------------- !
+
+    ! Check for T or F
+    If ((value /= '.TRUE.') .AND. (value /= '.FALSE.')) Then
+      Call log%error('Invalid entry found for parameter ' // trim(key) // ': ' // trim(value))
+    End If
+
+    ! Convert to logical
+    Read(value,*) valueLogical
+
+    ! Save the value and set the flag
+    saveTo = valueLogical
+
+    Return
+  End Subroutine verifyAndSaveProperty_logical
 
 
 End Module parameters_Mod

@@ -68,4 +68,9 @@ schaefer_nr_tolerance = 1.d-6 //Default 1.d-6
 // A high number of iterations might indicate that Newton Raphson loop won't converge
 schaefer_nr_counter_limit = 10000000 // Default 10000000
 
+// Determines the behavior when internal convergence cannot be found.
+// Defaults to .TRUE. in which case the analysis is terminated when no converged solution is found
+// Setting to .FALSE. triggers a warning, deletes the element, and proceeds with the analysis
+terminate_on_no_convergence = .TRUE. // Default .TRUE.
+
 // End of file (Do not remove me)
