@@ -5,8 +5,14 @@ import viz
 # logging
 CompDam_DGD.dgd_mod.log_init(level=4, filename='pyextmod_run_output.txt')
 
-# Load material properties from props file
-m = CompDam_DGD.matprop_mod.loadmatprops('IM7-8552', False, 4, [100000, 0, 0.183, 0])
+# Load material properties
+m = CompDam_DGD.matprop_mod.loadmatprops('IM7-8552', 40, 
+	[10300,        0,       0.2,       0,        0,       0,          0,      0, 
+	140653.,    8703.,    5164.,     0.32,     0.45,     80.1,     97.6,     0.24,
+	0.739,     2.07,    288.2,    0.925,    8703.,    5164.,    3001.,     0.32,
+	-5.5e-06, 2.58e-05, 4.06e-09,      5.4,   2326.2,      0.2,     205.,      0.5,
+	1730.6,      0.2,      61.,      0.5,      10.,     0.05,       0.,      0.3])
+CompDam_DGD.matprop_mod.consistencychecks(m, True)
 
 # Load parameters from the 'CompDam.parameters' file
 p = CompDam_DGD.parameters_mod.loadparameters()
@@ -34,7 +40,7 @@ svarray = [
 	0.000000000000000E+00      # SV19, CDM_d1C
 ]
 sv = CompDam_DGD.statevar_mod.loadstatevars(len(svarray), svarray, m)
-# print sv
+print(sv)
 
 
 # Other inputs

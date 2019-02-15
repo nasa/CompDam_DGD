@@ -21,6 +21,9 @@ wheels/
 *.egg
 MANIFEST
 
+# Configuration file
+etc/config.json
+
 # Version file
 for/version.for
 

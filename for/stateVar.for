@@ -1,6 +1,9 @@
 Module stateVar_Mod
   ! Module for loading and validating internal state variables
 
+  ! Maximum possible state variables defined
+  Integer, parameter :: nstatev_max = 33
+
   ! Stores the state variables
   Type stateVars
 
@@ -40,7 +43,9 @@ Module stateVar_Mod
     Double Precision :: Inel12c       ! Critical plastic strain for fiber failure
 
     ! Stored for debugging only
+    Integer :: debugpy_count
     Double Precision :: d_eps12, d_eps13
+    Double Precision :: old(nstatev_max)
 
     ! Temporary values
     Double Precision :: Plas12_temp
@@ -73,9 +78,11 @@ Contains
     ! -------------------------------------------------------------------- !
 
     sv%nstatev = nstatev
+    sv%old(1:nstatev) = stateOld
 
     ! Global variable (not returned to abaqus)
     sv%d_eps12 = zero
+    sv%Inel12c = Huge(zero)  ! Initialize to a large positive number so it is not reached (turns off fiber failure)
 
     sv%d2 = MAX(zero, stateOld(1))
     sv%Fb1 = stateOld(2)
@@ -147,7 +154,7 @@ Contains
     If (m%fiberCompDamFKT) Then
       sv%d1C = MAX(zero, stateOld(19))
       sv%phi0 = stateOld(22)
-      sv%gamma = zero
+      sv%gamma = stateOld(23)
       sv%Fm1 = stateOld(24)
       sv%Fm2 = stateOld(25)
       sv%Fm3 = stateOld(26)
@@ -311,4 +318,173 @@ Contains
 
     Return
   End Subroutine finalizeTemp
+
+
+  Subroutine writeStateVariablesToFile(fileUnit, sv, m)
+    ! Writes provided state variables to a file as a python dictionary
+    ! Assumes that file opening and closing is handled elsewhere
+
+    Use matProp_Mod
+
+    ! Arguments
+    Integer, intent(IN) :: fileUnit
+    Type(stateVars), intent(IN) :: sv
+    Type(matProps), intent(IN) :: m
+
+    ! Locals
+    Character(len=32) :: nameValueFmt
+    Double Precision, parameter :: zero=0.d0
+    ! -------------------------------------------------------------------- !
+
+    ! Defines the format for writing the floating point numbers
+    nameValueFmt = "(A,E21.15E2,A)"
+
+    ! Write the current state variables
+    write(101, "(A)") 'sv = ['
+    write(101, nameValueFmt) '    ', sv%d2, ',  # d2'
+    write(101, nameValueFmt) '    ', sv%Fb1, ',  # Fb1'
+    write(101, nameValueFmt) '    ', sv%Fb2, ',  # Fb2'
+    write(101, nameValueFmt) '    ', sv%Fb3, ',  # Fb3'
+    write(101, nameValueFmt) '    ', sv%B, ',  # B'
+    write(101, nameValueFmt) '    ', sv%Lc(1), ',  # Lc1'
+    write(101, nameValueFmt) '    ', sv%Lc(2), ',  # Lc2'
+    write(101, nameValueFmt) '    ', sv%Lc(3), ',  # Lc3'
+    write(101, nameValueFmt) '    ', sv%FIm, ',  # FIm'
+    write(101, "(A,I5,A)")   '    ', sv%alpha, ',  # alpha'
+    write(101, "(A,I1,A)")   '    ', sv%STATUS, ',  # STATUS'
+    If (m%shearNonlinearity12) Then
+      write(101, nameValueFmt) '    ', sv%Plas12, ',  # Plas12'
+      write(101, nameValueFmt) '    ', sv%Inel12, ',  # Inel12'
+    Else If (m%schapery) Then
+      write(101, nameValueFmt) '    ', sv%Sr, ',  # Sr'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV13'
+    Else
+      write(101, nameValueFmt) '    ', zero, ',  # SDV12'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV13'
+    End If
+    write(101, nameValueFmt) '    ', sv%rfT, ',  # rfT'
+    write(101, nameValueFmt) '    ', sv%slide(1), ',  # slide1'
+    write(101, nameValueFmt) '    ', sv%slide(2), ',  # slide2'
+    write(101, nameValueFmt) '    ', sv%rfC, ',  # rfC'
+    write(101, nameValueFmt) '    ', sv%d1T, ',  # d1T'
+    If (m%fiberCompDamBL .OR. m%fiberCompDamFKT) Then
+      write(101, nameValueFmt) '    ', sv%d1C, ',  # d1C'
+    Else If (sv%nstatev >= 19) Then
+      write(101, nameValueFmt) '    ', zero, ',  # SDV19'
+    End If
+    If (m%shearNonlinearity13) Then
+      write(101, nameValueFmt) '    ', sv%Plas13, ',  # Plas13'
+      write(101, nameValueFmt) '    ', sv%Inel13, ',  # Inel13'
+    Else If (sv%nstatev >= 21) Then
+      write(101, nameValueFmt) '    ', zero, ',  # SDV20'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV21'
+    End If
+    If (m%fiberCompDamFKT) Then
+      write(101, nameValueFmt) '    ', sv%phi0, ',  # phi0'
+      write(101, nameValueFmt) '    ', sv%gamma, ',  # gamma'
+      write(101, nameValueFmt) '    ', sv%Fm1, ',  # Fm1'
+      write(101, nameValueFmt) '    ', sv%Fm2, ',  # Fm2'
+      write(101, nameValueFmt) '    ', sv%Fm3, ',  # Fm3'
+    Else If (sv%nstatev >= 26) Then
+      write(101, nameValueFmt) '    ', zero, ',  # SDV22'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV23'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV24'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV25'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV26'
+    End If
+    If (m%schaefer) Then
+      write(101, nameValueFmt) '    ', sv%Ep_schaefer(1), ',  # Ep1'
+      write(101, nameValueFmt) '    ', sv%Ep_schaefer(2), ',  # Ep2'
+      write(101, nameValueFmt) '    ', sv%Ep_schaefer(3), ',  # Ep3'
+      write(101, nameValueFmt) '    ', sv%Ep_schaefer(4), ',  # Ep4'
+      write(101, nameValueFmt) '    ', sv%Ep_schaefer(5), ',  # Ep5'
+      write(101, nameValueFmt) '    ', sv%Ep_schaefer(6), ',  # Ep6'
+      write(101, nameValueFmt) '    ', sv%fp, '  # fp1'
+    Else If (sv%nstatev >= 33) Then
+      write(101, nameValueFmt) '    ', zero, ',  # SDV27'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV28'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV29'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV30'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV31'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV32'
+      write(101, nameValueFmt) '    ', zero, '  #SDV33'
+    End If
+    write(101, "(A)") ']'
+
+    ! Write old state variables too
+#ifndef PYEXT
+    write(101, "(A)") 'sv_old = ['
+    write(101, nameValueFmt) '    ', sv%old(1), ',  # d2'
+    write(101, nameValueFmt) '    ', sv%old(2), ',  # Fb1'
+    write(101, nameValueFmt) '    ', sv%old(3), ',  # Fb2'
+    write(101, nameValueFmt) '    ', sv%old(4), ',  # Fb3'
+    write(101, nameValueFmt) '    ', sv%old(5), ',  # B'
+    write(101, nameValueFmt) '    ', sv%old(6), ',  # Lc1'
+    write(101, nameValueFmt) '    ', sv%old(7), ',  # Lc2'
+    write(101, nameValueFmt) '    ', sv%old(8), ',  # Lc3'
+    write(101, nameValueFmt) '    ', sv%old(9), ',  # FIm'
+    write(101, "(A,I5,A)")   '    ', INT(sv%old(10)), ',  # alpha'
+    write(101, "(A,I2,A)")   '    ', INT(sv%old(11)), ',  # STATUS'
+    If (m%shearNonlinearity12) Then
+      write(101, nameValueFmt) '    ', sv%old(12), ',  # Plas12'
+      write(101, nameValueFmt) '    ', sv%old(13), ',  # Inel12'
+    Else If (m%schapery) Then
+      write(101, nameValueFmt) '    ', sv%old(12), ',  # Sr'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV13'
+    Else
+      write(101, nameValueFmt) '    ', zero, ',  # SDV12'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV13'
+    End If
+    write(101, nameValueFmt) '    ', sv%old(14), ',  # rfT'
+    write(101, nameValueFmt) '    ', sv%old(15), ',  # slide1'
+    write(101, nameValueFmt) '    ', sv%old(16), ',  # slide2'
+    write(101, nameValueFmt) '    ', sv%old(17), ',  # rfC'
+    write(101, nameValueFmt) '    ', sv%old(18), ',  # d1T'
+    If (m%fiberCompDamBL .OR. m%fiberCompDamFKT) Then
+      write(101, nameValueFmt) '    ', sv%old(19), ',  # d1C'
+    Else If (sv%nstatev >= 19) Then
+      write(101, nameValueFmt) '    ', zero, ',  # SDV19'
+    End If
+    If (m%shearNonlinearity13) Then
+      write(101, nameValueFmt) '    ', sv%old(20), ',  # Plas13'
+      write(101, nameValueFmt) '    ', sv%old(21), ',  # Inel13'
+    Else If (sv%nstatev >= 21) Then
+      write(101, nameValueFmt) '    ', zero, ',  # SDV20'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV21'
+    End If
+    If (m%fiberCompDamFKT) Then
+      write(101, nameValueFmt) '    ', sv%old(22), ',  # phi0'
+      write(101, nameValueFmt) '    ', sv%old(23), ',  # gamma'
+      write(101, nameValueFmt) '    ', sv%old(24), ',  # Fm1'
+      write(101, nameValueFmt) '    ', sv%old(25), ',  # Fm2'
+      write(101, nameValueFmt) '    ', sv%old(26), ',  # Fm3'
+    Else If (sv%nstatev >= 26) Then
+      write(101, nameValueFmt) '    ', zero, ',  # SDV22'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV23'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV24'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV25'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV26'
+    End If
+    If (m%schaefer) Then
+      write(101, nameValueFmt) '    ', sv%old(27), ',  # Ep1'
+      write(101, nameValueFmt) '    ', sv%old(28), ',  # Ep2'
+      write(101, nameValueFmt) '    ', sv%old(29), ',  # Ep3'
+      write(101, nameValueFmt) '    ', sv%old(30), ',  # Ep4'
+      write(101, nameValueFmt) '    ', sv%old(31), ',  # Ep5'
+      write(101, nameValueFmt) '    ', sv%old(32), ',  # Ep6'
+      write(101, nameValueFmt) '    ', sv%old(33), '  # fp1'
+    Else If (sv%nstatev >= 33) Then
+      write(101, nameValueFmt) '    ', zero, ',  # SDV27'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV28'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV29'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV30'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV31'
+      write(101, nameValueFmt) '    ', zero, ',  # SDV32'
+      write(101, nameValueFmt) '    ', zero, '  # SDV33'
+    End If
+    write(101, "(A)") ']'
+#endif
+
+    Return
+  End Subroutine writeStateVariablesToFile
 End Module stateVar_Mod

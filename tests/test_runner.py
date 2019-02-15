@@ -8,34 +8,29 @@ import sys
 import abaverify as av
 import math
 import re
+import subprocess
+import json
 
-# Helper for dealing with .props files
+
+def _versiontuple(v):
+    return tuple(map(int, (v.split("."))))
+
+
 def copyMatProps():
-    # If testOutput doesn't exist, create it
-    testOutputPath = os.path.join(os.getcwd(), 'testOutput')
-    if not os.path.isdir(testOutputPath):
-        os.makedirs(testOutputPath)
-
+    '''
+    Helper for dealing with .props files
+    '''
     # Put a copy of the properties file in the testOutput directory
     propsFiles = [x for x in os.listdir(os.getcwd()) if x.endswith('.props')]
-    for propsFile in propsFiles:
-        shutil.copyfile(os.path.join(os.getcwd(), propsFile), os.path.join(os.getcwd(),'testOutput', propsFile))
+    copyAdditionalFiles(propsFiles)
 
 
 def copyParametersFile():
     '''
     Helper for dealing with .parameters files
     '''
-    # If testOutput doesn't exist, create it
-    testOutputPath = os.path.join(os.getcwd(), 'testOutput')
-    if not os.path.isdir(testOutputPath):
-        os.makedirs(testOutputPath)
+    copyAdditionalFiles('CompDam.parameters')
 
-    # Put a copy of the properties file in the testOutput directory
-    parameterName = 'CompDam.parameters'
-    parameterPath = os.path.join(os.getcwd(), parameterName)
-    if os.path.exists(parameterPath):
-        shutil.copyfile(parameterPath, os.path.join(os.getcwd(), 'testOutput', parameterName))
 
 def copyAdditionalFiles(files):
     '''
@@ -48,6 +43,8 @@ def copyAdditionalFiles(files):
         os.makedirs(testOutputPath)
 
     # Copy files
+    if isinstance(files, str):
+        files = [files,]
     for f in files:
         shutil.copyfile(f, os.path.join(os.getcwd(), 'testOutput', f))
 
@@ -68,6 +65,23 @@ def modifyParametersFile(**kwargs):
     # Write to testOutput directory
     with open(os.path.join(os.getcwd(), 'testOutput', 'CompDam.parameters'), 'w') as f:
         f.write(data)
+
+
+def evaluate_pyextmod_output(abaverify_obj, jobName, arguments):
+    '''
+    Helper for evaluating python extension module implementation
+    '''
+    # Arguments
+    subroutine = arguments[0]
+    # Run the debug file through the python extension module helper code; outputs a json file
+    subprocess.check_output('bash -i pyextmod_run.sh ' + subroutine + ' ' + jobName + '-1-debug-0.py', shell=True)
+    # Load the json file with the state variables computed by abaqus and the Python Extension Module
+    with open(os.path.join(os.getcwd(), 'testOutput', jobName+'_pyextmod_results.json'), 'r') as f:
+        results_dict = json.load(f)
+    # Load the file that specifies which state variables to compare (and tolerances for comparison)
+    results_expected = __import__('verify_debug_' + jobName + '_expected').parameters
+    for sv in results_expected.keys():
+        abaverify_obj.assertAlmostEqual(results_dict[sv][0], results_dict[sv][1], delta=results_expected[sv]) # First value is abaqus, 2nd value is pyextmod
 
 
 def plotFailureEnvelope(baseName, abscissaIdentifier, ordinateIdentifier, abcissaStrengths, ordinateStrengths):
@@ -312,6 +326,66 @@ class ParametricKinkBandWidth_singleElement(av.TestCase):
     expectedpy_ignore = ('x_at_peak_in_xy')
 
 
+class VerifyDebugPy(av.TestCase):
+    """
+    Tests to verify that the logic that writes the debug.py file is working
+    properly.
+
+    Single element tests are run with a special flag set
+    (debug_kill_at_total_time) to trigger an error and write the debug.py
+    file. The debug.py file is loaded and executed by the Python Extension
+    Module. The tests compare the state variables calculated using Abaqus to
+    those calculated using the Python Extension Module. Only the state
+    variables listed in the corresponding verify_debug_[jobname]_expected.py
+    are checked; the state variables must be equal to pass the test.
+
+    Several single element tests are used to exercise all the state variables.
+
+    The Python Extension Module helper routine 'verify_debug.py' produces a
+    json file with the state variables calculated from Abaqus and the Python
+    Extension Module. The first entry is the value from Abaqus and the second
+    entry is the value from the Python Extension Module.
+    """
+
+    # Class-wide methods
+    @classmethod
+    def setUpClass(cls):
+
+        copyMatProps()
+
+        # Check for bash
+        try:
+            with open(os.path.join(os.getcwd(), os.pardir, 'etc', 'config.json'), 'r') as f:
+                config = json.load(f)
+                if not config["bash"]:
+                    raise av.unittest.SkipTest("CompDam configuration has bash disabled; skipping")
+        except IOError:
+            print("WARNING: CompDam configuration was not set during installation. Run `python setup.py` from the CompDam root folder.")
+            raise av.unittest.SkipTest("Bash not found")
+
+        # Check for abaverify >= 0.5.0
+        installed_version = av.__version__
+        minimum_required_version = "0.5.0"
+        if _versiontuple(installed_version) < _versiontuple(minimum_required_version):
+            raise av.unittest.SkipTest("Abaverify 0.5.0 or newer required for these tests; skipping")
+
+        # Run compile script
+        sys.stdout.write('Compiling CompDam into a Python Extension Module ... ')
+        subprocess.check_output('bash -i pyextmod_compile.sh', stderr=subprocess.STDOUT, shell=True)
+        sys.stdout.write(' DONE\n')
+
+
+    # -----------------------------------------------------------------------------------------
+    # Test methods
+    def test_C3D8R_matrixTension(self):
+        modifyParametersFile(debug_kill_at_total_time='0.09d0', logLevel='3')
+        self.runTest("test_C3D8R_matrixTension", func=evaluate_pyextmod_output, arguments=['dgdevolve'])
+
+    def test_C3D8R_fiberCompression_FKT(self):
+        modifyParametersFile(debug_kill_at_total_time='0.08d0', logLevel='4')
+        self.runTest("test_C3D8R_fiberCompression_FKT", func=evaluate_pyextmod_output, arguments=['dgdkinkband'])
+
+
 class SingleElementSchaeferTests(av.TestCase):
     """
     Single element models to tests the DGD code base for Schaefer theory
@@ -402,7 +476,7 @@ class SingleElementTests(av.TestCase):
 
     def test_C3D8R_fiberCompression_FKT_FF(self):
         """ Fiber compression: Fiber kinking theory based model, fiber failure """
-        copyAdditionalFiles(files=['test_C3D8R_fiberCompression_FKT.inp'])
+        copyAdditionalFiles('test_C3D8R_fiberCompression_FKT.inp')
         modifyParametersFile(fkt_fiber_failure_angle = '10.d0')
         self.runTest("test_C3D8R_fiberCompression_FKT_FF")
         modifyParametersFile(fkt_fiber_failure_angle = '-1.d0')

@@ -180,18 +180,20 @@ Contains
     Return
   End Function MInverse
 
-#ifndef PYEXT
-  Function MInverse6x6(mat)
-    ! Finds the inverse of a 6x6 matrix
+  Function MInverseLarge(mat)
+    ! Finds the inverse of a matrix
     ! Requires LAPACK
     ! From: http://fortranwiki.org/fortran/show/inv
+
+    ! Consider alternative for potential speed-up (TODO)
+    ! https://caps.gsfc.nasa.gov/simpson/software/m66inv_f90.txt
 
     Use forlog_Mod
 
     ! Arguments
     Double Precision, intent(IN) :: mat(:,:)
     ! Output
-    Double Precision :: MInverse6x6(size(mat,1),size(mat,2))
+    Double Precision :: MInverseLarge(size(mat,1),size(mat,2))
 
     ! Locals
     Double Precision :: work(size(mat,1))  ! work array for LAPACK
@@ -217,13 +219,13 @@ Contains
     End Interface
     ! -------------------------------------------------------------------- !
 
-    ! Store mat in MInverse6x6 to prevent it from being overwritten by LAPACK
-    MInverse6x6 = mat
+    ! Store mat in MInverseLarge to prevent it from being overwritten by LAPACK
+    MInverseLarge = mat
     n = size(mat,1)
 
     ! DGETRF computes an LU factorization of a general M-by-N matrix A
     ! using partial pivoting with row interchanges.
-    Call DGETRF(n, n, MInverse6x6, n, ipiv, out_info)
+    Call DGETRF(n, n, MInverseLarge, n, ipiv, out_info)
 
     If (out_info /= 0) Then
       Call log%error('Matrix is numerically singular!')
@@ -231,20 +233,22 @@ Contains
 
     ! DGETRI computes the inverse of a matrix using the LU factorization
     ! computed by DGETRF.
-    call DGETRI(n, MInverse6x6, n, ipiv, work, n, out_info)
+    call DGETRI(n, MInverseLarge, n, ipiv, work, n, out_info)
 
     If (out_info /= 0) Then
       Call log%error('Matrix inversion failed!')
     End If
 
     Return
-  End Function MInverse6x6
-  PURE FUNCTION MInverse4x4(A) result(B)
-    !! Credit for inversion algorithm goes to http://fortranwiki.org/fortran/show/Matrix+inversion
-    !! Performs a direct calculation of the inverse of a 4×4 matrix.
-    Double PRECISION, intent(in) :: A(4,4)   !! Matrix
-    Double PRECISION             :: B(4,4)   !! Inverse matrix
-    Double PRECISION             :: detinv
+  End Function MInverseLarge
+
+
+  Pure Function MInverse4x4(A) result(B)
+    ! Credit for inversion algorithm goes to http://fortranwiki.org/fortran/show/Matrix+inversion
+    ! Performs a direct calculation of the inverse of a 4x4 matrix.
+    Double Precision, intent(in) :: A(4,4)   !! Matrix
+    Double Precision             :: B(4,4)   !! Inverse matrix
+    Double Precision             :: detinv
 
     ! Calculate the inverse determinant of the matrix
     detinv = &
@@ -270,8 +274,10 @@ Contains
     B(2,4) = detinv*(A(1,1)*(A(2,3)*A(3,4)-A(2,4)*A(3,3))+A(1,3)*(A(2,4)*A(3,1)-A(2,1)*A(3,4))+A(1,4)*(A(2,1)*A(3,3)-A(2,3)*A(3,1)))
     B(3,4) = detinv*(A(1,1)*(A(2,4)*A(3,2)-A(2,2)*A(3,4))+A(1,2)*(A(2,1)*A(3,4)-A(2,4)*A(3,1))+A(1,4)*(A(2,2)*A(3,1)-A(2,1)*A(3,2)))
     B(4,4) = detinv*(A(1,1)*(A(2,2)*A(3,3)-A(2,3)*A(3,2))+A(1,2)*(A(2,3)*A(3,1)-A(2,1)*A(3,3))+A(1,3)*(A(2,1)*A(3,2)-A(2,2)*A(3,1)))
-  END FUNCTION
-#endif
+
+    Return
+  End Function
+
 
   Pure Function MDet(mat)
     ! Finds the determinant of a 3x3 matrix
@@ -371,7 +377,7 @@ Contains
     Return
   End Function Length
 
-
+#ifndef PYEXT
   Subroutine PolarDecomp(F,R,U)
     ! Finds the polar decomposition of F
     ! Returns R and U
@@ -416,6 +422,6 @@ Contains
 
     Return
   End Subroutine PolarDecomp
-
+#endif
 
 End Module

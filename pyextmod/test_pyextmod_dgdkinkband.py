@@ -1,6 +1,5 @@
 import numpy as np
 import CompDam_DGD
-import viz
 
 # logging
 CompDam_DGD.dgd_mod.log_init(level=4, filename='pyextmod_run_output.txt')
@@ -74,7 +73,3 @@ CompDam_DGD.dgd_mod.dgdkinkband(u=U, f=F, f_old=F_old, m=m, p=p, sv=sv, ndir=3, 
 # print Cauchy
 
 CompDam_DGD.dgd_mod.log_close()
-
-
-# Visualize
-# viz.visualize(lc=svarray[5:8], alpha=svarray[9], F=F, pathToLogFile='pyextmod_run_output.txt', initMD=2, initEQk=1)

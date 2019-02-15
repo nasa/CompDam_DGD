@@ -291,12 +291,15 @@ Subroutine CompDam(  &
 
   End If
 
-  ! If (totalTime <= DT) Call checkForSnapBack(m, sv%Lc, nElement(km))
+  If (totalTime <= dt) Then
+    ! Call checkForSnapBack(m, sv%Lc, nElement(km))
+    sv%debugpy_count = 0  ! Initialize
+  End If
 
   ! -------------------------------------------------------------------- !
   !    Initialize phi0                                                   !
   ! -------------------------------------------------------------------- !
-  If (totalTime <= DT .AND. m%fiberCompDamFKT) Then
+  If (totalTime <= dt .AND. m%fiberCompDamFKT) Then
     sv%phi0 = initializePhi0(sv%phi0, m%G12, m%XC, m%aPL, m%nPL, sv%Lc, charLength(km, 4:6))
   End If
 
@@ -305,8 +308,6 @@ Subroutine CompDam(  &
   ! -------------------------------------------------------------------- !
   If (m%fiberCompDamFKT .AND. p%fkt_fiber_failure_angle > zero) Then
     sv%Inel12c = intializeFiberFailure(sv%phi0, p%fkt_fiber_failure_angle, m%G12, m%aPL, m%nPL)
-  Else
-    sv%Inel12c = Huge(zero)   ! Turn off fiber failure by setting the associate inelastic strain to a very large number
   End If
 
   ! -------------------------------------------------------------------- !
@@ -351,6 +352,16 @@ Subroutine CompDam(  &
   !    Store the internal energy                                         !
   ! -------------------------------------------------------------------- !
   enerInternNew(km) = enerInternNew(km)/density(km)
+
+  ! -------------------------------------------------------------------- !
+  !    Kill job for debugging purposes                                   !
+  ! -------------------------------------------------------------------- !
+  If (p%logLevel > 2 .AND. p%debug_kill_at_total_time > zero) Then
+    If (log%arg%totalTime >= p%debug_kill_at_total_time) Then
+      Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),log%arg,'CompDam_DGD')
+      Call log%error('debug_kill_at_total_time condition satisfied; terminating job.')
+    End If
+  End If
 
   End Do master ! End Master Loop
 
