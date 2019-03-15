@@ -704,18 +704,14 @@ Contains
         ! -------------------------------------------------------------------- !
         If (crack_open) Then  ! Open cracks
 
-          T_coh(:) = Pen(:)*(one - sv%d2)*delta_coh(:,Q)
-
+          T_coh(:) = cohesive_traction(delta_coh(:,Q), Pen(:), sv%d2)
           sv%slide(1) = delta_coh(1,Q)
           sv%slide(2) = delta_coh(3,Q)
 
         Else  ! Closed cracks
 
           If (.NOT. m%friction) Then  ! Closed cracks without friction
-            T_coh(1) = Pen(1)*(one - sv%d2)*delta_coh(1,Q)
-            T_coh(2) = Pen(2)*delta_coh(2,Q)
-            T_coh(3) = Pen(3)*(one - sv%d2)*delta_coh(3,Q)
-
+            T_coh(:) = cohesive_traction(delta_coh(:,Q), Pen(:), sv%d2)
             sv%slide(1) = delta_coh(1,Q)
             sv%slide(2) = delta_coh(3,Q)
 

@@ -355,6 +355,16 @@ class SingleElementTests(av.TestCase):
 
     # -----------------------------------------------------------------------------------------
     # Test methods
+    def test_COH3D8_mode1(self):
+        """ Single cohesive element test for mode I response """
+        self.runTest("test_COH3D8_mode1")
+
+
+    def test_COH3D8_mode2(self):
+        """ Single cohesive element test for mode II response """
+        self.runTest("test_COH3D8_mode2")
+
+
     def test_C3D8R_matrixTension(self):
         """ Simple tension in the matrix direction, with damage """
         self.runTest("test_C3D8R_matrixTension")

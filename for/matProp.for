@@ -69,6 +69,7 @@ Module matProp_Mod
 
     ! Flags for features
     Logical :: matrixDam
+    Logical :: cohesive
     Logical :: shearNonlinearity12
     Logical :: shearNonlinearity13
     Logical :: schapery
@@ -435,10 +436,17 @@ Contains
               Case (1)
                 If (featureFlags(j:j) == '1') Then
                   m%matrixDam = .TRUE.
+                  m%cohesive = .FALSE.
                   Call log%info("loadMatProps: Matrix damage ENABLED")
                 Else
                   m%matrixDam = .FALSE.
-                  Call log%info("loadMatProps: Matrix damage DISABLED")
+                  If (featureFlags(j:j) == '2') Then
+                    m%cohesive = .TRUE.
+                    Call log%info("loadMatProps: Cohesive mode ENABLED")
+                  Else
+                    m%cohesive = .FALSE.
+                    Call log%info("loadMatProps: Matrix damage DISABLED")
+                  End If
                 End If
 
               Case (2)
@@ -797,28 +805,48 @@ Contains
     Double Precision, Parameter :: zero=0.d0, one=1.d0, two=2.d0, four=4.d0
     ! -------------------------------------------------------------------- !
 
-    ! Check that all elastic properties have been defined for transverse isotropy
-    If (.NOT. m%E1_def) Call log%error('PROPERTY ERROR: Must define a value for E1')
-    If (.NOT. m%E2_def) Call log%error('PROPERTY ERROR: Must define a value for E2')
-    If (.NOT. m%G12_def) Call log%error('PROPERTY ERROR: Must define a value for G12')
-    If (.NOT. m%v12_def) Call log%error('PROPERTY ERROR: Must define a value for v12')
-    If (.NOT. m%v23_def) Call log%error('PROPERTY ERROR: Must define a value for v23')
+    If (.NOT. m%cohesive) Then
+      ! Check that all elastic properties have been defined for transverse isotropy
+      If (.NOT. m%E1_def) Call log%error('PROPERTY ERROR: Must define a value for E1')
+      If (.NOT. m%E2_def) Call log%error('PROPERTY ERROR: Must define a value for E2')
+      If (.NOT. m%G12_def) Call log%error('PROPERTY ERROR: Must define a value for G12')
+      If (.NOT. m%v12_def) Call log%error('PROPERTY ERROR: Must define a value for v12')
+      If (.NOT. m%v23_def) Call log%error('PROPERTY ERROR: Must define a value for v23')
 
-    ! Check if orthotropic elastic properties have been defined
-    If (m%E3_def .OR. m%G13_def .OR. m%G23_def) Then
-      If (.NOT. m%E3_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for E3.')
-      If (.NOT. m%G13_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for G13.')
-      If (.NOT. m%G23_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for G23.')
-      If (.NOT. m%v13_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for v13.')
-      Call log%info('PROPERTY: Orthotropic constants are defined directly')
+      ! Check if orthotropic elastic properties have been defined
+      If (m%E3_def .OR. m%G13_def .OR. m%G23_def) Then
+        If (.NOT. m%E3_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for E3.')
+        If (.NOT. m%G13_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for G13.')
+        If (.NOT. m%G23_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for G23.')
+        If (.NOT. m%v13_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for v13.')
+        Call log%info('PROPERTY: Orthotropic constants are defined directly')
+      Else
+        ! Compute these properties assuming transverse isotropy
+        Call log%info('PROPERTY: Assuming transverse isotropy')
+        m%E3  = m%E2
+        m%G13 = m%G12
+        m%v13 = m%v12
+        m%G23 = m%E2/two/(one + m%v23)
+      End If
     Else
-      ! Compute these properties assuming transverse isotropy
-      Call log%info('PROPERTY: Assuming transverse isotropy')
-      m%E3  = m%E2
-      m%G13 = m%G12
-      m%v13 = m%v12
-      m%G23 = m%E2/two/(one + m%v23)
-    End If
+      ! Check for cohesive stiffness material properties
+      If (.NOT. m%E3_def) Call log%error('PROPERTY ERROR: Cohesive material laws require a definition for E3.')
+      ! Check for cohesive strength material properties
+      If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YT.')
+      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL_def.')
+      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YC.')
+      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for alpha0.')
+      ! Check for cohesive fracture toughness material properties
+      If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GYT.')
+      If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GSL.')
+      If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for eta_BK.')
+      ! Compute these properties for the transverse shear strength
+      m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
+      m%etaT = -one/TAN(two*m%alpha0)
+      m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
+
+      Call log%info('PROPERTY: All required cohesive element peroperties are defined.')
+    End IF
 
     ! Check if matrix damage properties have been specified
     If (m%matrixDam) Then
@@ -829,6 +857,24 @@ Contains
       If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for eta_BK.')
       If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for YC.')
       If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for alpha0.')
+      m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
+      m%etaT = -one/TAN(two*m%alpha0)
+      m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
+
+      Call log%info('PROPERTY: Matrix damage is enabled')
+    Else
+      Call log%info('PROPERTY: Matrix damage is disabled')
+    End If
+
+    ! Check if cohesive element properties have been specified
+    If (m%cohesive) Then
+      If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YT.')
+      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL_def.')
+      If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GYT.')
+      If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GSL.')
+      If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for eta_BK.')
+      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YC.')
+      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for alpha0.')
       m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
       m%etaT = -one/TAN(two*m%alpha0)
       m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))

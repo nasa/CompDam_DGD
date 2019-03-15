@@ -175,4 +175,23 @@ Contains
     Return
   End Subroutine cohesive_damage_propsListed
 
+
+  Pure Function cohesive_traction(delta, penalty, damage) result(traction)
+    ! Calculates the cohesive tractions from displacement, penalty stiffness, and damage.
+
+    ! Arguments
+    Double Precision, intent(IN) :: delta(3)    ! cohesive displacement-jump vector
+    Double Precision, intent(IN) :: penalty(3)  ! cohesive penalty stiffness
+    Double Precision, intent(IN) :: damage      ! cohesive damage variable
+    Double Precision :: traction(3)
+
+    ! Locals
+    Double Precision, parameter :: zero=0.d0, one=1.d0
+    ! -------------------------------------------------------------------- !
+    traction(:) = penalty(:)*(one - damage)*delta(:)
+    If (delta(2) < zero) traction(2) = penalty(2)*delta(2)  ! normal direction
+
+    Return
+  End Function cohesive_traction
+
 End Module cohesive_mod

@@ -91,6 +91,8 @@ Subroutine CompDam(  &
   Use parameters_Mod
   Use DGD_Mod
   Use plasticity_mod
+  Use cohesive_mod
+  Use friction_mod
 
   Implicit Double Precision (a-h, o-z)
   Parameter (j_sys_Dimension = 2, n_vec_Length = 136, maxblk = n_vec_Length)
@@ -118,12 +120,17 @@ Subroutine CompDam(  &
   ! Stress
   Double Precision :: Cauchy(3,3)
   Double Precision :: CauchyABQ(3,3)
+  Double Precision :: T_coh(3)  ! Cohesive tractions (shear, normal, shear)
   Double Precision :: Rot(3,3)
 
   ! Other
   Double Precision :: F(3,3)                                               ! Current deformation gradient tensor
   Double Precision :: F_old(3,3)                                           ! Previous deformation gradient tensor
   Double Precision :: U(3,3)
+  Double Precision :: Pen(3)  ! Cohesive penalty stiffness
+  Double Precision :: delta(3)  ! Cohesive displacement-jump vector
+  Double Precision :: AdAe
+  Logical :: Sliding
 
   ! Parameters
   Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
@@ -256,49 +263,93 @@ Subroutine CompDam(  &
   Call log%debug("Master loop. km = " // trim(str(km)))
 
   ! -------------------------------------------------------------------- !
-  !    Deformation Gradient Tensor and Right Stretch Tensor              !
-  ! -------------------------------------------------------------------- !
-  U = Vec2Matrix(stretchNew(km,:))
-  F = Vec2Matrix(defgradNew(km,:))
-  F_old = Vec2Matrix(defgradOld(km,:))
-
-  ! -------------------------------------------------------------------- !
-  ! As of Abaqus 6.16, the packager receives a defGradNew of (0.999, 0.999, 0.0, 0.001, 0.001)
-  ! for S4R elements. The F(3,3) of 0.0 breaks the initial pass through the VUMAT and the model
-  ! will not run. The following statement is a workaround to this problem.
-  If (totalTime == 0 .AND. nshr == 1) F(3,3) = one
-
-  ! -------------------------------------------------------------------- !
   !    Recall previous elastic limits, plasticity, and damage states:    !
   ! -------------------------------------------------------------------- !
   sv = loadStateVars(nstatev, stateOld(km,:), m)
 
   ! -------------------------------------------------------------------- !
-  !    Define the characteristic element lengths                         !
+  !    Cohesive elements:                                                !
   ! -------------------------------------------------------------------- !
-  If (sv%Lc(1) == zero) Then
+  ElementType: If (m%cohesive) Then
 
-    sv%Lc(1) = charLength(km, 1)
-    sv%Lc(2) = charLength(km, 2)
-    If (nshr == 1) Then
-      sv%Lc(3) = m%thickness
-    Else
-      sv%Lc(3) = charLength(km, 3)
+    ! Define penalty stiffness terms
+    Pen(2) = m%E3  ! Mode I penalty stiffness
+    Pen(1) = Pen(2)*m%GYT*m%SL*m%SL/(m%GSL*m%YT*m%YT)  ! Mode II penalty stiffness, Turon (2010)
+    Pen(3) = Pen(2)*m%GYT*m%ST*m%ST/(m%GSL*m%YT*m%YT)
+
+    ! Determine current cohesive displacement-jump
+    !  Assumes a constitutive thickness equal to one.
+    delta(1) = sv%Fb1 + two*strainInc(km,3)  ! First shear direction (1--3)
+    delta(2) = sv%Fb2 + strainInc(km,1)      ! Normal direction (3--3)
+    delta(3) = sv%Fb3 + two*strainInc(km,2)  ! Second shear direction (2--3)
+
+    ! Store current cohesive displacement-jump
+    sv%Fb1 = delta(1)  ! First shear direction
+    sv%Fb2 = delta(2)  ! Normal direction
+    sv%Fb3 = delta(3)  ! Second shear direction
+
+    Call cohesive_damage(m, delta, Pen, delta(2), sv%B, sv%FIm, sv%d2, enerInelasNew(km))
+
+    If (m%friction .AND. delta(2) <= zero) Then  ! Closed cracks without friction
+      AdAe = sv%d2/(sv%d2 + (one - sv%d2)*two*Pen(1)*m%GSL/(m%SL*m%SL))
+      Sliding = crack_is_sliding(delta, Pen, sv%slide, m%mu, m%mu)
+      Call crack_traction_and_slip(delta, Pen, sv%slide, sv%slide, m%mu, m%mu, sv%d2, AdAe, T_coh, Sliding)
+    Else  ! Closed cracks without friction and open cracks
+      T_coh = cohesive_traction(delta, Pen, sv%d2)
+      sv%slide(1) = delta(1)
+      sv%slide(2) = delta(3)
     End If
 
-    Call log%debug("Characteristic element lengths:")
-    Call log%debug(trim(str(sv%Lc(1)))//' '//trim(str(sv%Lc(2)))//' '//trim(str(sv%Lc(3))))
+    stressNew(km,3) = T_coh(1)  ! First shear direction (1--3)
+    stressNew(km,1) = T_coh(2)  ! Normal direction (3--3)
+    stressNew(km,2) = T_coh(3)  ! Second shear direction (2--3)
 
-  End If
+    enerInternNew(km) = zero
+    enerInelasNew(km) = enerInelasOld(km) + enerInelasNew(km)
 
-  ! If (totalTime <= DT) Call checkForSnapBack(m, sv%Lc, nElement(km))
+  ! -------------------------------------------------------------------- !
+  !    Solid elements:                                                   !
+  ! -------------------------------------------------------------------- !
+  Else ElementType
+  ! -------------------------------------------------------------------- !
+  !    Deformation Gradient Tensor and Right Stretch Tensor              !
+  ! -------------------------------------------------------------------- !
+    U = Vec2Matrix(stretchNew(km,:))
+    F = Vec2Matrix(defgradNew(km,:))
+    F_old = Vec2Matrix(defgradOld(km,:))
+
+  ! -------------------------------------------------------------------- !
+  ! As of Abaqus 6.16, the packager receives a defGradNew of (0.999, 0.999, 0.0, 0.001, 0.001)
+  ! for S4R elements. The F(3,3) of 0.0 breaks the initial pass through the VUMAT and the model
+  ! will not run. The following statement is a workaround to this problem.
+    If (totalTime == 0 .AND. nshr == 1) F(3,3) = one
+
+  ! -------------------------------------------------------------------- !
+  !    Define the characteristic element lengths                         !
+  ! -------------------------------------------------------------------- !
+    If (sv%Lc(1) == zero) Then
+
+      sv%Lc(1) = charLength(km, 1)
+      sv%Lc(2) = charLength(km, 2)
+      If (nshr == 1) Then
+        sv%Lc(3) = m%thickness
+      Else
+        sv%Lc(3) = charLength(km, 3)
+      End If
+
+      Call log%debug("Characteristic element lengths:")
+      Call log%debug(trim(str(sv%Lc(1)))//' '//trim(str(sv%Lc(2)))//' '//trim(str(sv%Lc(3))))
+
+    End If
+
+    ! If (totalTime <= DT) Call checkForSnapBack(m, sv%Lc, nElement(km))
 
   ! -------------------------------------------------------------------- !
   !    Initialize phi0                                                   !
   ! -------------------------------------------------------------------- !
-  If (totalTime <= DT .AND. m%fiberCompDamFKT) Then
-    sv%phi0 = initializePhi0(sv%phi0, m%G12, m%XC, m%aPL, m%nPL, sv%Lc, charLength(km, 4:6))
-  End If
+    If (totalTime <= DT .AND. m%fiberCompDamFKT) Then
+      sv%phi0 = initializePhi0(sv%phi0, m%G12, m%XC, m%aPL, m%nPL, sv%Lc, charLength(km, 4:6))
+    End If
 
   ! -------------------------------------------------------------------- !
   !    Initialize fiber failure                                          !
@@ -313,44 +364,43 @@ Subroutine CompDam(  &
   !    Damage Calculations:                                              !
   ! -------------------------------------------------------------------- !
 
-  ! Damage initiation prediction
-  If (.NOT. (m%matrixDam .AND. sv%d2 > zero) .AND. .NOT. (m%fiberCompDamFKT .AND. sv%d1C > zero)) Then
+    ! Damage initiation prediction
+    If (.NOT. (m%matrixDam .AND. sv%d2 > zero) .AND. .NOT. (m%fiberCompDamFKT .AND. sv%d1C > zero)) Then
 
-    Call DGDInit(U,F,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km), F_old)
+      Call DGDInit(U,F,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km), F_old)
 
-  End IF
+    End If
 
-  ! Matrix crack damage evolution
-  If (m%matrixDam .AND. sv%d2 > zero) Then
+    ! Matrix crack damage evolution
+    If (m%matrixDam .AND. sv%d2 > zero) Then
 
-    Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km))
+      Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km))
 
-  ! Fiber compression damage evolution (New model)
-  Else If (m%fiberCompDamFKT .AND. sv%d1C > zero) Then
+    ! Fiber compression damage evolution (New model)
+    Else If (m%fiberCompDamFKT .AND. sv%d1C > zero) Then
 
-    Call DGDKinkband(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km))
+      Call DGDKinkband(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km))
 
-  End IF
+    End If
 
   ! -------------------------------------------------------------------- !
   !    Determine and store the stress tensor:                            !
   ! -------------------------------------------------------------------- !
-  ! Rotation tensor
-  Rot = MATMUL(F, MInverse(U))
-  ! Cauchy stress in the current configuration
-  CauchyABQ = MATMUL(TRANSPOSE(Rot), MATMUL(Cauchy, Rot))
-  ! Convert to vector format
-  stressNew(km,:) = Matrix2Vec(CauchyABQ, nshr)
+    ! Rotation tensor
+    Rot = MATMUL(F, MInverse(U))
+    ! Cauchy stress in the current configuration
+    CauchyABQ = MATMUL(TRANSPOSE(Rot), MATMUL(Cauchy, Rot))
+    ! Convert to vector format
+    stressNew(km,:) = Matrix2Vec(CauchyABQ, nshr)
 
-  ! -------------------------------------------------------------------- !
-  !    Store the updated state variables:                                !
-  ! -------------------------------------------------------------------- !
+  End If ElementType
+
+  ! Store the updated state variables
   stateNew(km,:) = storeStateVars(sv, nstatev, m)
 
-  ! -------------------------------------------------------------------- !
-  !    Store the internal energy                                         !
-  ! -------------------------------------------------------------------- !
+  ! Scale the energy terms by density
   enerInternNew(km) = enerInternNew(km)/density(km)
+  enerInelasNew(km) = enerInelasNew(km)/density(km)
 
   End Do master ! End Master Loop
 
