@@ -73,15 +73,15 @@ Contains
     Double Precision :: damage_max                                           ! Maximum value for damage variable
     Double Precision :: beta                                                 ! Placeholder (temp.) variables for Mode-mixity
     Double Precision :: KS                                                   ! Penalty stiffnesses
-    Double Precision :: B_temp, dmg_temp
+    Double Precision :: B_old, damage_old
     Double Precision :: mode_mix_limit
     Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
     ! -------------------------------------------------------------------- !
 
-    damage_max = one ! Maximum value for damage variables
+    damage_max = one  ! Maximum value for damage variables
     mode_mix_limit = 1.d-6
 
-    ! Cohesive displacement jumps
+    ! Cohesive displacement-jumps
     del_s1 = delta(1)
     del_s2 = delta(3)
     del_n  = delta(2)
@@ -100,8 +100,8 @@ Contains
     End If
 
     ! Cohesive displacements for initiation for pure mode I and mode II
-    del0n = YT/Pen(2)             ! mode I cohesive initiation disp.
-    del0s = ds_str/KS             ! mode II cohesive initiation disp.
+    del0n = YT/Pen(2)  ! mode I cohesive initiation disp.
+    del0s = ds_str/KS  ! mode II cohesive initiation disp.
 
     ! Mode mixity
     beta = del_s*del_s + MAX(zero, del_n)*del_n
@@ -110,7 +110,7 @@ Contains
     Else
       beta = del_s*del_s/beta
     End If
-    B_temp = B
+    B_old = B
     B = KS*beta/(KS*beta + Pen(2)*(one - beta))
 
     ! Mixed-mode initiation displacements
@@ -130,7 +130,7 @@ Contains
 
     FI = MIN(one, del/d0)
 
-    If (present(damage)) Then
+    DamageEvolution: If (present(damage) .AND. FI == one) Then
 
       ! Cohesive displacements for final failure for pure mode I and mode II
       delfn = two*GYT/del0n/Pen(2)  ! mode I cohesive final disp.
@@ -148,30 +148,24 @@ Contains
       End If
 
       ! Determine the new damage state
-      dmg_temp = damage                     ! Store the current damage variable
+      damage_old = damage  ! Store the current damage variable
       If (del == zero) Then
         damage = zero
       Else
         damage = df*(del - d0)/del/(df - d0)  ! Calculate the new damage variable
       End If
-      damage = MIN(damage, damage_max)            ! Cap damage variable
+      damage = MIN(damage, damage_max)  ! Cap damage variable
 
       ! Check for damage advancement
-
-      ! If there is no damage progression...
-      If (damage <= dmg_temp) Then
-
-        ! ...use the old damage and mode mixity variables.
-        damage = dmg_temp
-        B = B_temp
+      If (damage <= damage_old) Then  ! If there is no damage progression...
+        damage = damage_old  ! ...use the old damage variable.
+      Else  ! If there is damage progression...
+        ! ...calculate energy dissipated by change in damage state
+        dGdGc = damage/(df/d0*(one - damage) + damage) - damage_old/(df/d0*(one - damage_old) + damage_old)
       End If
 
-      ! Energy dissipated by change in damage state
-      dGdGc = damage/(df/d0*(one - damage) + damage) - dmg_temp/(df/d0*(one - dmg_temp) + dmg_temp)
+    End If DamageEvolution
 
-    End If
-
-    ! -------------------------------------------------------------------- !
     Return
   End Subroutine cohesive_damage_propsListed
 
