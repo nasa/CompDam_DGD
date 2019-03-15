@@ -278,45 +278,33 @@ Subroutine CompDam(  &
 
     ! Determine current cohesive displacement-jump
     !  Assumes a constitutive thickness equal to one.
-    If (stressOld(km,1) > zero) Then
-      delta(2) = stressOld(km,1)/(Pen(2)*(one - sv%d2)) + strainInc(km,1)
-    Else
-      delta(2) = stressOld(km,1)/Pen(2) + strainInc(km,1)
+    delta(1) = sv%Fb1 + two*strainInc(km,3)  ! First shear direction (1--3)
+    delta(2) = sv%Fb2 + strainInc(km,1)      ! Normal direction (3--3)
+    delta(3) = sv%Fb3 + two*strainInc(km,2)  ! Second shear direction (2--3)
+
+    ! Store current cohesive displacement-jump
+    sv%Fb1 = delta(1)  ! First shear direction
+    sv%Fb2 = delta(2)  ! Normal direction
+    sv%Fb3 = delta(3)  ! Second shear direction
+
+    Call cohesive_damage(m, delta, Pen, delta(2), sv%B, sv%FIm, sv%d2, enerInelasNew(km))
+
+    If (m%friction .AND. delta(2) <= zero) Then  ! Closed cracks without friction
+      AdAe = sv%d2/(sv%d2 + (one - sv%d2)*two*Pen(1)*m%GSL/(m%SL*m%SL))
+      Sliding = crack_is_sliding(delta, Pen, sv%slide, m%mu, m%mu)
+      Call crack_traction_and_slip(delta, Pen, sv%slide, sv%slide, m%mu, m%mu, sv%d2, AdAe, T_coh, Sliding)
+    Else  ! Closed cracks without friction and open cracks
+      T_coh = cohesive_traction(delta, Pen, sv%d2)
+      sv%slide(1) = delta(1)
+      sv%slide(2) = delta(3)
     End If
-    delta(1) = stressOld(km,2)/(Pen(1)*(one - sv%d2)) + strainInc(km,2)
-    delta(3) = stressOld(km,3)/(Pen(3)*(one - sv%d2)) + strainInc(km,3)
 
-    CohesiveInit: If (sv%d2 == zero) Then
-      Call cohesive_damage(m, delta, Pen, delta(2), sv%B, sv%FIm)
-      If (sv%FIm >= one) Call log%info('cohesive damage initiated.')
-    End If CohesiveInit
+    stressNew(km,3) = T_coh(1)  ! First shear direction (1--3)
+    stressNew(km,1) = T_coh(2)  ! Normal direction (3--3)
+    stressNew(km,2) = T_coh(3)  ! Second shear direction (2--3)
 
-    CohesiveEvolve: If (sv%FIm >= one) Then
-      Call cohesive_damage(m, delta, Pen, delta(2), sv%B, sv%FIm, sv%d2)
-      If (delta(2) > zero) Then  ! Open cracks
-        T_coh(:) = Pen(:)*(one - sv%d2)*delta(:)
-        sv%slide(1) = delta(1)
-        sv%slide(2) = delta(3)
-      Else  ! Closed cracks
-        If (.NOT. m%friction) Then  ! Closed cracks without friction
-          T_coh(1) = Pen(1)*(one - sv%d2)*delta(1)
-          T_coh(2) = Pen(2)*delta(2)
-          T_coh(3) = Pen(3)*(one - sv%d2)*delta(3)
-          sv%slide(1) = delta(1)
-          sv%slide(2) = delta(3)
-        Else  ! Closed cracks with friction
-          AdAe = sv%d2/(sv%d2 + (one - sv%d2)*two*Pen(1)*m%GSL/(m%SL*m%SL))
-          Sliding = crack_is_sliding(delta, Pen, sv%slide, m%mu, m%mu)
-          Call crack_traction_and_slip(delta, Pen, sv%slide, sv%slide, m%mu, m%mu, sv%d2, AdAe, T_coh, Sliding)
-        End If
-      End If
-    End If CohesiveEvolve
-
-    stressNew(km,1) = T_coh(2)
-    stressNew(km,2) = T_coh(1)
-    stressNew(km,3) = T_coh(3)
-
-    enerInternNew(km) = 0.0
+    enerInternNew(km) = zero
+    enerInelasNew(km) = enerInelasOld(km) + enerInelasNew(km)
 
   ! -------------------------------------------------------------------- !
   !    Solid elements:                                                   !
@@ -397,15 +385,12 @@ Subroutine CompDam(  &
 
   End If ElementType
 
-  ! -------------------------------------------------------------------- !
-  !    Store the updated state variables:                                !
-  ! -------------------------------------------------------------------- !
+  ! Store the updated state variables
   stateNew(km,:) = storeStateVars(sv, nstatev, m)
 
-  ! -------------------------------------------------------------------- !
-  !    Store the internal energy                                         !
-  ! -------------------------------------------------------------------- !
+  ! Scale the energy terms by density
   enerInternNew(km) = enerInternNew(km)/density(km)
+  enerInelasNew(km) = enerInelasNew(km)/density(km)
 
   End Do master ! End Master Loop
 
