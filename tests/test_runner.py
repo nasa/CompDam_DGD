@@ -314,7 +314,7 @@ class ParametricKinkBandWidth_singleElement(av.TestCase):
     __metaclass__ = av.ParametricMetaClass
 
     # Refers to the template input file name
-    baseName = "test_C3D8R_fiberCompression_FKT"
+    baseName = "test_C3D8R_fiberCompression_FKT_12"
 
     # Range of parameters to test; all combinations are tested
     parameters = {'wkbToTotal': [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
@@ -380,10 +380,12 @@ class VerifyDebugPy(av.TestCase):
     def test_C3D8R_matrixTension(self):
         modifyParametersFile(debug_kill_at_total_time='0.09d0', logLevel='3')
         self.runTest("test_C3D8R_matrixTension", func=evaluate_pyextmod_output, arguments=['dgdevolve'])
+        modifyParametersFile(debug_kill_at_total_time = '-1.d0', logLevel='2')
 
-    def test_C3D8R_fiberCompression_FKT(self):
+    def test_C3D8R_fiberCompression_FKT_12(self):
         modifyParametersFile(debug_kill_at_total_time='0.08d0', logLevel='4')
-        self.runTest("test_C3D8R_fiberCompression_FKT", func=evaluate_pyextmod_output, arguments=['dgdkinkband'])
+        self.runTest("test_C3D8R_fiberCompression_FKT_12", func=evaluate_pyextmod_output, arguments=['dgdkinkband'])
+        modifyParametersFile(debug_kill_at_total_time = '-1.d0', logLevel='2')
 
 
 class SingleElementSchaeferTests(av.TestCase):
@@ -515,29 +517,67 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_fiberTension_FN")
 
 
-    def test_C3D8R_fiberCompression_FKT(self):
-        """ Fiber compression: Fiber kinking theory based model """
-        self.runTest("test_C3D8R_fiberCompression_FKT")
+    def test_C3D8R_fiberCompression_FKT_12(self):
+        """ Fiber compression: Fiber kinking theory based model, 1-2 """
+        self.runTest("test_C3D8R_fiberCompression_FKT_12")
 
 
-    def test_C3D8R_fiberCompression_FKT_FF(self):
+    def test_C3D8R_fiberCompression_FKT_13(self):
+        """ Fiber compression: Fiber kinking theory based model, 1-3 """
+        self.runTest("test_C3D8R_fiberCompression_FKT_13")
+
+
+    def test_C3D8R_fiberCompression_FKT_3D(self):
+        """ Fiber compression: Fiber kinking theory based model, 3-D """
+        self.runTest("test_C3D8R_fiberCompression_FKT_3D")
+
+
+    def test_C3D8R_fiberCompression_FKT_12_FF(self):
         """ Fiber compression: Fiber kinking theory based model, fiber failure """
-        copyAdditionalFiles('test_C3D8R_fiberCompression_FKT.inp')
+        copyAdditionalFiles('test_C3D8R_fiberCompression_FKT_12.inp')
         modifyParametersFile(fkt_fiber_failure_angle = '10.d0')
-        self.runTest("test_C3D8R_fiberCompression_FKT_FF")
+        self.runTest("test_C3D8R_fiberCompression_FKT_12_FF")
         modifyParametersFile(fkt_fiber_failure_angle = '-1.d0')
 
 
-    def test_C3D8R_fiberCompression_FKT_FF_negphi0(self):
+    def test_C3D8R_fiberCompression_FKT_13_FF(self):
         """ Fiber compression: Fiber kinking theory based model, fiber failure """
+        copyAdditionalFiles('test_C3D8R_fiberCompression_FKT_13.inp')
         modifyParametersFile(fkt_fiber_failure_angle = '10.d0')
-        self.runTest("test_C3D8R_fiberCompression_FKT_FF_negphi0")
+        self.runTest("test_C3D8R_fiberCompression_FKT_13_FF")
         modifyParametersFile(fkt_fiber_failure_angle = '-1.d0')
 
 
-    def test_C3D8R_fiberCompression_FKT_FN(self):
+    def test_C3D8R_fiberCompression_FKT_12_FF_negphi0(self):
+        """ Fiber compression: Fiber kinking theory based model, fiber failure """
+        modifyParametersFile(fkt_fiber_failure_angle = '10.d0')
+        self.runTest("test_C3D8R_fiberCompression_FKT_12_FF_negphi0")
+        modifyParametersFile(fkt_fiber_failure_angle = '-1.d0')
+
+
+    def test_C3D8R_fiberCompression_FKT_12_FN(self):
         """ Fiber compression: Fiber kinking theory based model, fiber nonlinearity """
-        self.runTest("test_C3D8R_fiberCompression_FKT_FN")
+        self.runTest("test_C3D8R_fiberCompression_FKT_12_FN")
+
+
+    def test_C3D8R_fiberCompression_FKT_13_FN(self):
+        """ Fiber compression: Fiber kinking theory based model, fiber nonlinearity """
+        self.runTest("test_C3D8R_fiberCompression_FKT_13_FN")
+
+
+    def test_C3D8R_fiberCompression_FKT_3D_pert(self):
+        """ Fiber compression: Fiber kinking theory based model, 3-D, perturbation """
+        self.runTest("test_C3D8R_fiberCompression_FKT_3D_pert")
+
+
+    def test_C3D8R_fiberCompression_FKT_3D_spring_oop(self):
+        """ Fiber compression: Fiber kinking theory based model, 3-D, out-of-plane stiffness """
+        self.runTest("test_C3D8R_fiberCompression_FKT_3D_spring_oop")
+
+
+    def test_C3D8R_fiberCompression_FKT_3D_spring_ip(self):
+        """ Fiber compression: Fiber kinking theory based model, 3-D, in-plane stiffness """
+        self.runTest("test_C3D8R_fiberCompression_FKT_3D_spring_ip")
 
 
     def test_C3D8R_fiberCompression_BL(self):

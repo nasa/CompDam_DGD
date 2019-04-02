@@ -61,9 +61,9 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_UMAT_nonlinearShear13")
 
 
-    def test_C3D8R_UMAT_fiberCompression_FKT(self):
+    def test_C3D8R_UMAT_fiberCompression_FKT_12(self):
         """ Fiber kinking model, Abaqus/Standard """
-        self.runTest("test_C3D8R_UMAT_fiberCompression_FKT")
+        self.runTest("test_C3D8R_UMAT_fiberCompression_FKT_12")
 
 
 

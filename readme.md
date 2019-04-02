@@ -263,32 +263,36 @@ Load reversal assumptions from [Maimí et al. (2007)](http://doi.org/10.1016/j.m
 
 #### Model 2: Placeholder
 
-#### Model 3: Fiber kinking theory (FKT)
-A model based on Budiansky's fiber kinking theory from [Budiansky 1983](https://doi.org/10.1016/0045-7949(83)90141-4), [Budiansky and Fleck 1993](https://doi.org/10.1016/0022-5096(93)90068-Q), and [Budiansky et al. 1998](https://doi.org/10.1016/S0022-5096(97)00042-2) implemented using the DGD framework to model in-plane (1-2) kinking. The model is described in detail in [Bergan et al. 2018](https://arc.aiaa.org/doi/10.2514/6.2018-1221) and [Bergan and Jackson 2018](http://dpi-proceedings.com/index.php/asc33/article/view/26003). The model accounts for fiber kinking due to shear instability by considering an initial fiber misalignment, nonlinear shear stress-strain behavior via Ramberg-Osgood, and geometric nonlinearity. Fiber failure can be introduced by specifying a critical fiber rotation angle.
+#### Model 3, 4, 5: Fiber kinking theory (FKT)
+A model based on Budiansky's fiber kinking theory from [Budiansky 1983](https://doi.org/10.1016/0045-7949(83)90141-4), [Budiansky and Fleck 1993](https://doi.org/10.1016/0022-5096(93)90068-Q), and [Budiansky et al. 1998](https://doi.org/10.1016/S0022-5096(97)00042-2) implemented using the DGD framework to model in-plane (1-2) and/or out-of-plane (1-3) fiber kinking. The model is described in detail in [Bergan et al. 2018](https://arc.aiaa.org/doi/10.2514/6.2018-1221), [Bergan and Jackson 2018](http://dpi-proceedings.com/index.php/asc33/article/view/26003), and [Bergan 2019](https://arc.aiaa.org/doi/abs/10.2514/6.2019-1548). The model accounts for fiber kinking due to shear instability by considering an initial fiber misalignment, nonlinear shear stress-strain behavior via Ramberg-Osgood, and geometric nonlinearity. Fiber failure can be introduced by specifying a critical fiber rotation angle.
 
-The required material properties are: XC, YC, wkb, alpha0, alpha_PL, and n_PL. The [feature flag](#controlling-which-features-are-enabled) for fiber compression should be set to '3' to activate this model feature. This feature requires 26 state variables to be defined and initialized. The relevant state variables are:
-- `CDM_phi0`: initial fiber misalignment (radians).
-- `CDM_gamma`: rotation of the fibers due to loading (radians). The current fiber misalignment is `CDM_phi0 + CDM_gamma`.
-- `CDM_FIfC`: failure index for fiber kinking (0 to 1). The calculation for this failure index is simplistic and is accurate for unconstrained elements. It is possible for cases to arise where `CDM_FIfC = 1` but the element is not kinked. A better definition of the failure index for fiber kinking is needed. Interpret the value of `CDM_FIfC` with caution.
-- `CDM_Fmi`: the components of the first column of `Fm` used for decomposing the element where `i=1,2,3`.
+The required material properties are: XC, YC, wkb, alpha0, alpha_PL, and n_PL. The [feature flag](#controlling-which-features-are-enabled) for fiber compression should be set to '3', '4', or '5' to activate this model feature. Model '3' enables in-plane (1-2 plane) fiber kinking. Model '4' enables out-of-plane (1-3 plane) fiber kinking. Model '5' enables fiber kinking in both planes (uncoupled). This feature requires 25 state variables to be defined and initialized. The relevant state variables are:
+- `CDM_phi0_12`: initial fiber misalignment (radians) in the 1-2 plane.
+- `CDM_phi0_13`: initial fiber misalignment (radians) in the 1-3 plane.
+- `CDM_gamma_12`: rotation of the fibers due to loading (radians) in the 1-2 plane.
+- `CDM_gamma_13`: rotation of the fibers due to loading (radians) in the 1-3 plane. 
+- `CDM_Fbi`: the components of the first column of `Fm` used for decomposing the element where `i=1,2,3`.
 
-The initial condition for the state variable `CDM_phi0` determines the initial fiber misalignment as described in [initial conditions](#initial-conditions).
+The current fiber misalignment is `CDM_phi0_1i + CDM_gamma_1i` where `i=2 or 3`.
+
+The initial conditions for the state variable `CDM_phi0_12` and `CDM_phi0_13` determine the initial fiber misalignments as described in [initial conditions](#initial-conditions).
 
 A fiber failure criterion described in [Bergan and Jackson 2018](http://dpi-proceedings.com/index.php/asc33/article/view/26003) is implemented to represent the material behavior in confined conditions under large strains (post failure). The fiber failure criterion is satisfied when
 
 *&phi;* &ge; *&phi;*<sub>ff,c</sub>
 
-where *&phi;* is the current fiber rotation. Once the fiber failure critierion is satisfied, the plastic shear strain is held constant. The value for *&phi;*<sub>ff,c</sub> is defined as the parameter `fkt_fiber_failure_angle` since it is not a well-defined material property. The fiber failure criterion is disabled when *&phi;*<sub>ff,c</sub> < 0.
+where *&phi;* is the current fiber rotation. Once the fiber failure critierion is satisfied, the plastic shear strain is held constant. The value for *&phi;*<sub>ff,c</sub> is defined as the parameter `fkt_fiber_failure_angle` since it is not a well-defined material property. The fiber failure criterion is disabled when *&phi;*<sub>ff,c</sub> < 0. The same angle is used for in-plane and out-of-plane kinking.
 
 The fiber kinking theory model implemented here is preliminary and has some known shortcomings and caveats:
 - The model has only been tested for C3D8R. Limited application with C3D6 demonstrated issues. No testing has been completed for other element types.
-- The model does not account for out-of-plane kinking. FKT expects that Ramberg-Osgood nonlinearity is enabled in the 1-2 plane (i.e. feature flag: `x1x3xx`). The model may not perform as intended if shear nonlinearity is enabled in the 1-3 plane.
+- The interaction of this model with matrix cracking has not been fully tested and verified.
+- No effort has been made to model progressive crushing.
 - Other mechanisms of fiber compressive failure (e.g., shear driven fiber breaks) are not accounted for. An outcome of this is that the model predicts the material does not fail if shear deformation is fully constrained.
 - No special consideration for load reversal has been included.
 
 Relevant single element tests are named starting with `test_C3D8R_fiberCompression_FKT`.
 
-Relevant example problems: UNC0_C3D8R_FKT
+Relevant example problems: `UNC0_C3D8R_FKT_12`, `UNC0_C3D8R_FKT_13`, and `UNC0_C3D8R_FKT_3D`.
 
 ### Friction
 Friction is modeled on the damaged fraction of the cross-sectional area of DGD cracks using the approach of [Alfano and Sacco (2006)](http://doi.org/10.1002/nme.1728). The coefficient of friction *&mu;* must be defined to account for friction on the failed crack surface.
@@ -402,7 +406,7 @@ The positions correspond to the features as follows:
 - Position 1: Matrix damage (1=intra-laminar cracking in solid elements, 2=interlaminar cracking in cohesive elements)
 - Position 2: Shear nonlinearity (1=Ramberg-Osgood 1-2 plane, 2=Schapery, 3=Ramberg-Osgood 3-D, 4=Ramberg-Osgood 1-3 plane, 5=Schaefer || more information [here](#shear-nonlinearity))
 - Position 3: Fiber tensile damage
-- Position 4: Fiber compression damage (1=max strain, 2=N/A, 3=FKT || more information [here](#fiber-compression-damage))
+- Position 4: Fiber compression damage (1=max strain, 2=N/A, 3=FKT-12, 4=FKT-13, 5=FKT-3D || more information [here](#fiber-compression-damage))
 - Position 5: *reserved*
 - Position 6: Friction
 
@@ -412,7 +416,7 @@ For example, `101000` indicates that the model will run with matrix damage and f
 Length along the thickness-direction associated with the current integration point.
 
 ## State variables
-The table below lists all of the state variables in the model when used with solid or shell elements. The model requires a minimum of 18 state variables. Additional state variables are defined depending on which (if any) shear nonlinearity and fiber compression features are enabled. For fiber compression model 1: nstatev = 19 and for model 3: nstatev = 26. For shear nonlinearity models 3 or 4: nstatev = 21.
+The table below lists all of the state variables in the model. The model requires a minimum of 18 state variables. Additional state variables are defined depending on which (if any) shear nonlinearity and fiber compression features are enabled. For fiber compression model 1: nstatev = 19 and for model 3: nstatev = 25. For shear nonlinearity models 3 or 4: nstatev = 21.
 
 | # | Name             | Description                                                           |
 |---|------------------|-----------------------------------------------------------------------|
@@ -440,11 +444,11 @@ The table below lists all of the state variables in the model when used with sol
 | 20| `CDM_Plas13`     | 1-3 plastic strain                                                    |
 | 21| `CDM_Inel13`     | 1-3 inelastic strain                                                  |
 |---|------------------|-----------------------------------------------------------------------|
-| 22| `CDM_phi0`       | Initial fiber misalignment (radians)                                  |
-| 23| `CDM_gamma`      | Current rotation of the fibers due to loading (radians)               |
-| 24| `CDM_Fm1`        | Fm1                                                                   |
-| 25| `CDM_Fm2`        | Fm2                                                                   |
-| 26| `CDM_Fm3`        | Fm3                                                                   |
+| 22| `CDM_phi0_12`    | Initial fiber misalignment, 1-2 plane (radians)                       |
+| 23| `CDM_gamma_12`   | Current rotation of the fibers due to loading, 1-2 plane (radians)    |
+| 24| `CDM_phi0_13`    | Initial fiber misalignment, 1-3 plane (radians)                       |
+| 25| `CDM_gamma_13`   | Current rotation of the fibers due to loading, 1-3 plane (radians)    |
+| 26| `CDM_reserve`    | Reserved                                                              |
 |---|------------------|-----------------------------------------------------------------------|
 | 27| `CDM_Ep1`        | Plastic strain in 11 direction calculated using Schaefer Theory       |
 | 28| `CDM_Ep2`        | Plastic strain in 22 direction calculated using Schaefer Theory       |
@@ -474,11 +478,12 @@ The initial condition for `CDM_alpha` can be used to specify a predefined angle 
 
 Since `CDM_STATUS` is used for element deletion, always initialize `CDM_STATUS` to 1.
 
-The initial condition for `CDM_phi0` is used to specify the initial fiber misalignment. One of three options is used depending on the initial condition specified for `CDM_phi0` as follows:
+The initial condition for `CDM_phi0` is used to specify the initial fiber misalignment. One of the followings options is used depending on the initial condition specified for `CDM_phi0` as follows:
 - *&phi;<sub>0</sub>* = 0 :: The value for *&phi;<sub>0</sub>* is calculated for shear instability.
 - *&phi;<sub>0</sub>* &le; 0.5 :: The value provided in the initial condition is used as the initial fiber misalignment.
-- *&phi;<sub>0</sub>* = 1 :: A pseudo random uniform distribution varying spatially in the 1-direction is used. The spatial distribution algorithm relies on an uniform element size and fiber aligned mesh. The random number generator used is set to generate the same sequence of random numbers during every execution; therefore, the results are repeatable. When using the random distribution for *&phi;<sub>0</sub>*, the characteristic length must be set to include 6 components: `*Characteristic Length, definition=USER, components=6`.
+- *&phi;<sub>0</sub>* = 1 :: A pseudo random uniform distribution varying spatially in the 1-direction is used. The spatial distribution algorithm relies on an uniform element size and fiber aligned mesh. The random number generator can be set to generate the same realizations or different realizations on multiple nominally identical analyses using the boolean parameter `fkt_random_seed`. When using the random distribution for *&phi;<sub>0</sub>*, the characteristic length must be set to include 6 components: `*Characteristic Length, definition=USER, components=6`.
 - *&phi;<sub>0</sub>* = 2 :: Identical to *&phi;<sub>0</sub>* = 1, with the exception that a different realization is calculated for each ply.
+- *&phi;<sub>0</sub>* = 3 :: (Intended for use with 3-D FKT only) A pseudo random distribution varying spatially in the 1-direction is used with a 2-parameter lognormal distribution for the polar angle and a normal distribution for the azimuthal angle. The parameters starting with `fkt_init_misalignment` are used to control the polar and azimuthal distributions.
 
 Pre-existing damage can be modeled by creating an element set for the damaged region and specifying different initial conditions for this element set. For example, to create an intraply matrix crack with no out-of-plane orientation, the following initial conditions could be specified for the cracked elements:
 

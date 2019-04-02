@@ -5,8 +5,8 @@ parameters = {
     "d1c": 0.0,
     "d1t": 0.0,
     "d2": 0.0,
-    "gamma": 1e-7,
+    "gamma_12": 1e-7,
     "inel12": 1e-7,
     "plas12": 1e-7,
-    "phi0": 0.0,
+    "phi0_12": 0.0,
 }

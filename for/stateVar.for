@@ -31,8 +31,10 @@ Module stateVar_Mod
     Double Precision :: rfC           ! Fiber compression damage threshold
     Double Precision :: d1T           ! Fiber tension damage
     Double Precision :: d1C           ! Fiber compression damage
-    Double Precision :: phi0
-    Double Precision :: gamma
+    Double Precision :: phi0_12
+    Double Precision :: gamma_12
+    Double Precision :: phi0_13
+    Double Precision :: gamma_13
     Double Precision :: Sr            ! Schapery micro-damage state variable, reduced
     Double Precision :: direct(9)
     Double Precision :: Ep_schaefer(6) ! Total plastic strain for schaefer theory
@@ -41,6 +43,7 @@ Module stateVar_Mod
     ! Calculated once at the start of the analysis, not passed to abaqus
     ! Since this value depends on phi0, it needs to be a state variable and not global calculated parameter
     Double Precision :: Inel12c       ! Critical plastic strain for fiber failure
+    Double Precision :: Inel13c       ! Critical plastic strain for fiber failure
 
     ! Stored for debugging only
     Integer :: debugpy_count
@@ -83,6 +86,7 @@ Contains
     ! Global variable (not returned to abaqus)
     sv%d_eps12 = zero
     sv%Inel12c = Huge(zero)  ! Initialize to a large positive number so it is not reached (turns off fiber failure)
+    sv%Inel13c = Huge(zero)  ! Initialize to a large positive number so it is not reached (turns off fiber failure)
 
     sv%d2 = MAX(zero, stateOld(1))
     sv%Fb1 = stateOld(2)
@@ -151,13 +155,22 @@ Contains
       sv%Inel13 = zero
     End If
 
-    If (m%fiberCompDamFKT) Then
+    If (m%fiberCompDamFKT12) Then
       sv%d1C = MAX(zero, stateOld(19))
-      sv%phi0 = stateOld(22)
-      sv%gamma = stateOld(23)
-      sv%Fm1 = stateOld(24)
-      sv%Fm2 = stateOld(25)
-      sv%Fm3 = stateOld(26)
+      sv%phi0_12 = stateOld(22)
+      sv%gamma_12 = stateOld(23)
+    Else
+      sv%phi0_12 = zero
+      sv%gamma_12 = zero
+    End If
+
+    If (m%fiberCompDamFKT13) Then
+      sv%d1C = MAX(zero, stateOld(19))
+      sv%phi0_13 = stateOld(24)
+      sv%gamma_13 = stateOld(25)
+    Else
+      sv%phi0_13 = zero
+      sv%gamma_13 = zero
     End If
 
     Return
@@ -211,7 +224,7 @@ Contains
     stateNew(17) = sv%rfC
     stateNew(18) = sv%d1T
 
-    If (m%fiberCompDamBL .OR. m%fiberCompDamFKT) Then
+    If (m%fiberCompDamBL .OR. m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) Then
       stateNew(19) = sv%d1C
     Else If (nstatev >= 19) Then
       stateNew(19) = zero
@@ -243,18 +256,20 @@ Contains
       stateNew(21) = zero
     End If
 
-    If (m%fiberCompDamFKT) Then
-      stateNew(22) = sv%phi0
-      stateNew(23) = sv%gamma
-      stateNew(24) = sv%Fm1
-      stateNew(25) = sv%Fm2
-      stateNew(26) = sv%Fm3
-    Else If (nstatev == 26) Then
+    If (m%fiberCompDamFKT12) Then
+      stateNew(22) = sv%phi0_12
+      stateNew(23) = sv%gamma_12
+    Else If (nstatev >= 23) Then
       stateNew(22) = zero
       stateNew(23) = zero
+    End If
+
+    If (m%fiberCompDamFKT13) Then
+      stateNew(24) = sv%phi0_13
+      stateNew(25) = sv%gamma_13
+    Else If (nstatev >= 25) Then
       stateNew(24) = zero
       stateNew(25) = zero
-      stateNew(26) = zero
     End If
 
     Return
@@ -367,7 +382,7 @@ Contains
     write(101, nameValueFmt) '    ', sv%slide(2), ',  # slide2'
     write(101, nameValueFmt) '    ', sv%rfC, ',  # rfC'
     write(101, nameValueFmt) '    ', sv%d1T, ',  # d1T'
-    If (m%fiberCompDamBL .OR. m%fiberCompDamFKT) Then
+    If (m%fiberCompDamBL .OR. m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) Then
       write(101, nameValueFmt) '    ', sv%d1C, ',  # d1C'
     Else If (sv%nstatev >= 19) Then
       write(101, nameValueFmt) '    ', zero, ',  # SDV19'
@@ -379,17 +394,21 @@ Contains
       write(101, nameValueFmt) '    ', zero, ',  # SDV20'
       write(101, nameValueFmt) '    ', zero, ',  # SDV21'
     End If
-    If (m%fiberCompDamFKT) Then
-      write(101, nameValueFmt) '    ', sv%phi0, ',  # phi0'
-      write(101, nameValueFmt) '    ', sv%gamma, ',  # gamma'
-      write(101, nameValueFmt) '    ', sv%Fm1, ',  # Fm1'
-      write(101, nameValueFmt) '    ', sv%Fm2, ',  # Fm2'
-      write(101, nameValueFmt) '    ', sv%Fm3, ',  # Fm3'
-    Else If (sv%nstatev >= 26) Then
+    If (m%fiberCompDamFKT12) Then
+      write(101, nameValueFmt) '    ', sv%phi0_12, ',  # phi0_12'
+      write(101, nameValueFmt) '    ', sv%gamma_12, ',  # gamma_12'
+    Else If (sv%nstatev >= 23) Then
       write(101, nameValueFmt) '    ', zero, ',  # SDV22'
       write(101, nameValueFmt) '    ', zero, ',  # SDV23'
+    End If
+    If (m%fiberCompDamFKT13) Then
+      write(101, nameValueFmt) '    ', sv%phi0_12, ',  # phi0_13'
+      write(101, nameValueFmt) '    ', sv%gamma_12, ',  # gamma_13'
+    Else If (sv%nstatev >= 25) Then
       write(101, nameValueFmt) '    ', zero, ',  # SDV24'
       write(101, nameValueFmt) '    ', zero, ',  # SDV25'
+    End If
+    If (sv%nstatev >= 26) Then
       write(101, nameValueFmt) '    ', zero, ',  # SDV26'
     End If
     If (m%schaefer) Then
@@ -440,7 +459,7 @@ Contains
     write(101, nameValueFmt) '    ', sv%old(16), ',  # slide2'
     write(101, nameValueFmt) '    ', sv%old(17), ',  # rfC'
     write(101, nameValueFmt) '    ', sv%old(18), ',  # d1T'
-    If (m%fiberCompDamBL .OR. m%fiberCompDamFKT) Then
+    If (m%fiberCompDamBL .OR. m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) Then
       write(101, nameValueFmt) '    ', sv%old(19), ',  # d1C'
     Else If (sv%nstatev >= 19) Then
       write(101, nameValueFmt) '    ', zero, ',  # SDV19'
@@ -452,17 +471,21 @@ Contains
       write(101, nameValueFmt) '    ', zero, ',  # SDV20'
       write(101, nameValueFmt) '    ', zero, ',  # SDV21'
     End If
-    If (m%fiberCompDamFKT) Then
-      write(101, nameValueFmt) '    ', sv%old(22), ',  # phi0'
-      write(101, nameValueFmt) '    ', sv%old(23), ',  # gamma'
-      write(101, nameValueFmt) '    ', sv%old(24), ',  # Fm1'
-      write(101, nameValueFmt) '    ', sv%old(25), ',  # Fm2'
-      write(101, nameValueFmt) '    ', sv%old(26), ',  # Fm3'
-    Else If (sv%nstatev >= 26) Then
+    If (m%fiberCompDamFKT12) Then
+      write(101, nameValueFmt) '    ', sv%old(22), ',  # phi0_12'
+      write(101, nameValueFmt) '    ', sv%old(23), ',  # gamma_12'
+    Else If (sv%nstatev >= 23) Then
       write(101, nameValueFmt) '    ', zero, ',  # SDV22'
       write(101, nameValueFmt) '    ', zero, ',  # SDV23'
+    End If
+    If (m%fiberCompDamFKT13) Then
+      write(101, nameValueFmt) '    ', sv%old(22), ',  # phi0_13'
+      write(101, nameValueFmt) '    ', sv%old(23), ',  # gamma_13'
+    Else If (sv%nstatev >= 25) Then
       write(101, nameValueFmt) '    ', zero, ',  # SDV24'
       write(101, nameValueFmt) '    ', zero, ',  # SDV25'
+    End If
+    If (sv%nstatev >= 26) Then
       write(101, nameValueFmt) '    ', zero, ',  # SDV26'
     End If
     If (m%schaefer) Then

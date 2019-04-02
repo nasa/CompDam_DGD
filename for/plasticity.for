@@ -34,7 +34,7 @@ Contains
     Else
       use_temporary_sv = .FALSE.
     End If
-    if (PRESENT(eps_old_in)) THEN
+    If (PRESENT(eps_old_in)) THEN
       eps_old = eps_old_in
     ELSE 
       eps_old = zero
@@ -42,27 +42,41 @@ Contains
 
     If (m%shearNonlinearity12) Then
       If (use_temporary_sv) Then
+        If (m%fiberCompDamFKT12) Then
+          sv%d_eps12_temp = Sign(one, (eps(1,2) - eps_old(1,2)))
+        End If
         Call ro_plasticity(two*eps(1,2), sv%d_eps12_temp, m%G12, m%aPL, m%nPL, sv%Inel12c, sv%Plas12_temp, sv%Inel12_temp)
         eps(1,2) = eps(1,2) - sv%Plas12_temp/two
         eps(2,1) = eps(1,2)
       Else
+        If (m%fiberCompDamFKT12) Then
+          sv%d_eps12 = Sign(one, (eps(1,2) - eps_old(1,2)))
+        End If
         Call ro_plasticity(two*eps(1,2), sv%d_eps12, m%G12, m%aPL, m%nPL, sv%Inel12c, sv%Plas12, sv%Inel12)
         eps(1,2) = eps(1,2) - sv%Plas12/two
         eps(2,1) = eps(1,2)
       End IF
-    Else If (m%shearNonlinearity13) Then
+    End If
+    If (m%shearNonlinearity13) Then
       If (use_temporary_sv) Then
-        Call ro_plasticity(two*eps(1,3), sv%d_eps13_temp, m%G13, m%aPL, m%nPL, Huge(zero), sv%Plas13_temp, sv%Inel13_temp)
+        If (m%fiberCompDamFKT13) Then
+          sv%d_eps13_temp = Sign(one, (eps(1,3) - eps_old(1,3)))
+        End If
+        Call ro_plasticity(two*eps(1,3), sv%d_eps13_temp, m%G13, m%aPL, m%nPL, sv%Inel13c, sv%Plas13_temp, sv%Inel13_temp)
         eps(1,3) = eps(1,3) - sv%Plas13_temp/two
         eps(3,1) = eps(1,3)
       Else
-        Call ro_plasticity(two*eps(1,3), sv%d_eps13, m%G13, m%aPL, m%nPL, Huge(zero), sv%Plas13, sv%Inel13)
+        If (m%fiberCompDamFKT13) Then
+          sv%d_eps13 = Sign(one, (eps(1,3) - eps_old(1,3)))
+        End If
+        Call ro_plasticity(two*eps(1,3), sv%d_eps13, m%G13, m%aPL, m%nPL, sv%Inel13c, sv%Plas13, sv%Inel13)
         eps(1,3) = eps(1,3) - sv%Plas13/two
         eps(3,1) = eps(1,3)
-      End IF
-    Else If (m%schaefer) THEN
+      End If
+    End If
+    If (m%schaefer) Then
     	! Update Ep_schaefer and f (yield function)
-      CALL schaefer(m, p, m%schaefer_a6,  m%schaefer_b2,  m%schaefer_n, m%schaefer_A, eps, eps_old, ndir, nshr, sv%Ep_schaefer, sv%fp)
+      Call schaefer(m, p, m%schaefer_a6,  m%schaefer_b2,  m%schaefer_n, m%schaefer_A, eps, eps_old, ndir, nshr, sv%Ep_schaefer, sv%fp)
       !updated eps subtracting out total plastic strain eps -= sv%Ep_old
       eps = eps - Vec2Matrix(sv%Ep_schaefer)
     End If

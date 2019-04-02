@@ -65,11 +65,12 @@ Contains
     Double Precision :: normalDir(3)                                       ! Normal to the crack plane in the reference configuration
     Double Precision :: fiberDir(3)                                        ! Current fiber direction
     Double Precision :: pk2_fiberDir(3,3)                                  ! 2PK stress in the fiber direction
-    Double Precision :: R_phi0(3,3)                                        ! Rotation to the misaligned frame
+    Double Precision :: R_phi0(3,3), R_phi0_12(3,3), R_phi0_13(3,3)              ! Rotation to the misaligned frame (FKT)
     Double Precision :: gamma_rphi0                                        ! Shear strain in the misaligned frame
 
     ! Miscellaneous
     Double Precision :: rad_to_deg, deg_to_rad
+    Double Precision :: eye(3,3)
     Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
     Double Precision, parameter :: pert=0.0001d0                           ! Small perturbation used to compute a numerical derivative
 
@@ -79,6 +80,7 @@ Contains
     ! Miscellaneous constants
     rad_to_deg = 45.d0/ATAN(one)  ! Converts radians to degrees when multiplied
     deg_to_rad = one/rad_to_deg   ! Converts degrees to radians when multiplied
+    eye = zero; Do I = 1,3; eye(I,I) = one; End Do
 
     ! Initialize outputs
     d1       = zero
@@ -137,21 +139,34 @@ Contains
       If (sv%rfT <= one) sv%rfT = zero
 
       ! Check for fiber compression damage initiation
-      If (m%fiberCompDamFKT) Then
+      If (m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) Then
 
         ! -------------------------------------------------------------------- !
         !    Compute stress in the material (considering phi0)                 !
         ! -------------------------------------------------------------------- !
 
         ! Rotation from reference frame to fiber misaligned frame
-        fiberDir = (/cos(sv%phi0), sin(sv%phi0), zero/)
-        normalDir = (/-sin(sv%phi0), cos(sv%phi0), zero/)
-        R_phi0(:,1) = fiberDir
-        R_phi0(:,2) = normalDir
-        R_phi0(:,3) = (/zero, zero, one/)
+        If (m%fiberCompDamFKT12) Then
+          R_phi0_12(:,1) = (/cos(sv%phi0_12), sin(sv%phi0_12), zero/)
+          R_phi0_12(:,2) = (/-sin(sv%phi0_12), cos(sv%phi0_12), zero/)
+          R_phi0_12(:,3) = (/zero, zero, one/)
+        Else
+          R_phi0_12 = eye
+        End If
+        If (m%fiberCompDamFKT13) Then
+          R_phi0_13(:,1) = (/cos(sv%phi0_13), zero, sin(sv%phi0_13)/)
+          R_phi0_13(:,2) = (/zero, one, zero/)
+          R_phi0_13(:,3) = (/-sin(sv%phi0_13), zero, cos(sv%phi0_13)/)
+        Else
+          R_phi0_13 = eye
+        End If
+        R_phi0 = MATMUL(R_phi0_12, R_phi0_13)
+        fiberDir = R_phi0(:,1)
+        normalDir = R_phi0(:,2)
 
         ! Transform strain to the fiber frame
         eps = MATMUL(TRANSPOSE(R_phi0), MATMUL(eps, R_phi0))
+        eps_old = MATMUL(TRANSPOSE(R_phi0), MATMUL(eps_old, R_phi0))
 
         ! Compute the plastic strains and remove from the strain tensor
         Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old)
@@ -160,7 +175,7 @@ Contains
         gamma_rphi0 = two*(eps(1,2) + sv%Plas12/two)
 
         ! Only decompose element if the plastic strain is nonnegligible and the kink band is smaller than the element size
-        If (sv%Inel12 > 0.00001d0) Then
+        If (sv%Inel12 > 0.00001d0 .OR. sv%Inel13 > 0.00001d0) Then
           If (m%w_kb/sv%Lc(1) < p%kb_decompose_thres) Then
             Call log%debug('DGDInit triggering DGDKinkband.')
             sv%d1C   = 1.d-6    ! Used as a flag to call DGDEvolve
@@ -179,16 +194,16 @@ Contains
         stress = MATMUL(R_phi0, MATMUL(pk2_fiberDir, TRANSPOSE(R_phi0)))  ! 2PK rotated back to the reference direction
         Cauchy = convertToCauchy(stress, F)  ! Cauchy stress in the reference frame
 
-        ! Failure index for fiber kinking
-        sv%rfC = abs((-1*Cauchy(1,1)*cos(two*(sv%phi0+gamma_rphi0)))/((ramberg_osgood(gamma_rphi0 + pert, m%G12, m%aPL, m%nPL) - ramberg_osgood(gamma_rphi0 - pert, m%G12, m%aPL, m%nPL)) / (two * pert)))
-
         ! Rotation to the crack frame / fiber-aligned frame
         R_cr(:,1) = Norm(MATMUL(F, fiberDir))
         R_cr(:,2) = Norm(MATMUL(F_inverse_transpose, normalDir))
         R_cr(:,3) = CrossProduct(R_cr(:,1), R_cr(:,2))
 
         ! Calculate the angle that define the rotation of the fibers
-        sv%gamma = ATAN(R_cr(2,1)/R_cr(1,1)) - sv%phi0
+        phi12 = ATAN2(R_cr(2,1), R_cr(1,1))
+        phi13 = ATAN2(R_cr(3,1), R_cr(1,1))
+        sv%gamma_12 = phi12 - sv%phi0_12
+        sv%gamma_13 = phi13 - sv%phi0_13
 
         d1 = zero
 
@@ -443,7 +458,6 @@ Contains
     Double Precision :: fiberDir(3)                                          ! Misaligned fiber direction in the reference configuration
     Double Precision :: rfT_temp, rfC_temp                                   ! Fiber damage thresholds, from previous converged solution
     Double Precision :: d1T_temp, d1C_temp                                   ! Fiber damage variables, from previous converged solution
-    Double Precision :: phi0
     Double Precision :: d1
 
     ! Friction
@@ -1039,7 +1053,7 @@ Contains
     ! -------------------------------------------------------------------- !
     ! Locals
     Double Precision :: Stiff(ndir+nshr,ndir+nshr)                           ! Stiffness
-    Double Precision :: R_cr(3,3)                                            ! Basis coordinate system for the cohesive surface
+    Double Precision :: R_cr(3,3)                                            ! Basis coordinate system for the current (deformed) coordinates
     Double Precision :: normalDir(3)                                         ! Normal to the crack plane in the reference configuration
     Double Precision :: fiberDir(3)                                          ! Current fiber direction
     Double Precision :: gamma_rphi0                                          ! Shear strain in the misaligned frame
@@ -1047,17 +1061,17 @@ Contains
     Double Precision :: eye(ndir,ndir)
     Double Precision :: R_phi0(3,3)                                          ! Transformation to the misaligned frame from the reference frame
     Double Precision :: d1
+    Double Precision :: R_phi0_12(3,3), R_phi0_13(3,3)                       ! Transformations for in-plane misalignment (12) and out-of-plane misalignment (13)
 
     ! Kink band region
     Double Precision :: Fkb(3,3)
     Double Precision :: Fkb_inverse(3,3)
     Double Precision :: Fkb_old(3,3)
-    Double Precision :: epskb(ndir,ndir)
+    Double Precision :: epskb(ndir,ndir), epskb_old(ndir,ndir)
     Double Precision :: pk2_fiberDirkb(3,3)
     Double Precision :: stresskb(ndir,ndir)
     Double Precision :: Cauchykb(ndir,ndir)
     Double Precision :: Tkb(3)
-    Double Precision :: eps12kb_dir
 
     ! Material region
     Double Precision :: Fm(3,3)
@@ -1095,14 +1109,14 @@ Contains
     Double Precision :: dCauchykb_dFkb1(3,3,3)
     Double Precision :: dTkb_dFkb1(3,3)
     Double Precision :: Ym(3,3), Ykb(3,3)
-    Double Precision :: dplas12, dinel12
+    Double Precision :: dplas12, dinel12, dplas13, dinel13
 
     ! -------------------------------------------------------------------- !
 
     ! Initialize
     aid = one
     d1 = zero
-    sv%gamma = zero
+    sv%gamma_12 = zero; sv%gamma_13 = zero
     X = zero; X(1,1) = sv%Lc(1); X(2,2) = sv%Lc(2); X(3,3) = sv%Lc(3) ! Ref. Config.
     eye = zero; DO I = 1,3; eye(I,I) = one; end DO ! Identity Matrix
     tol_DGD = m%YT*p%tol_DGD_f ! Equilibrium loop tolerance [stress]
@@ -1116,20 +1130,30 @@ Contains
     ! Make sure that we have a valid starting point
     If (Length(Fkb(:,1)) == zero) Fkb(1,1) = one
 
-    ! Normal to misaligned fibers (reference config)
-    normalDir = (/-sin(sv%phi0), cos(sv%phi0), zero/)
-
-    ! Misaligned fiber direction (reference config)
-    fiberDir = (/cos(sv%phi0), sin(sv%phi0), zero/)
-
-    ! Build R_phi0 matrix
-    R_phi0(:,1) = fiberDir
-    R_phi0(:,2) = normalDir
-    R_phi0(:,3) = (/zero, zero, one/)
+    ! Rotation from reference frame to fiber misaligned frame
+    If (m%fiberCompDamFKT12) Then
+      R_phi0_12(:,1) = (/cos(sv%phi0_12), sin(sv%phi0_12), zero/)
+      R_phi0_12(:,2) = (/-sin(sv%phi0_12), cos(sv%phi0_12), zero/)
+      R_phi0_12(:,3) = (/zero, zero, one/)
+    Else
+      R_phi0_12 = eye
+    End If
+    If (m%fiberCompDamFKT13) Then
+      R_phi0_13(:,1) = (/cos(sv%phi0_13), zero, sin(sv%phi0_13)/)
+      R_phi0_13(:,2) = (/zero, one, zero/)
+      R_phi0_13(:,3) = (/-sin(sv%phi0_13), zero, cos(sv%phi0_13)/)
+    Else
+      R_phi0_13 = eye
+    End If
+    R_phi0 = MATMUL(R_phi0_12, R_phi0_13)
+    fiberDir = R_phi0(:,1)
+    normalDir = R_phi0(:,2)
 
     ! Initialize
     Fkb_old = F_old
     Fkb_old(:,1) = (/sv%Fb1, sv%Fb2, sv%Fb3/)
+    Call Strains(Fkb_old, m, DT, ndir, epskb_old)
+    epskb_old = MATMUL(TRANSPOSE(R_phi0), MATMUL(epskb_old, R_phi0))
 
     ! -------------------------------------------------------------------- !
     !    Equilibrium Loop and solution controls definition                 !
@@ -1191,10 +1215,8 @@ Contains
       R_cr(:,3) = CrossProduct(R_cr(:,1), R_cr(:,2))
 
       ! Calculate the angle that define the rotation of the fibers
-      sv%gamma = ATAN(R_cr(2,1)/R_cr(1,1)) - sv%phi0
-
-      ! Calculate the sign of the change in shear strain (for shear nonlinearity subroutine)
-      sv%d_eps12_temp = Sign(one, (Fkb(1,1)*Fkb(1,2) + Fkb(2,1)*Fkb(2,2) + Fkb(3,1)*Fkb(3,2)) - (sv%Fb1*Fkb_old(1,2) + sv%Fb2*Fkb_old(2,2) + sv%Fb3*Fkb_old(3,2)))
+      sv%gamma_12 = ATAN(R_cr(2,1)/R_cr(1,1)) - sv%phi0_12
+      sv%gamma_13 = ATAN(R_cr(3,1)/R_cr(1,1)) - sv%phi0_13
 
       ! -------------------------------------------------------------------- !
       !    Calculate the stress in the bulk material region:                 !
@@ -1213,7 +1235,7 @@ Contains
       ! -------------------------------------------------------------------- !
       Call Strains(Fkb, m, DT, ndir, epskb)
       epskb = MATMUL(TRANSPOSE(R_phi0), MATMUL(epskb, R_phi0))
-      Call Plasticity(m, sv, p, ndir, nshr, epskb, use_temp=.TRUE.)
+      Call Plasticity(m, sv, p, ndir, nshr, epskb, epskb_old, use_temp=.TRUE.)
       gamma_rphi0 = two*(epskb(1,2) + sv%Plas12_temp/two)
       Call StiffFuncNL(m, ndir, nshr, d1, zero, zero, epskb, Stiff, sv%Sr)
       pk2_fiberDirkb = Hooke(Stiff, epskb, nshr) ! 2PK in the fiber direction
@@ -1221,10 +1243,6 @@ Contains
       Cauchykb = convertToCauchy(stresskb, Fkb)
       Cauchy = Cauchykb
       Tkb = MATMUL(Cauchykb, R_cr(:,1))  ! Traction on surface with normal in fiber direction
-
-
-      ! Failure index for fiber kinking
-      sv%rfC = abs((-1*Cauchy(1,1)*cos(two*(sv%phi0+gamma_rphi0)))/((ramberg_osgood(gamma_rphi0 + pert, m%G12, m%aPL, m%nPL) - ramberg_osgood(gamma_rphi0 - pert, m%G12, m%aPL, m%nPL)) / (two * pert)))
 
       ! -------------------------------------------------------------------- !
       !    Define the stress residual vector, R. R is equal to the           !
@@ -1333,6 +1351,8 @@ Contains
       dEkb_dFkb1 = zero
       dplas12 = zero
       dinel12 = zero
+      dplas13 = zero
+      dinel13 = zero
       dSkb_dFkb1 = zero
       dCauchykb_dFkb1 = zero
       dTkb_dFkb1 = zero
@@ -1371,6 +1391,9 @@ Contains
           Call ro_plasticity(two*dEkb_dFkb1(1,2,I), sv%d_eps12_temp, m%G12, m%aPL, m%nPL, sv%Inel12c, dplas12, dinel12)
           dEkb_dFkb1(1,2,I) = dEkb_dFkb1(1,2,I) - dplas12/two
           dEkb_dFkb1(2,1,I) = dEkb_dFkb1(1,2,I)
+          Call ro_plasticity(two*dEkb_dFkb1(1,3,I), sv%d_eps13_temp, m%G13, m%aPL, m%nPL, sv%Inel13c, dplas13, dinel13)
+          dEkb_dFkb1(1,3,I) = dEkb_dFkb1(1,3,I) - dplas13/two
+          dEkb_dFkb1(3,1,I) = dEkb_dFkb1(1,3,I)
         End If
         dSkb_dFkb1(:,:,I) = Hooke(Stiff, dEkb_dFkb1(:,:,I), nshr)
         dSkb_dFkb1(:,:,I) = MATMUL(R_phi0, MATMUL(dSkb_dFkb1(:,:,I), TRANSPOSE(R_phi0)))

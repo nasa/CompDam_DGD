@@ -77,7 +77,8 @@ Module matProp_Mod
     Logical :: schaefer
     Logical :: fiberTenDam
     Logical :: fiberCompDamBL
-    Logical :: fiberCompDamFKT
+    Logical :: fiberCompDamFKT12
+    Logical :: fiberCompDamFKT13
     Logical :: friction
 
   End Type matProps
@@ -459,7 +460,7 @@ Contains
                   m%shearNonlinearity13 = .FALSE.
                   m%schapery = .FALSE.
                   m%schaefer = .FALSE.
-                  Call log%info("loadMatProps: Shear nonlinearity ENABLED")
+                  Call log%info("loadMatProps: Shear nonlinearity (1-2 plane) ENABLED")
                 Else If (featureFlags(j:j) == '2') Then
                   m%shearNonlinearity12 = .FALSE.
                   m%shearNonlinearity13 = .FALSE.
@@ -502,17 +503,30 @@ Contains
               Case (4)
                 If (featureFlags(j:j) == '1') Then
                   m%fiberCompDamBL = .TRUE.
-                  m%fiberCompDamFKT = .FALSE.
+                  m%fiberCompDamFKT12 = .FALSE.
+                  m%fiberCompDamFKT13 = .FALSE.
                   Call log%info("loadMatProps: fiber comp. damage (CDM) ENABLED")
                 Else If (featureFlags(j:j) == '2') Then
                   Call log%error("loadMatProps: fiber comp. model 2 not implemented. TODO")
                 Else If (featureFlags(j:j) == '3') Then
                   m%fiberCompDamBL = .FALSE.
-                  m%fiberCompDamFKT = .TRUE.
-                  Call log%info("loadMatProps: fiber comp. damage (DGD) ENABLED")
+                  m%fiberCompDamFKT12 = .TRUE.
+                  m%fiberCompDamFKT13 = .FALSE.
+                  Call log%info("loadMatProps: fiber comp. damage (FKT) in-plane ENABLED")
+                Else If (featureFlags(j:j) == '4') Then
+                  m%fiberCompDamBL = .FALSE.
+                  m%fiberCompDamFKT12 = .FALSE.
+                  m%fiberCompDamFKT13 = .TRUE.
+                  Call log%info("loadMatProps: fiber comp. damage (FKT) out-of-plane ENABLED")
+                Else If (featureFlags(j:j) == '5') Then
+                  m%fiberCompDamBL = .FALSE.
+                  m%fiberCompDamFKT12 = .TRUE.
+                  m%fiberCompDamFKT13 = .TRUE.
+                  Call log%info("loadMatProps: fiber comp. damage (FKT) 3-D ENABLED")
                 Else
                   m%fiberCompDamBL = .FALSE.
-                  m%fiberCompDamFKT = .FALSE.
+                  m%fiberCompDamFKT12 = .FALSE.
+                  m%fiberCompDamFKT13 = .FALSE.
                   Call log%info("loadMatProps: fiber comp. damage DISABLED")
                 End If
 
@@ -958,7 +972,7 @@ Contains
     End If
 
     ! Check if the DGD fiber compression damage properties have been defined
-    If (m%fiberCompDamFKT) Then
+    If (m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) Then
       If (.NOT. m%XC_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (FKT model). Must define a value for XC.')
       If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (FKT model). Must define a value for YC.')
       If (.NOT. m%w_kb_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (FKT model). Must define a value for w_kb.')
@@ -966,11 +980,14 @@ Contains
       If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (FKT model). Must define a value for SL.')
 
       ! Make sure shear nonlinearity is enabled
-      If (.NOT. m%shearNonlinearity12) Call log%error('PROPERTY ERROR: In-plane shear-nonlinearity must be enabled with fiber compression damage FKT.')
+      If (m%fiberCompDamFKT12 .AND. (.NOT. m%shearNonlinearity12)) Call log%error('PROPERTY ERROR: Shear-nonlinearity 1-2 must be enabled with fiber compression damage FKT 1-2.')
+      If (m%fiberCompDamFKT13 .AND. (.NOT. m%shearNonlinearity13)) Call log%error('PROPERTY ERROR: Shear-nonlinearity 1-3 must be enabled with fiber compression damage FKT 1-3.')
 
-      Call log%info('PROPERTY: fiber compression damage FKT (model 3) properties have been defined')
+      If (m%fiberCompDamFKT12 .AND. m%fiberCompDamFKT13) Call log%info('PROPERTY: fiber compression damage FKT 3-D (model 5) properties have been defined')
+      If (m%fiberCompDamFKT12) Call log%info('PROPERTY: fiber compression damage FKT in-plane (model 3) properties have been defined')
+      If (m%fiberCompDamFKT13) Call log%info('PROPERTY: fiber compression damage FKT out-of-plane (model 4) properties have been defined')
     Else
-      Call log%info('PROPERTY: fiber compression damage FKT (model 3) is disabled')
+      Call log%info('PROPERTY: fiber compression damage FKT is disabled')
     End If
 
     ! check if fiber nonlinearity has been defined
@@ -1069,70 +1086,157 @@ Contains
   End Subroutine checkForSnapBack
 
 
-  Function initializePhi0(phi0, G12, XC, aPL, nPL, Lc, position)
-    ! Determines the phi0 for shear instability
+  Function applyIdxRangeChecks(index, randomNumbers) result(output)
+    ! Adjusts the index so that it is within bounds
+    ! Handles large numbers and negative numbers
 
     Use forlog_Mod
 
     ! Arguments
-    Double Precision, intent(IN) :: phi0                         ! Guess for phi0
-    Double Precision, intent(IN) :: G12, XC                      ! Material properties
-    Double Precision, intent(IN) :: aPL, nPL                     ! Shear nonlinearity
+    Integer, intent(IN) :: index
+    Double Precision, intent(IN) :: randomNumbers(10000)
+
+    ! Output
+    Integer :: output
+
+    ! Locals
+    Integer :: rnsize
+    Double Precision, parameter :: zero=0.d0
+    ! -------------------------------------------------------------------- !
+
+    ! Wrap in a loop if there are more rows than randomNumbers is long
+    output = index
+    rnsize = SIZE(randomNumbers, 1)
+    If (output > rnsize) Then
+      output = MOD(output, rnsize)
+      Call log%warn('Random fiber misalignments are being wrapped in a loop. Increase randomNumberCount in vexternaldb.')
+    End If
+
+    ! In case the position is negative
+    If (output < 0) Then
+      output = rnsize+output
+    End If
+
+    Return
+  End Function applyIdxRangeChecks
+
+
+  Subroutine initializePhi0(m, Lc, position, phi012, phi013)
+    ! Determines the phi0 for shear instability
+    ! Calculates using polar and azimuth angles
+
+    Use forlog_Mod
+
+    ! Arguments
+    Type(matProps), intent(IN) :: m
+    ! Double Precision, intent(IN) :: G12, G13, XC                 ! Material properties
+    ! Double Precision, intent(IN) :: aPL, nPL                     ! Shear nonlinearity
     Double Precision, intent(IN) :: Lc(3)                        ! Element characteristic lengths
     Double Precision, intent(IN) :: position(3)                  ! Position
-    Double Precision :: initializePhi0
+    Double Precision, intent(INOUT) :: phi012, phi013            ! Return values
+
 
     ! Locals
     Double Precision :: shearInstabilityPhi0
-    Double Precision :: randomNumbers(10000)
-    Double Precision :: rn
+    Double Precision :: randomNumbers1(10000), randomNumbers2(10000)
+    Double Precision :: randomNumbers3(10000), randomNumbers4(10000)
+    Double Precision :: rn1, rn2
+    Double Precision :: phi0, azi
+    Double Precision :: rad_to_deg, deg_to_rad
+    Double Precision :: phi0_input
     Integer :: index, rnsize
-    Double Precision, parameter :: zero=0.d0, half=0.5d0, one=1.d0, two=2.d0
+    Double Precision, parameter :: zero=0.d0, half=0.5d0, one=1.d0, two=2.d0, three=3.d0
 
     ! Common
-    Common randomNumbers
+    Common randomNumbers1, randomNumbers2, randomNumbers3, randomNumbers4
     ! -------------------------------------------------------------------- !
 
     ! Initialization
     index = 0
-    initializePhi0 = 0.d0
+    rad_to_deg = 45.d0/ATAN(one)  ! Converts radians to degrees when multiplied
+    deg_to_rad = one/rad_to_deg   ! Converts degrees to radians when multiplied
 
-    shearInstabilityPhi0 = (nPL-one)/G12*((G12-XC)/(XC*nPL*aPL**(one/nPL)))**(nPL/(nPL-one))
+    shearInstabilityPhi0 = (m%nPL-one)/m%G12*((m%G12-m%XC)/(m%XC*m%nPL*m%aPL**(one/m%nPL)))**(m%nPL/(m%nPL-one))
 
-    If (phi0 == zero) Then  ! Special case to use phi0 corresponding to instability
-      ! Calculate phi0
-      initializePhi0 = shearInstabilityPhi0
+    ! Check for valid initial conditions for phi012 and phi013
+    If (m%fiberCompDamFKT12 .AND. m%fiberCompDamFKT13) Then
+      If (phi012 > half .AND. phi013 > half) Then
+        If (ABS(phi012 - phi013) > 1d-8) Then
+          Call log%error('Expect that the initial conditions for phi0_12 and phi0_13 are the same. Found phi012: ' // trim(str(phi012)) // ' and phi0_13: ' // trim(str(phi013)))
+        End If
+      Else If (phi012 < -1*half .OR. phi013 < -1*half) Then
+        Call log%error('Unexpected initial conditions for phi0_12 and phi0_13. Phi012 and phi013 cannot be less than -0.5. Found phi012: ' // trim(str(phi012)) //   &
+          ' and phi0_13: ' // trim(str(phi013)))
+      Else If ((phi012 == zero .AND. phi013 /= zero) .OR. (phi012 /= zero .AND. phi013 == zero)) Then
+        Call log%error('Unexpected initial conditions for phi0_12 and phi0_13. For 3-D kinking, if both phi012 and phi013 must be zero or nonzero. Found phi012: ' //  &
+          trim(str(phi012)) // ' and phi0_13: ' // trim(str(phi013)))
+      End If
+      phi0_input = phi012
+    Else If (m%fiberCompDamFKT12) Then
+      phi0_input = phi012
+    Else If (m%fiberCompDamFKT13) Then
+      phi0_input = phi013
+    Else
+      phi0_input = zero
+    End If
 
-    Else If (phi0 <= half) Then   ! Use initial condition value of phi0
-      initializePhi0 = phi0
-
-    Else If (phi0 >= one) Then   ! 1-D variation
-      ! Set index to be integer count of row
-      If (phi0 == one) Then ! 1-D variation
-        index = NINT(position(1)/0.05d0)
-      Else If (phi0 == two) Then ! 2-D variation (different 1-D variation for each ply)
-        index = NINT((position(1)/0.05d0) + (100.d0*position(3)))
-      Else
-        Call log%error('Invalid initial condition received for phi0. Found ' // trim(str(phi0)))
+    If (phi0_input == zero) Then  ! Special case to use phi0 corresponding to instability
+      If (m%fiberCompDamFKT12) Then
+        phi012 = shearInstabilityPhi0
+      End If
+      If (m%fiberCompDamFKT13) Then
+        phi013 = shearInstabilityPhi0
       End If
 
-      ! Wrap in a loop if there are more rows than randomNumbers is long
-      rnsize = SIZE(randomNumbers, 1)
-      If (index > rnsize) Then
-        index = MOD(index, rnsize)
-        Call log%warn('Random fiber misalignments are being wrapped in a loop. Increase randomNumberCount in vexternaldb.')
-      End If
+    Else If (phi0_input <= half) Then   ! Use initial condition value of phi0
+      Return
 
-      ! In case the position is negative
-      If (index < 0) Then
-        index = rnsize+index
-      End If
+    Else If (phi0_input == one) Then ! 1-D spatial variation
+      index = NINT(position(1)/0.05d0)
+      index = applyIdxRangeChecks(index, randomNumbers1)
 
       ! Get the random number (0 to 1)
-      rn = randomNumbers(index)
+      rn = randomNumbers1(index)
+      rn2 = randomNumbers2(index)
 
-      ! Scale -phi to +phi
-      initializePhi0 = rn*two*shearInstabilityPhi0 - shearInstabilityPhi0
+      ! Polar angle, scale -phi to +phi
+      phi0 = (rn*two-one)*shearInstabilityPhi0  ! polar angle
+
+      ! Azimuth angle, scale -180 to 180
+      azi = (rn2*two-one)*180.d0*deg_to_rad
+
+      ! Phi012 and phi013
+      phi012 = phi0*COS(azi)
+      phi013 = phi0*SIN(azi)
+
+    Else If (phi0_input == two) Then ! 2-D variation (different 1-D variation for each ply)
+      index = NINT((position(1)/0.05d0) + (100.d0*position(3)/Lc(3)))
+      index = applyIdxRangeChecks(index, randomNumbers1)
+
+      ! Get the random number (0 to 1)
+      rn = randomNumbers1(index)
+      rn2 = randomNumbers2(index)
+
+      ! Polar angle, scale -phi to +phi
+      phi0 = (rn*two-one)*shearInstabilityPhi0  ! polar angle
+
+      ! Azimuth angle, scale -180 to 180
+      azi = (rn2*two-one)*180.d0*deg_to_rad
+
+      ! Phi012 and phi013
+      phi012 = phi0*COS(azi)
+      phi013 = phi0*SIN(azi)
+
+    ElseIf (phi0_input == three) Then
+      index = NINT((position(1)/0.05d0) + (100.d0*position(3)/Lc(3)))
+      index = applyIdxRangeChecks(index, randomNumbers1)
+
+      phi0 = randomNumbers3(index)*deg_to_rad  ! polar angle
+      azi = randomNumbers4(index)*deg_to_rad   ! Azimuth
+
+      ! Phi012 and phi013
+      phi012 = phi0*COS(azi)
+      phi013 = phi0*SIN(azi)
 
     Else
       Call log%error('Invalid phi0. Found phi0 = '  // trim(str(phi0)) // ' See README.')
@@ -1140,7 +1244,7 @@ Contains
     End If
 
     Return
-  End Function initializePhi0
+  End Subroutine initializePhi0
 
 
   Subroutine writeMaterialPropertiesToFile(fileUnit, m)
@@ -1198,10 +1302,15 @@ Contains
     Else
       write(101,"(A)") '    "fiberCompDamBL": False,'
     End If
-    If (m%fiberCompDamFKT) Then
-      write(101,"(A)") '    "fiberCompDamFKT": True,'
+    If (m%fiberCompDamFKT12) Then
+      write(101,"(A)") '    "fiberCompDamFKT12": True,'
     Else
-      write(101,"(A)") '    "fiberCompDamFKT": False,'
+      write(101,"(A)") '    "fiberCompDamFKT12": False,'
+    End If
+    If (m%fiberCompDamFKT13) Then
+      write(101,"(A)") '    "fiberCompDamFKT13": True,'
+    Else
+      write(101,"(A)") '    "fiberCompDamFKT13": False,'
     End If
     If (m%friction) Then
       write(101,"(A)") '    "friction": True'

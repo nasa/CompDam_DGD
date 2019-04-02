@@ -76,6 +76,15 @@ terminate_on_no_convergence = .TRUE. // Default .TRUE.
 // DEBUGGING (only activated when > 0 and logLevel > 2)
 // Specify total time at which to kill the analysis. The analysis is killed immediately before CompDam exits if totalTime is >= value
 // specified below. Debug data is written.
-debug_kill_at_total_time = 0.d0
+debug_kill_at_total_time = -1.d0
+
+// Set to true to use the time as the seed for initial fiber misalignment to get different results for each realization
+fkt_random_seed = .FALSE.  // Default .FALSE.
+
+// Initial fiber misalignments (only activated when the 3-D fiber kinking model is enabled, feature flag = '5', and the initial condition for phi0 is 3.0)
+fkt_init_misalignment_azi_mu = 0.d0  // Default 0.d0, Normal distribution mean in degrees
+fkt_init_misalignment_azi_sigma = 45.0d0  // Default 45.0d0, Normal distribution variance in degrees
+fkt_init_misalignment_polar_shape = 0.676d0  // Default 0.676d0, Lognormal distribution shape parameter in degrees
+fkt_init_misalignment_polar_scale = 2.25d0   // Default 2.25d0, Lognormal distribution scale parameter in degrees
 
 // End of file (Do not remove me)

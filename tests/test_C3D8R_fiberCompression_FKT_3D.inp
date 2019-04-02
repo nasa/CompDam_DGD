@@ -2,10 +2,10 @@
  Single element test for fiber compression DGD
 **
 *Parameter
-l = 0.2
-w = 0.2
+l = 0.15
+w = 0.15
 t = 0.15
-wkbToTotal = 0.6
+wkbToTotal = 1
 wkb = wkbToTotal*l
 stepDuration = 0.1
 **
@@ -56,11 +56,23 @@ stepDuration = 0.1
  2
  Part-1-1.loadFollowers, 1, -1., Part-1-1.loadApp, 1, 1.
 *Equation
+ 2
+ Part-1-1.1, 2, -1., Part-1-1.3, 2, 1.
+*Equation
+ 2
+ Part-1-1.1, 3, -1., Part-1-1.2, 3, 1.
+*Equation
  4
  Part-1-1.5, 2, -1., Part-1-1.1, 2, 1., Part-1-1.6, 2, 1., Part-1-1.2, 2, -1.
 *Equation
  4
  Part-1-1.7,2,-1., Part-1-1.3,2,1., Part-1-1.8,2,1., Part-1-1.4,2,-1.
+*Equation
+ 4
+ Part-1-1.5, 3, -1., Part-1-1.1, 3, 1., Part-1-1.6, 3, 1., Part-1-1.2, 3, -1.
+*Equation
+ 4
+ Part-1-1.7,3,-1., Part-1-1.3,3,1., Part-1-1.8,3,1., Part-1-1.4,3,-1.
 *End Assembly
 **
 *Section controls, name=SectionCtrl-1, distortion control=YES
@@ -76,7 +88,7 @@ stepDuration = 0.1
 *User material, constants=39
 ** 1              2                  3          4
 ** feature flags, , thickness, 4, 5, 6, 7, 8
-          011301, ,       <t>,  ,  ,  ,  ,  ,
+          030500, ,       <t>,  ,  ,  ,  ,  ,
 **
 **  9         10        11        12        13        14        15        16
 **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
@@ -92,10 +104,10 @@ stepDuration = 0.1
 **
 **  33        34        35        36        37        38        39        40
 **  XC,       fXC,      GXC,      fGXC,     cl,    w_kb,     ,         mu
-    1200.1,      ,         ,          ,     10.0,     <wkb>,    ,         0.3
+    1200.1,      ,         ,          ,     ,         <wkb>,    ,         0.3
 **
 *Depvar
-26,
+ 25,
  1, CDM_d2
  2, CDM_Fb1
  3, CDM_Fb2
@@ -117,12 +129,12 @@ stepDuration = 0.1
 19, CDM_d1C
 20, CDM_Plas13
 21, CDM_Inel13
-22, CDM_phi
-23, CDM_gamma
-24, CDM_Fm1
-25, CDM_Fm2
-26, CDM_Fm3
+22, CDM_phi0_12
+23, CDM_gamma_12
+24, CDM_phi0_13
+25, CDM_gamma_13
 *Characteristic Length, definition=USER, components=3
+*Damping, alpha=1.d+4
 **
 ** INITIAL CONDITIONS
 **
@@ -130,7 +142,7 @@ stepDuration = 0.1
   Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
   0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
   0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-  0.d0,  0.d0,  0.d0
+  0.d0,  0.d0,
 ** ----------------------------------------------------------------
 **
 ** STEP: Step-1
@@ -149,16 +161,13 @@ stepDuration = 0.1
 ** Applied displacement end
 *Boundary, amplitude=Amp-1
 Part-1-1.loadApp, 1, 1, -0.01
-Part-1-1.loadApp, 3, 3
-*Boundary, amplitude=Amp-1
-Part-1-1.all, 3, 3
 ** Fixed end
 *Boundary, amplitude=Amp-1
-Part-1-1.pin, 1, 1
-Part-1-1.pin, 2, 2
+Part-1-1.pin, 1, 3
 *Boundary, amplitude=Amp-1
 Part-1-1.pinx, 1, 1
 Part-1-1.6, 2, 2
+Part-1-1.7, 3, 3
 **
 ** OUTPUT REQUESTS
 **

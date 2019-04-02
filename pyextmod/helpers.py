@@ -17,6 +17,7 @@ def loaddebugpy(filename='', jobname='', suffix=''):
         filename = jobname+'-debug'
 
     # Import the debug file
+    print("Importing: " + filename+suffix)
     debugpy = __import__(filename+suffix)
 
     # Material properties
@@ -41,7 +42,7 @@ def loaddebugpy(filename='', jobname='', suffix=''):
     sv = CompDam_DGD.statevar_mod.loadstatevars(len(debugpy.sv), debugpy.sv, m)
     sv_old = CompDam_DGD.statevar_mod.loadstatevars(len(debugpy.sv_old), debugpy.sv_old, m)
 
-    return (m, p, sv, sv_old, F, F_old, U)
+    return (m, p, sv, sv_old, F, F_old, U, debugpy)
 
 
 def tensorAsListTo3x3(t):

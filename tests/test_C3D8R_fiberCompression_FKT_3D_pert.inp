@@ -2,17 +2,17 @@
  Single element test for fiber compression DGD
 **
 *Parameter
-l = 0.2
-w = 0.2
+l = 0.15
+w = 0.15
 t = 0.15
-wkbToTotal = 0.6
+wkbToTotal = 1
 wkb = wkbToTotal*l
-stepDuration = 1.0
+stepDuration = 0.1
 **
 ** PARTS
 **
 *Part, name=Part-1
-*Node, nset=GLOBAL
+*Node
       1,  <l>,          <w>,          <t>
       2,  <l>,           0.,          <t>
       3,  <l>,          <w>,           0.
@@ -40,6 +40,7 @@ stepDuration = 1.0
  3, 0.
 ** Section: Section-1
 *Solid Section, elset=all, orientation=Ori-1, material=IM7-8552, controls=SectionCtrl-1
+,
 *End Part
 **
 **
@@ -55,17 +56,29 @@ stepDuration = 1.0
  2
  Part-1-1.loadFollowers, 1, -1., Part-1-1.loadApp, 1, 1.
 *Equation
+ 2
+ Part-1-1.1, 2, -1., Part-1-1.3, 2, 1.
+*Equation
+ 2
+ Part-1-1.1, 3, -1., Part-1-1.2, 3, 1.
+*Equation
  4
  Part-1-1.5, 2, -1., Part-1-1.1, 2, 1., Part-1-1.6, 2, 1., Part-1-1.2, 2, -1.
 *Equation
  4
  Part-1-1.7,2,-1., Part-1-1.3,2,1., Part-1-1.8,2,1., Part-1-1.4,2,-1.
+*Equation
+ 4
+ Part-1-1.5, 3, -1., Part-1-1.1, 3, 1., Part-1-1.6, 3, 1., Part-1-1.2, 3, -1.
+*Equation
+ 4
+ Part-1-1.7,3,-1., Part-1-1.3,3,1., Part-1-1.8,3,1., Part-1-1.4,3,-1.
 *End Assembly
 **
-*Section controls, name=SectionCtrl-1, distortion control=YES, hourglass=ENHANCED
+*Section controls, name=SectionCtrl-1, distortion control=YES
 **
 *Amplitude, name=Amp-1, definition=SMOOTH STEP
- 0., 0., <stepDuration>, 1.
+             0.,              0.,    <stepDuration>,              1.
 **
 ** MATERIALS
 **
@@ -75,7 +88,7 @@ stepDuration = 1.0
 *User material, constants=39
 ** 1              2                  3          4
 ** feature flags, , thickness, 4, 5, 6, 7, 8
-          011301, ,       <t>,  ,  ,  ,  ,  ,
+          030500, ,       <t>,  ,  ,  ,  ,  ,
 **
 **  9         10        11        12        13        14        15        16
 **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
@@ -94,82 +107,71 @@ stepDuration = 1.0
     1200.1,      ,         ,          ,     ,         <wkb>,    ,         0.3
 **
 *Depvar
-  35,
-  1, CDM_d2
-  2, CDM_Fb1
-  3, CDM_Fb2
-  4, CDM_Fb3
-  5, CDM_B
-  6, CDM_Lc1
-  7, CDM_Lc2
-  8, CDM_Lc3
-  9, CDM_FIm
- 10, CDM_alpha
- 11, CDM_STATUS
- 12, CDM_Plas12
- 13, CDM_Inel12
- 14, CDM_FIfT
- 15, CDM_slide1
- 16, CDM_slide2
- 17, CDM_FIfC
- 18, CDM_d1T
- 19, CDM_d1C
- 20, CDM_Plas13
- 21, CDM_Inel13
- 22, CDM_phi
- 23, CDM_gamma
- 24, CDM_Fm1
- 25, CDM_Fm2
- 26, CDM_Fm3
- 27, CDM_DIRECT11
- 28, CDM_DIRECT21
- 29, CDM_DIRECT31
- 30, CDM_DIRECT12
- 31, CDM_DIRECT22
- 32, CDM_DIRECT32
- 33, CDM_DIRECT13
- 34, CDM_DIRECT23
- 35, CDM_DIRECT33
-*User defined field
+ 25,
+ 1, CDM_d2
+ 2, CDM_Fb1
+ 3, CDM_Fb2
+ 4, CDM_Fb3
+ 5, CDM_B
+ 6, CDM_Lc1
+ 7, CDM_Lc2
+ 8, CDM_Lc3
+ 9, CDM_FIm
+10, CDM_alpha
+11, CDM_STATUS
+12, CDM_Plas12
+13, CDM_Inel12
+14, CDM_FIfT
+15, CDM_slide1
+16, CDM_slide2
+17, CDM_FIfC
+18, CDM_d1T
+19, CDM_d1C
+20, CDM_Plas13
+21, CDM_Inel13
+22, CDM_phi0_12
+23, CDM_gamma_12
+24, CDM_phi0_13
+25, CDM_gamma_13
+*Characteristic Length, definition=USER, components=3
+*Damping, alpha=1.d+4
 **
 ** INITIAL CONDITIONS
 **
 *Initial Conditions, Type=Solution
   Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
   0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
-  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0, 5.236d-2,  0.d0,
-  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0
-*Initial Conditions, Type=Field, Variable=1
-  Part-1-1.GLOBAL,  0.d0
-**
+  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.0376858d0,  0.d0,
+  0.0377858d0,  0.d0,
 ** ----------------------------------------------------------------
 **
 ** STEP: Step-1
 **
-*Step, name=Step-1, nlgeom=YES, inc=1000
-*Dynamic, application=QUASI-STATIC, initial=NO
- 0.01, <stepDuration>, 5.e-6, 0.01
+*Step, name=Step-1, nlgeom=YES
+*Dynamic, Explicit
+ , <stepDuration>
+*Bulk Viscosity
+ 0.06, 1.2
+** Mass Scaling: Semi-Automatic
+**               Whole Model
+*Fixed Mass Scaling, factor=10000.
 **
 ** BOUNDARY CONDITIONS
 **
 ** Applied displacement end
 *Boundary, amplitude=Amp-1
-Part-1-1.loadApp, 1, 1, -0.005
-Part-1-1.loadApp, 3, 3
-*Boundary, amplitude=Amp-1
-Part-1-1.all, 3, 3
+Part-1-1.loadApp, 1, 1, -0.01
 ** Fixed end
 *Boundary, amplitude=Amp-1
-Part-1-1.pin, 1, 1
-Part-1-1.pin, 2, 2
+Part-1-1.pin, 1, 3
 *Boundary, amplitude=Amp-1
 Part-1-1.pinx, 1, 1
 Part-1-1.6, 2, 2
+Part-1-1.7, 3, 3
 **
 ** OUTPUT REQUESTS
 **
-*Output, field, frequency=1
+*Output, field, number interval=100
 *Node Output
 U, RF
 *Element Output

@@ -30,7 +30,7 @@ def _main_entry(args):
         CompDam_DGD.dgd_mod.log_init(level=4, filename=pyextmod_log_file_name, totaltime=0.081)
 
         # Load the debug file
-        (m, p, sv, sv_old, F, F_old, U) = h.loaddebugpy(filename=debug_file_name_no_ext)
+        (m, p, sv, sv_old, F, F_old, U, debugpy) = h.loaddebugpy(filename=debug_file_name_no_ext)
         log.write('\nState variables: \n' + str(sv) + '\n')
         print(sv)
 

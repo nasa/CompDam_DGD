@@ -2,12 +2,14 @@
  Single element test for fiber compression DGD
 **
 *Parameter
-l = 0.2
-w = 0.2
+l = 0.15
+w = 0.15
 t = 0.15
-wkbToTotal = 0.6
+wkbToTotal = 1
 wkb = wkbToTotal*l
 stepDuration = 0.1
+l2 = l*2
+ml = l*-1
 **
 ** PARTS
 **
@@ -21,18 +23,25 @@ stepDuration = 0.1
       6,  0.,            0.,          <t>
       7,  0.,           <w>,           0.
       8,  0.,            0.,           0.
+** Nodes for springs
+      9,  <l>,          <l2>,          0.
+     10,  <l>,          <ml>,          0.
+     11,  <l>,          <l2>,         <t>
+     12,  <l>,          <ml>,         <t>
 *Element, type=C3D8R
  1, 3, 4, 2, 1, 7, 8, 6, 5
 *Nset, nset=loadApp
  4,
 *Nset, nset=loadFollowers
- 1, 2, 3
+ 1, 2, 3, 9, 10, 11, 12
 *Nset, nset=pin
  8,
 *Nset, nset=pinx
  5, 6, 7
 *Nset, nset=all, generate
  1,  8,  1
+*Nset, nset=spring_nodes
+ 9, 10, 11, 12
 *Elset, elset=all
  1,
 *Orientation, name=Ori-1
@@ -41,6 +50,22 @@ stepDuration = 0.1
 ** Section: Section-1
 *Solid Section, elset=all, orientation=Ori-1, material=IM7-8552, controls=SectionCtrl-1
 ,
+** Spring
+*Spring, elset=springs
+2,
+10.,
+*Element, type=SpringA, elset=springs
+ 2, 9, 3
+ 3, 10, 4
+ 4, 11, 1
+ 5, 12, 2
+*Element, type=MASS, elset=m1
+ 102, 9
+ 103, 10
+ 104, 11
+ 105, 12
+*Mass, elset=m1
+ 1.57e-014,
 *End Part
 **
 **
@@ -56,11 +81,35 @@ stepDuration = 0.1
  2
  Part-1-1.loadFollowers, 1, -1., Part-1-1.loadApp, 1, 1.
 *Equation
+ 2
+ Part-1-1.1, 2, -1., Part-1-1.3, 2, 1.
+*Equation
+ 2
+ Part-1-1.1, 3, -1., Part-1-1.2, 3, 1.
+*Equation
  4
  Part-1-1.5, 2, -1., Part-1-1.1, 2, 1., Part-1-1.6, 2, 1., Part-1-1.2, 2, -1.
 *Equation
  4
  Part-1-1.7,2,-1., Part-1-1.3,2,1., Part-1-1.8,2,1., Part-1-1.4,2,-1.
+*Equation
+ 4
+ Part-1-1.5, 3, -1., Part-1-1.1, 3, 1., Part-1-1.6, 3, 1., Part-1-1.2, 3, -1.
+*Equation
+ 4
+ Part-1-1.7,3,-1., Part-1-1.3,3,1., Part-1-1.8,3,1., Part-1-1.4,3,-1.
+*Equation
+ 2
+ Part-1-1.3,3,1, Part-1-1.9,3,-1
+*Equation
+ 2
+ Part-1-1.4,3,1, Part-1-1.10,3,-1
+*Equation
+ 2
+ Part-1-1.1,3,1, Part-1-1.11,3,-1
+*Equation
+ 2
+ Part-1-1.2,3,1, Part-1-1.12,3,-1
 *End Assembly
 **
 *Section controls, name=SectionCtrl-1, distortion control=YES
@@ -76,7 +125,7 @@ stepDuration = 0.1
 *User material, constants=39
 ** 1              2                  3          4
 ** feature flags, , thickness, 4, 5, 6, 7, 8
-          011301, ,       <t>,  ,  ,  ,  ,  ,
+          030500, ,       <t>,  ,  ,  ,  ,  ,
 **
 **  9         10        11        12        13        14        15        16
 **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
@@ -95,7 +144,7 @@ stepDuration = 0.1
     1200.1,      ,         ,          ,     ,         <wkb>,    ,         0.3
 **
 *Depvar
-26,
+ 25,
  1, CDM_d2
  2, CDM_Fb1
  3, CDM_Fb2
@@ -117,20 +166,20 @@ stepDuration = 0.1
 19, CDM_d1C
 20, CDM_Plas13
 21, CDM_Inel13
-22, CDM_phi
-23, CDM_gamma
-24, CDM_Fm1
-25, CDM_Fm2
-26, CDM_Fm3
+22, CDM_phi0_12
+23, CDM_gamma_12
+24, CDM_phi0_13
+25, CDM_gamma_13
 *Characteristic Length, definition=USER, components=3
+*Damping, alpha=1.d+4
 **
 ** INITIAL CONDITIONS
 **
 *Initial Conditions, Type=Solution
   Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
   0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
-  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  -0.037686d0,  0.d0,
-  0.d0,  0.d0,  0.d0
+  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+  0.d0,  0.d0,
 ** ----------------------------------------------------------------
 **
 ** STEP: Step-1
@@ -149,23 +198,23 @@ stepDuration = 0.1
 ** Applied displacement end
 *Boundary, amplitude=Amp-1
 Part-1-1.loadApp, 1, 1, -0.01
-Part-1-1.loadApp, 3, 3
-*Boundary, amplitude=Amp-1
-Part-1-1.all, 3, 3
 ** Fixed end
 *Boundary, amplitude=Amp-1
-Part-1-1.pin, 1, 1
-Part-1-1.pin, 2, 2
+Part-1-1.pin, 1, 3
 *Boundary, amplitude=Amp-1
 Part-1-1.pinx, 1, 1
 Part-1-1.6, 2, 2
+Part-1-1.7, 3, 3
+** Springs
+*Boundary, amplitude=Amp-1
+Part-1-1.spring_nodes, 2, 2
 **
 ** OUTPUT REQUESTS
 **
 *Output, field, number interval=100
 *Node Output
 U, RF
-*Element Output
+*Element Output, elset=Part-1-1.all
 S, LE, SDV
 **
 ** HISTORY OUTPUT: H-Output-1

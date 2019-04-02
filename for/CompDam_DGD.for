@@ -6,7 +6,6 @@
 ! Space Administration. No copyright is claimed in the United States under Title 17, U.S. Code. All Other Rights
 ! Reserved.
 
-#include "vexternaldb.for"
 #include "vumatArgs.for"
 #include "version.for"
 #include "forlog.for"
@@ -24,6 +23,7 @@
 #include "cohesive.for"
 #include "vucharlength.for"
 #include "DGD.for"
+#include "vexternaldb.for"
 
 
 Subroutine VUMAT(  &
@@ -331,6 +331,7 @@ Subroutine CompDam(  &
   !    Solid elements:                                                   !
   ! -------------------------------------------------------------------- !
   Else ElementType
+
     ! -------------------------------------------------------------------- !
     !    Deformation Gradient Tensor and Right Stretch Tensor              !
     ! -------------------------------------------------------------------- !
@@ -370,25 +371,30 @@ Subroutine CompDam(  &
     ! -------------------------------------------------------------------- !
     !    Initialize phi0                                                   !
     ! -------------------------------------------------------------------- !
-    If (totalTime <= dt .AND. m%fiberCompDamFKT) Then
-      sv%phi0 = initializePhi0(sv%phi0, m%G12, m%XC, m%aPL, m%nPL, sv%Lc, charLength(km, 4:6))
+    If (totalTime <= dt .AND. (m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13)) Then
+      Call initializePhi0(m, sv%Lc, charLength(km, 4:6), sv%phi0_12, sv%phi0_13)
+      Call log%debug("Calculated initial misalignments, phi0_12: " // trim(str(sv%phi0_12)) // " and phi0_13: " // trim(str(sv%phi0_13)))
     End If
 
     ! -------------------------------------------------------------------- !
     !    Initialize fiber failure                                          !
     ! -------------------------------------------------------------------- !
-    If (m%fiberCompDamFKT .AND. p%fkt_fiber_failure_angle > zero) Then
-      sv%Inel12c = intializeFiberFailure(sv%phi0, p%fkt_fiber_failure_angle, m%G12, m%aPL, m%nPL)
+    If (m%fiberCompDamFKT12 .AND. p%fkt_fiber_failure_angle > zero) Then
+      sv%Inel12c = intializeFiberFailure(sv%phi0_12, p%fkt_fiber_failure_angle, m%G12, m%aPL, m%nPL)
     Else
       sv%Inel12c = Huge(zero)   ! Turn off fiber failure by setting the associate inelastic strain to a very large number
+    End If
+    If (m%fiberCompDamFKT13 .AND. p%fkt_fiber_failure_angle > zero) Then
+      sv%Inel13c = intializeFiberFailure(sv%phi0_13, p%fkt_fiber_failure_angle, m%G13, m%aPL, m%nPL)
+    Else
+      sv%Inel13c = Huge(zero)   ! Turn off fiber failure by setting the associate inelastic strain to a very large number
     End If
 
     ! -------------------------------------------------------------------- !
     !    Damage Calculations:                                              !
     ! -------------------------------------------------------------------- !
-
     ! Damage initiation prediction
-    If (.NOT. (m%matrixDam .AND. sv%d2 > zero) .AND. .NOT. (m%fiberCompDamFKT .AND. sv%d1C > zero)) Then
+    If (.NOT. (m%matrixDam .AND. sv%d2 > zero) .AND. .NOT. ((m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) .AND. sv%d1C > zero)) Then
 
       Call DGDInit(U,F,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km), F_old)
 
@@ -399,8 +405,8 @@ Subroutine CompDam(  &
 
       Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km),enerInelasNew(km))
 
-    ! Fiber compression damage evolution (New model)
-    Else If (m%fiberCompDamFKT .AND. sv%d1C > zero) Then
+    ! Fiber compression damage evolution (FKT decomposition)
+    Else If ((m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) .AND. sv%d1C > zero) Then
 
       Call DGDKinkband(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km))
 
@@ -416,9 +422,33 @@ Subroutine CompDam(  &
     ! Convert to vector format
     stressNew(km,:) = Matrix2Vec(CauchyABQ, nshr)
 
+    ! -------------------------------------------------------------------- !
+    !    Excesive shear strain errors                                      !
+    ! -------------------------------------------------------------------- !
+    If (m%shearNonlinearity12) Then
+      If (sv%Inel12 < stateOld(km,13)) Then
+        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),log%arg,'CompDam_DGD')
+        Call log%terminate('Decrease in inelastic strain 12.')
+      End If
+    End If
+    If (m%shearNonlinearity13) Then
+      If (sv%Inel13 < stateOld(km,21)) Then
+        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),log%arg,'CompDam_DGD')
+        Call log%terminate('Decrease in inelastic strain 13.')
+      End If
+    End If
+    If (m%shearNonlinearity12 .OR. m%shearNonlinearity13) Then
+      If (sv%Inel12 > 1.d0 .OR. sv%Inel13 > 1.d0) Then
+        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),log%arg,'CompDam_DGD')
+        Call log%terminate('Excessive inelastic shear strain.')
+      End If
+    End If
+
   End If ElementType
 
-  ! Store the updated state variables
+  ! -------------------------------------------------------------------- !
+  !    Store the updated state variables:                                !
+  ! -------------------------------------------------------------------- !
   stateNew(km,:) = storeStateVars(sv, nstatev, m)
 
   ! Scale the energy terms by density

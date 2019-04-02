@@ -28,6 +28,11 @@ Module parameters_Mod
     Double Precision :: schaefer_nr_tolerance                     ! Tolerance value used to determine if convergence has occurred in newton raphson loop
     Logical :: terminate_on_no_convergence                        ! Set to false to trigger an error, delete the element, and allow the analysis to continue when no converged solution can be found
     Double Precision :: debug_kill_at_total_time                  ! Time at which to kill analysis (for debugging purposes)
+    Logical :: fkt_random_seed                                    ! Set to true to use the time as the seed for initial fiber misalignment to get different results for each realization
+    Double Precision :: fkt_init_misalignment_azi_mu              ! Initial fiber misalignment azimuthal average [degrees]
+    Double Precision :: fkt_init_misalignment_azi_sigma           ! Initial fiber misalignment azimuthal variance [degrees]
+    Double Precision :: fkt_init_misalignment_polar_shape         ! Initial fiber misalignment polar shape parameter [degrees]
+    Double Precision :: fkt_init_misalignment_polar_scale         ! Initial fiber misalignment polar standard deviation [degrees]
 
     ! min and max values for acceptable range
     Integer, private :: logLevel_min, logLevel_max
@@ -48,6 +53,10 @@ Module parameters_Mod
     Double Precision, private :: fkt_fiber_failure_angle_min, fkt_fiber_failure_angle_max
     Double Precision, private :: schaefer_nr_tolerance_min, schaefer_nr_tolerance_max
     Double Precision, private :: debug_kill_at_total_time_min, debug_kill_at_total_time_max
+    Double Precision, private :: fkt_init_misalignment_azi_mu_min, fkt_init_misalignment_azi_mu_max
+    Double Precision, private :: fkt_init_misalignment_azi_sigma_min, fkt_init_misalignment_azi_sigma_max
+    Double Precision, private :: fkt_init_misalignment_polar_shape_min, fkt_init_misalignment_polar_shape_max
+    Double Precision, private :: fkt_init_misalignment_polar_scale_min, fkt_init_misalignment_polar_scale_max
 
   End Type parameters
 
@@ -211,6 +220,21 @@ Contains
           Case ('debug_kill_at_total_time')
             Call verifyAndSaveProperty_dbl(trim(key), value, p%debug_kill_at_total_time_min, p%debug_kill_at_total_time_max, p%debug_kill_at_total_time)
 
+          Case ('fkt_random_seed')
+            Call verifyAndSaveProperty_logical(trim(key), adjustl(value), p%fkt_random_seed)
+
+          Case ('fkt_init_misalignment_azi_mu')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_azi_mu_min, p%fkt_init_misalignment_azi_mu_max, p%fkt_init_misalignment_azi_mu)
+
+          Case ('fkt_init_misalignment_azi_sigma')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_azi_sigma_min, p%fkt_init_misalignment_azi_sigma_max, p%fkt_init_misalignment_azi_sigma)
+
+          Case ('fkt_init_misalignment_polar_shape')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_polar_shape_min, p%fkt_init_misalignment_polar_shape_max, p%fkt_init_misalignment_polar_shape)
+
+          Case ('fkt_init_misalignment_polar_scale')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_polar_scale_min, p%fkt_init_misalignment_polar_scale_max, p%fkt_init_misalignment_polar_scale)
+
           Case Default
             Call log%error("loadParameters: Parameter not recognized: " // trim(key))
         End Select
@@ -250,6 +274,11 @@ Contains
     p%schaefer_nr_counter_limit = 10000000
     p%terminate_on_no_convergence = .TRUE.
     p%debug_kill_at_total_time = -1.0d0
+    p%fkt_random_seed = .FALSE.
+    p%fkt_init_misalignment_azi_mu = 0.d0
+    p%fkt_init_misalignment_azi_sigma = 45.0d0
+    p%fkt_init_misalignment_polar_shape = 0.676d0
+    p%fkt_init_misalignment_polar_scale = 2.25d0
 
     ! Maximum and minimum values for parameters to be read from CompDam.parameters file
     p%logLevel_min = 0
@@ -305,6 +334,18 @@ Contains
 
     p%debug_kill_at_total_time_min = -2.0d0
     p%debug_kill_at_total_time_max = 1000.d0
+
+    p%fkt_init_misalignment_azi_mu_min = -180.d0
+    p%fkt_init_misalignment_azi_mu_max = 180.d0
+
+    p%fkt_init_misalignment_azi_sigma_min = Tiny(zero)
+    p%fkt_init_misalignment_azi_sigma_max = Huge(zero)
+
+    p%fkt_init_misalignment_polar_shape_min = Tiny(zero)
+    p%fkt_init_misalignment_polar_shape_max = Huge(zero)
+
+    p%fkt_init_misalignment_polar_scale_min = Tiny(zero)
+    p%fkt_init_misalignment_polar_scale_max = Huge(zero)
 
     Return
   End Subroutine initializeParameters
@@ -436,13 +477,22 @@ Contains
     write(fileUnit, nameValueFmt) '    "kb_decompose_thres": ', p%kb_decompose_thres, ', '
     write(fileUnit, nameValueFmt) '    "fkt_fiber_failure_angle": ', p%fkt_fiber_failure_angle, ', '
     write(fileUnit, nameValueFmt) '    "schaefer_nr_tolerance": ', p%schaefer_nr_tolerance, ', '
-    write(fileUnit, nameValueFmt) '    "schaefer_nr_counter_limit": ', p%schaefer_nr_counter_limit, ', '
+    write(fileUnit, "(A,I9,A)")   '    "schaefer_nr_counter_limit": ', p%schaefer_nr_counter_limit, ', '
     If (p%terminate_on_no_convergence) Then
       write(101,"(A)") '    "terminate_on_no_convergence": True,'
     Else
       write(101,"(A)") '    "terminate_on_no_convergence": False,'
     End If
-    write(fileUnit, nameValueFmt) '    "debug_kill_at_total_time": ', p%debug_kill_at_total_time
+    write(fileUnit, nameValueFmt) '    "debug_kill_at_total_time": ', p%debug_kill_at_total_time, ', '
+    If (p%fkt_random_seed) Then
+      write(101,"(A)") '    "fkt_random_seed": True,'
+    Else
+      write(101,"(A)") '    "fkt_random_seed": False,'
+    End If
+    write(fileUnit, nameValueFmt) '    "fkt_init_misalignment_azi_mu": ', p%fkt_init_misalignment_azi_mu, ', '
+    write(fileUnit, nameValueFmt) '    "fkt_init_misalignment_azi_sigma": ', p%fkt_init_misalignment_azi_sigma, ', '
+    write(fileUnit, nameValueFmt) '    "fkt_init_misalignment_polar_shape": ', p%fkt_init_misalignment_polar_shape, ', '
+    write(fileUnit, nameValueFmt) '    "fkt_init_misalignment_polar_scale": ', p%fkt_init_misalignment_polar_scale
     write(fileUnit, "(A)") '}'
 
   End Subroutine writeParametersToFile

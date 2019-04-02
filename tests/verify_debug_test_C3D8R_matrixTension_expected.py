@@ -9,5 +9,5 @@ parameters = {
     "fb2": 0.0,
     "fb3": 0.0,
     "nstatev": 0,
-    "phi0": 0.0,
+    "phi0_12": 0.0,
 }
