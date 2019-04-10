@@ -77,108 +77,104 @@ $ abaqus job=test_C3D8R_elastic_fiberTension user=../for/CompDam_DGD.for double=
 ### Example input file statements
 Example 1, using an [external material properties file](#defining-the-material-properties-in-a-props-file):
 
-<pre>
-*Section controls, name=control_name, distortion control=YES, element deletion=YES
-**
-*Material, name=IM7-8552
-*Density
- 1.57e-09,
-*Depvar, delete=11
-** the above delete statement is optional
-  19,
-  1, CDM_d2
-  2, CDM_Fb1
-  3, CDM_Fb2
-  4, CDM_Fb3
-  5, CDM_B
-  6, CDM_Lc1
-  7, CDM_Lc2
-  8, CDM_Lc3
-  9, CDM_FIm
- 10, CDM_alpha
- 11, CDM_STATUS
- 12, CDM_Plas12
- 13, CDM_Inel12
- 14, CDM_FIfT
- 15, CDM_slide1
- 16, CDM_slide2
- 17, CDM_FIfC
- 18, CDM_d1T
- 19, CDM_d1C
-*Characteristic Length, definition=USER, components=3
-*User material, constants=3
-** 1              2  3
-** feature flags,  , thickness
-          100001,  ,       0.1
-**
-*Initial Conditions, type=SOLUTION
- elset_name,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
- 0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0, 0.d0,
- 0.d0,  0.d0,  0.d0,  0.d0
-** In each step, NLGEOM=YES must be used. This is the default setting.
-</pre>
+    *Section controls, name=control_name, distortion control=YES, element deletion=YES
+    **
+    *Material, name=IM7-8552
+    *Density
+     1.57e-09,
+    *Depvar, delete=11
+    ** the above delete statement is optional
+      19,
+      1, CDM_d2
+      2, CDM_Fb1
+      3, CDM_Fb2
+      4, CDM_Fb3
+      5, CDM_B
+      6, CDM_Lc1
+      7, CDM_Lc2
+      8, CDM_Lc3
+      9, CDM_FIm
+     10, CDM_alpha
+     11, CDM_STATUS
+     12, CDM_Plas12
+     13, CDM_Inel12
+     14, CDM_FIfT
+     15, CDM_slide1
+     16, CDM_slide2
+     17, CDM_FIfC
+     18, CDM_d1T
+     19, CDM_d1C
+    *Characteristic Length, definition=USER, components=3
+    *User material, constants=3
+    ** 1              2  3
+    ** feature flags,  , thickness
+              100001,  ,       0.1
+    **
+    *Initial Conditions, type=SOLUTION
+     elset_name,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+     0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0, 0.d0,
+     0.d0,  0.d0,  0.d0,  0.d0
+    ** In each step, NLGEOM=YES must be used. This is the default setting.
 
 Example 2, using an [input deck command](#defining-the-material-properties-in-the-input-deck):
 
-<pre>
-*Section controls, name=control_name, distortion control=YES, element deletion=YES
-**
-*Material, name=IM7-8552
-*Density
- 1.57e-09,
-*Depvar, delete=11
-** the above delete statement is optional
-  19,
-  1, CDM_d2
-  2, CDM_Fb1
-  3, CDM_Fb2
-  4, CDM_Fb3
-  5, CDM_B
-  6, CDM_Lc1
-  7, CDM_Lc2
-  8, CDM_Lc3
-  9, CDM_FIm
- 10, CDM_alpha
- 11, CDM_STATUS
- 12, CDM_Plas12
- 13, CDM_Inel12
- 14, CDM_FIfT
- 15, CDM_slide1
- 16, CDM_slide2
- 17, CDM_FIfC
- 18, CDM_d1T
- 19, CDM_d1C
-*Characteristic Length, definition=USER, components=3
-*User material, constants=40
-** 1              2  3          4  5  6  7  8
-** feature flags,  , thickness, 4, 5, 6, 7, 8
-          100001,  ,       0.1,  ,  ,  ,  ,  ,
-**
-**  9         10        11        12        13        14        15        16
-**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT,
-    171420.0, 9080.0,   5290.0,   0.32,     0.52,     62.3,     92.30,    0.277,
-**
-**  17        18        19        20        21        22        23        24
-**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
-    0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
-**
-**  25        26        27        28        29        30        31        32
-**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
-    -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.2,      133.3,    0.5,
-**
-**  33        34        35        36        37        38        39        40
-**  XC,       fXC,      GXC,      fGXC,       cl,     w_kb,     None,     mu
-    1200.1,      ,         ,          ,         ,     0.1,          ,     0.3
-** For spacing below a6=schaefer_a6, b2=schaefer_b2, n=schaefer_n and A=schaefer_A
-**  41        42        43        44
-**  a6,       b2,       n,        A
-**
-*Initial Conditions, type=SOLUTION
- elset_name,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
- 0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0, 0.d0,
- 0.d0,  0.d0,  0.d0,  0.d0
-** In each step, NLGEOM=YES must be used. This is the default setting.
-</pre>
+    *Section controls, name=control_name, distortion control=YES, element deletion=YES
+    **
+    *Material, name=IM7-8552
+    *Density
+     1.57e-09,
+    *Depvar, delete=11
+    ** the above delete statement is optional
+      19,
+      1, CDM_d2
+      2, CDM_Fb1
+      3, CDM_Fb2
+      4, CDM_Fb3
+      5, CDM_B
+      6, CDM_Lc1
+      7, CDM_Lc2
+      8, CDM_Lc3
+      9, CDM_FIm
+     10, CDM_alpha
+     11, CDM_STATUS
+     12, CDM_Plas12
+     13, CDM_Inel12
+     14, CDM_FIfT
+     15, CDM_slide1
+     16, CDM_slide2
+     17, CDM_FIfC
+     18, CDM_d1T
+     19, CDM_d1C
+    *Characteristic Length, definition=USER, components=3
+    *User material, constants=40
+    ** 1              2  3          4  5  6  7  8
+    ** feature flags,  , thickness, 4, 5, 6, 7, 8
+              100001,  ,       0.1,  ,  ,  ,  ,  ,
+    **
+    **  9         10        11        12        13        14        15        16
+    **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT,
+        171420.0, 9080.0,   5290.0,   0.32,     0.52,     62.3,     92.30,    0.277,
+    **
+    **  17        18        19        20        21        22        23        24
+    **  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+        0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
+    **
+    **  25        26        27        28        29        30        31        32
+    **  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+        -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.2,      133.3,    0.5,
+    **
+    **  33        34        35        36        37        38        39        40
+    **  XC,       fXC,      GXC,      fGXC,       cl,     w_kb,     None,     mu
+        1200.1,      ,         ,          ,         ,     0.1,          ,     0.3
+    ** For spacing below a6=schaefer_a6, b2=schaefer_b2, n=schaefer_n and A=schaefer_A
+    **  41        42        43        44
+    **  a6,       b2,       n,        A
+    **
+    *Initial Conditions, type=SOLUTION
+     elset_name,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+     0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0, 0.d0,
+     0.d0,  0.d0,  0.d0,  0.d0
+    ** In each step, NLGEOM=YES must be used. This is the default setting.
 
 ### Running tests
 Test cases are available in the `tests` directory. The tests are useful for demonstrating the capabilities of the VUMAT as well as to verify that the code performs as intended. Try running some of the test cases to see how the code works. The test cases can be submitted as a typical Abaqus job using the Abaqus command line arguments.
@@ -315,7 +311,7 @@ By default, fiber nonlinearity is disabled by setting c<sub>*l*</sub> = 0.
 
 
 ## Elements
-CompDam_DGD has been developed and tested using the Abaqus three-dimensional, reduced-integration `C3D8R` solid elements. Limited testing has been performed using the `CPS4R` plane stress element, the `SC8R` continuum shell element, and the fully-integrated `C3D8` solid element.
+CompDam_DGD has been developed and tested using the Abaqus three-dimensional, reduced-integration `C3D8R` solid elements. Limited testing has been performed using the `CPS4R` plane stress element, the `SC8R` continuum shell element, the fully-integrated `C3D8` solid element, and the `COH3D8` cohesive element.
 
 Because CompDam_DGD is a material model, it is expected to be compatible with structural elements generally. However, users are advised to perform tests with any previously untested element types before proceeding to use CompDam_DGD in larger structural models.
 
@@ -403,20 +399,20 @@ Model features can be enabled or disabled by two methods. The first method is sp
 The second method is by specifying the status of each feature directly as a material property in the input deck. Each feature of the subroutine is controlled by a position in an integer, where 0 is disabled and 1 is enabled. In cases where mutually exclusive options are available, numbers greater than 1 are used to specify the particular option to use.
 
 The positions correspond to the features as follows:
-- Position 1: Matrix damage
+- Position 1: Matrix damage (1=intra-laminar cracking in solid elements, 2=interlaminar cracking in cohesive elements)
 - Position 2: Shear nonlinearity (1=Ramberg-Osgood 1-2 plane, 2=Schapery, 3=Ramberg-Osgood 3-D, 4=Ramberg-Osgood 1-3 plane, 5=Schaefer || more information [here](#shear-nonlinearity))
 - Position 3: Fiber tensile damage
 - Position 4: Fiber compression damage (1=max strain, 2=N/A, 3=FKT || more information [here](#fiber-compression-damage))
 - Position 5: *reserved*
 - Position 6: Friction
 
-For example, `101000` indicates that the model will run with matrix damage and fiber tension damage enabled; `120001` indicates that the model will run with matrix damage, in-plane shear nonlinearity using Schapery theory, and friction.
+For example, `101000` indicates that the model will run with matrix damage and fiber tension damage enabled; `120001` indicates that the model will run with matrix damage, in-plane shear nonlinearity using Schapery theory, and friction; and `200000` indicates that the model is being applied to cohesive elements.
 
 #### Definition of thickness
 Length along the thickness-direction associated with the current integration point.
 
 ## State variables
-The table below lists all of the state variables in the model. The model requires a minimum of 18 state variables. Additional state variables are defined depending on which (if any) shear nonlinearity and fiber compression features are enabled. For fiber compression model 1: nstatev = 19 and for model 3: nstatev = 26. For shear nonlinearity models 3 or 4: nstatev = 21.
+The table below lists all of the state variables in the model when used with solid or shell elements. The model requires a minimum of 18 state variables. Additional state variables are defined depending on which (if any) shear nonlinearity and fiber compression features are enabled. For fiber compression model 1: nstatev = 19 and for model 3: nstatev = 26. For shear nonlinearity models 3 or 4: nstatev = 21.
 
 | # | Name             | Description                                                           |
 |---|------------------|-----------------------------------------------------------------------|
@@ -458,6 +454,20 @@ The table below lists all of the state variables in the model. The model require
 | 32| `CDM_Ep6`        | Plastic strain in 31 direction calculated using Schaefer Theory       |
 | 33| `CDM_fp1`        | Yield criterion (effective stress) calculated using Schaefer Theory   |
 
+When using the material model with cohesive elements, a different set of state variables are used. Cohesive state variables with a similar continuum damage mechanics counterpart utilize the same state variable number. The cohesive element material model requires fewer state variables, however, resulting in "gaps" in the cohesive state variable numbering.
+
+| # | Name             | Description                                                           |
+|---|------------------|-----------------------------------------------------------------------|
+|  1| `COH_dmg`        | Cohesive damage variable                                              |
+|  2| `COH_delta_s1`   | Displacement-jump in the first shear direction                        |
+|  3| `COH_delta_n`    | Displacement-jump in the normal direction                             |
+|  4| `COH_delta_s2`   | Displacement-jump in the second shear direction                       |
+|  5| `COH_B`          | Mode Mixity (*G*<sub>II</sub> / (*G*<sub>I</sub> + *G*<sub>II</sub>)) |
+|  9| `COH_FI`         | Cohesive failure criterion (del/del_0)                                |
+| 15| `COH_slide1`     | Cohesive sliding displacement, fiber direction                        |
+| 16| `COH_slide2`     | Cohesive sliding displacement, transverse direction                   |
+|---|------------------|-----------------------------------------------------------------------|
+
 ### Initial conditions
 All state variables should be initialized using the `*Initial conditions` command. As a default, all state variables should be initialized as zero, except `CDM_alpha`, `CDM_STATUS`, and `CDM_phi0`.
 
@@ -473,12 +483,10 @@ The initial condition for `CDM_phi0` is used to specify the initial fiber misali
 
 Pre-existing damage can be modeled by creating an element set for the damaged region and specifying different initial conditions for this element set. For example, to create an intraply matrix crack with no out-of-plane orientation, the following initial conditions could be specified for the cracked elements:
 
-<pre>
-*Initial Conditions, type=SOLUTION
- damaged_elset,  1.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-          0.d0,  0.d0,     0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
-          0.d0,  0.d0,  0.d0,  0.d0
-</pre>
+    *Initial Conditions, type=SOLUTION
+     damaged_elset,  1.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+              0.d0,  0.d0,     0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+              0.d0,  0.d0,  0.d0,  0.d0
 
 ## Using CompDam with Abaqus/Standard
 The repository includes a developmental capability to run the CompDam VUMAT in an Abaqus/Standard analysis using a wrapper, `for/vumatWrapper.for`, that translates between the UMAT and VUMAT user subroutine interfaces. The intended usage is for Abaqus/Standard runs with little or no damage.
@@ -486,77 +494,75 @@ The repository includes a developmental capability to run the CompDam VUMAT in a
 ### Usage
 To run an analysis with CompDam in Abaqus/Standard, the following input deck template is provided. Note that 9 additional state variables are required.
 
-<pre>
-*Section controls, name=control_name, hourglass=ENHANCED
-**
-*Material, name=IM7-8552
-*Density
- 1.57e-09,
-*User material, constants=40
-** 1              2  3          4  5  6  7  8
-** feature flags,  , thickness, 4, 5, 6, 7, 8
-          100001,  ,       0.1,  ,  ,  ,  ,  ,
-**
-**  9         10        11        12        13        14        15        16
-**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT,
-    171420.0, 9080.0,   5290.0,   0.32,     0.52,     62.3,     92.30,    0.277,
-**
-**  17        18        19        20        21        22        23        24
-**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
-    0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
-**
-**  25        26        27        28        29        30        31        32
-**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
-    -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.2,      133.3,    0.5,
-**
-**  33        34        35        36        37        38        39        40
-**  XC,       fXC,      GXC,      fGXC,       cl,     w_kb,     None,     mu
-    1200.1,      ,         ,          ,         ,     0.1,          ,     0.3
-**
-*Depvar, delete=11
-  28,
-  1, CDM_d2
-  2, CDM_Fb1
-  3, CDM_Fb2
-  4, CDM_Fb3
-  5, CDM_B
-  6, CDM_Lc1
-  7, CDM_Lc2
-  8, CDM_Lc3
-  9, CDM_FIm
- 10, CDM_alpha
- 11, CDM_STATUS
- 12, CDM_Plas12
- 13, CDM_Inel12
- 14, CDM_FIfT
- 15, CDM_slide1
- 16, CDM_slide2
- 17, CDM_FIfC
- 18, CDM_d1T
- 19, CDM_d1C
- 20, CDM_DIRECT11
- 21, CDM_DIRECT21
- 22, CDM_DIRECT31
- 23, CDM_DIRECT12
- 24, CDM_DIRECT22
- 25, CDM_DIRECT32
- 26, CDM_DIRECT13
- 27, CDM_DIRECT23
- 28, CDM_DIRECT33
-*User defined field
-**
-** INITIAL CONDITIONS
-**
-*Initial Conditions, Type=Solution
-ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
-0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-0.d0,  0.d0,  0.d0,  0.d0,  0.d0
-*Initial Conditions, Type=Field, Variable=1
-GLOBAL,  0.d0
-** GLOBAL is an nset with all nodes attached to compdam enabled elements
-** In each step, NLGEOM=YES must be used. This is NOT the default setting.
-</pre>
+    *Section controls, name=control_name, hourglass=ENHANCED
+    **
+    *Material, name=IM7-8552
+    *Density
+     1.57e-09,
+    *User material, constants=40
+    ** 1              2  3          4  5  6  7  8
+    ** feature flags,  , thickness, 4, 5, 6, 7, 8
+              100001,  ,       0.1,  ,  ,  ,  ,  ,
+    **
+    **  9         10        11        12        13        14        15        16
+    **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT,
+        171420.0, 9080.0,   5290.0,   0.32,     0.52,     62.3,     92.30,    0.277,
+    **
+    **  17        18        19        20        21        22        23        24
+    **  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+        0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
+    **
+    **  25        26        27        28        29        30        31        32
+    **  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+        -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.2,      133.3,    0.5,
+    **
+    **  33        34        35        36        37        38        39        40
+    **  XC,       fXC,      GXC,      fGXC,       cl,     w_kb,     None,     mu
+        1200.1,      ,         ,          ,         ,     0.1,          ,     0.3
+    **
+    *Depvar, delete=11
+      28,
+      1, CDM_d2
+      2, CDM_Fb1
+      3, CDM_Fb2
+      4, CDM_Fb3
+      5, CDM_B
+      6, CDM_Lc1
+      7, CDM_Lc2
+      8, CDM_Lc3
+      9, CDM_FIm
+     10, CDM_alpha
+     11, CDM_STATUS
+     12, CDM_Plas12
+     13, CDM_Inel12
+     14, CDM_FIfT
+     15, CDM_slide1
+     16, CDM_slide2
+     17, CDM_FIfC
+     18, CDM_d1T
+     19, CDM_d1C
+     20, CDM_DIRECT11
+     21, CDM_DIRECT21
+     22, CDM_DIRECT31
+     23, CDM_DIRECT12
+     24, CDM_DIRECT22
+     25, CDM_DIRECT32
+     26, CDM_DIRECT13
+     27, CDM_DIRECT23
+     28, CDM_DIRECT33
+    *User defined field
+    **
+    ** INITIAL CONDITIONS
+    **
+    *Initial Conditions, Type=Solution
+    ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+    0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+    0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+    0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+    *Initial Conditions, Type=Field, Variable=1
+    GLOBAL,  0.d0
+    ** GLOBAL is an nset with all nodes attached to compdam enabled elements
+    ** In each step, NLGEOM=YES must be used. This is NOT the default setting.
 
 ### Current limitations
 As the `vumatWrapper` is a developmental capability, several important limitations exist at present:
@@ -578,7 +584,7 @@ Several statements for debugging need to be uncommented in the environment file.
 
 Run the job with the `-debug` and `-explicit` arguments. For example:
 ```
-abaqus -j test_C3D8R_fiberTension -user ../for/CompDam_DGD.for -double both -debug -explicit
+$ abaqus -j test_C3D8R_fiberTension -user ../for/CompDam_DGD.for -double both -debug -explicit
 ```
 
 This command should open the [Visual Studio debugging software](https://msdn.microsoft.com/en-us/library/sc65sadd.aspx) automatically. Open the source file(s) to debug. At a minimum, open the file with the subroutine entry point `for/CompDam_DGD.for`. Set a break point by clicking in the shaded column on the left edge of the viewer. The break point will halt execution. Press <kbd>F5</kbd> to start the solver. When the break point is reached, a yellow arrow will appear and code execution will pause. Press <kbd>F5</kbd> to continue to the next break point, press <kbd>F11</kbd> to execute the next line of code following execution into function calls (Step Into), or press <kbd>F10</kbd> to execute the next line of code but not follow execution into function calls (Step Over).
@@ -664,11 +670,9 @@ We invite your contributions to CompDam_DGD! Please submit contributions (includ
 ## Citing CompDam
 If you use CompDam, please cite using the following BibTex entry:
 
-<pre>
-  @misc{CompDam,
-  title={CompDam - Deformation Gradient Decomposition (DGD), v2.3.1},
-  author={Leone Jr., F. A., Bergan, A. C., D\'avila, C. G. },
-  note={https://github.com/nasa/CompDam_DGD},
-  year={2018}
-  }
-</pre>
+    @misc{CompDam,
+    title={CompDam - Deformation Gradient Decomposition (DGD), v2.3.1},
+    author={Leone Jr., F. A., Bergan, A. C., D\'avila, C. G. },
+    note={https://github.com/nasa/CompDam_DGD},
+    year={2018}
+    }
