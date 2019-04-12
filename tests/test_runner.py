@@ -314,7 +314,7 @@ class ParametricKinkBandWidth_singleElement(av.TestCase):
 
 class SingleElementSchaeferTests(av.TestCase):
     """
-    Single element models to tests the DGD code base for Schaefer theory
+    Single element models to test the CompDam_DGD code base for Schaefer theory responses
     """
 
     # Class-wide methods
@@ -342,9 +342,50 @@ class SingleElementSchaeferTests(av.TestCase):
         self.runTest("test_C3D8R_schaefer_oat75")
 
 
+class SingleElementCohesiveTests(av.TestCase):
+    """
+    Single element models to test the cohesive element material model features
+    """
+
+    # Class-wide methods
+    @classmethod
+    def setUpClass(cls):
+        copyParametersFile()
+
+    # -----------------------------------------------------------------------------------------
+    # Test methods
+    def test_COH3D8_mode1(self):
+        """ Single cohesive element test for mode I response """
+        self.runTest("test_COH3D8_mode1")
+
+    def test_COH3D8_shear13(self):
+        """ Single cohesive element test for 1-3 shear loading """
+        self.runTest("test_COH3D8_shear13")
+
+    def test_COH3D8_shear13_compression(self):
+        """ Single cohesive element test for 1-3 shear loading with normal compression """
+        self.runTest("test_COH3D8_shear13_compression")
+
+    def test_COH3D8_shear13_friction(self):
+        """ Single cohesive element test for 1-3 shear loading with friction """
+        self.runTest("test_COH3D8_shear13_friction")
+
+    def test_COH3D8_shear23(self):
+        """ Single cohesive element test for 2-3 shear loading """
+        self.runTest("test_COH3D8_shear23")
+
+    def test_COH3D8_shear23_compression(self):
+        """ Single cohesive element test for 2-3 shear loading with normal compression """
+        self.runTest("test_COH3D8_shear23_compression")
+
+    def test_COH3D8_shear23_friction(self):
+        """ Single cohesive element test for 2-3 shear loading with friction """
+        self.runTest("test_COH3D8_shear23_friction")
+
+
 class SingleElementTests(av.TestCase):
     """
-    Single element models to tests the DGD code base
+    Single element models to test the solid element material model features
     """
 
     # Class-wide methods
@@ -355,16 +396,6 @@ class SingleElementTests(av.TestCase):
 
     # -----------------------------------------------------------------------------------------
     # Test methods
-    def test_COH3D8_mode1(self):
-        """ Single cohesive element test for mode I response """
-        self.runTest("test_COH3D8_mode1")
-
-
-    def test_COH3D8_mode2(self):
-        """ Single cohesive element test for mode II response """
-        self.runTest("test_COH3D8_mode2")
-
-
     def test_C3D8R_matrixTension(self):
         """ Simple tension in the matrix direction, with damage """
         self.runTest("test_C3D8R_matrixTension")
