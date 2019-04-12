@@ -466,7 +466,6 @@ When using the material model with cohesive elements, a different set of state v
 |  9| `COH_FI`         | Cohesive failure criterion (del/del_0)                                |
 | 15| `COH_slide1`     | Cohesive sliding displacement, fiber direction                        |
 | 16| `COH_slide2`     | Cohesive sliding displacement, transverse direction                   |
-|---|------------------|-----------------------------------------------------------------------|
 
 ### Initial conditions
 All state variables should be initialized using the `*Initial conditions` command. As a default, all state variables should be initialized as zero, except `CDM_alpha`, `CDM_STATUS`, and `CDM_phi0`.
