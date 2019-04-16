@@ -359,7 +359,7 @@ Contains
   End Subroutine DGDInit
 
 
-  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern)
+  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern, enerInelas)
     ! Determines the matrix damage state variable based on the current   !
     ! deformation and mode mixity.                                       !
 
@@ -385,7 +385,7 @@ Contains
     Double Precision, Intent(IN) :: DT                                       ! Delta temperature
     Integer, intent(IN) :: ndir, nshr
     Double Precision, Intent(OUT) :: Cauchy(ndir,ndir)
-    Double Precision, Intent(OUT) :: enerIntern
+    Double Precision, Intent(OUT) :: enerIntern, enerInelas
 
     ! -------------------------------------------------------------------- !
     ! Locals
@@ -469,6 +469,7 @@ Contains
 
     ! Initialize outputs
     sv%FIm = zero
+    enerInelas = zero
 
     X = zero; X(1,1) = sv%Lc(1); X(2,2) = sv%Lc(2); X(3,3) = sv%Lc(3) ! Ref. Config.
 
@@ -979,6 +980,7 @@ Contains
         EXIT MatrixDamage
       Else
         Call log%debug('Change in matrix damage variable, d2 ' // trim(str(sv%d2)))
+        enerInelas = enerInelas + dGdGc*(m%GYT + (m%GSL - m%GYT)*sv%B**m%eta_BK)
       End If
 
       ! Check for convergence based on rate of energy dissipation

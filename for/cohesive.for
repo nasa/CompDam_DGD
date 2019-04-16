@@ -34,7 +34,7 @@ Contains
     Use matProp_Mod
 
     ! Arguments
-    Double Precision, intent(IN) :: GYT, GSL                                  ! Toughnesses
+    Double Precision, intent(IN) :: GYT, GSL
     Type(matProps), intent(IN) :: m
     Double Precision, intent(IN) :: delta(3)
     Double Precision, intent(IN) :: Pen(3), delta_n_init
@@ -61,7 +61,7 @@ Contains
     Double Precision, intent(INOUT) :: B
     Double Precision, intent(OUT) :: FI
     Double Precision, optional, intent(INOUT) :: damage
-    Double Precision, optional, intent(OUT) :: dGdGc
+    Double Precision, optional, intent(OUT) :: dGdGc                        ! Dissipated energy per fracture toughness
 
     ! Locals
     Double Precision :: del                                                  ! Magnitude of current cohesive displacement
@@ -72,7 +72,7 @@ Contains
     Double Precision :: del0nB, del0sB, delfnB, delfsB                       ! Temporary, used to calculate d0 and df
     Double Precision :: damage_max                                           ! Maximum value for damage variable
     Double Precision :: beta                                                 ! Placeholder (temp.) variables for Mode-mixity
-    Double Precision :: KS                                                   ! Penalty stiffnesses
+    Double Precision :: KS                                                   ! Shear penalty stiffness
     Double Precision :: B_old, damage_old
     Double Precision :: mode_mix_limit
     Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
@@ -129,6 +129,7 @@ Contains
     End If
 
     FI = MIN(one, del/d0)
+    dGdGc = zero
 
     DamageEvolution: If (present(damage) .AND. FI == one) Then
 

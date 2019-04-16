@@ -130,6 +130,7 @@ Subroutine CompDam(  &
   Double Precision :: Pen(3)  ! Cohesive penalty stiffness
   Double Precision :: delta(3)  ! Cohesive displacement-jump vector
   Double Precision :: AdAe
+  Double Precision :: dGdGc  ! dissipated cohesive energy per fracture toughness
   Logical :: Sliding
 
   ! Parameters
@@ -288,7 +289,7 @@ Subroutine CompDam(  &
     sv%Fb2 = delta(2)  ! Normal direction
     sv%Fb3 = delta(3)  ! Second shear direction
 
-    Call cohesive_damage(m, delta, Pen, delta(2), sv%B, sv%FIm, sv%d2, enerInelasNew(km))
+    Call cohesive_damage(m, delta, Pen, delta(2), sv%B, sv%FIm, sv%d2, dGdGc)
 
     If (m%friction .AND. delta(2) <= zero) Then  ! Closed cracks without friction
       AdAe = sv%d2/(sv%d2 + (one - sv%d2)*two*Pen(1)*m%GSL/(m%SL*m%SL))
@@ -300,12 +301,17 @@ Subroutine CompDam(  &
       sv%slide(2) = delta(3)
     End If
 
+    ! Allows for cohesive elements to be deleted when their damage variable reaches one
+    If (sv%d2 >= one) sv%STATUS = 0
+
+    ! Update stress values
     stressNew(km,3) = T_coh(1)  ! First shear direction (1--3)
     stressNew(km,1) = T_coh(2)  ! Normal direction (3--3)
     stressNew(km,2) = T_coh(3)  ! Second shear direction (2--3)
 
-    enerInternNew(km) = zero
-    enerInelasNew(km) = enerInelasOld(km) + enerInelasNew(km)
+    ! Update internal and inelastic energy terms
+    enerInternNew(km) = DOT_PRODUCT(T_coh, delta)/two
+    enerInelasNew(km) = dGdGc*(m%GYT + (m%GSL - m%GYT)*sv%B**m%eta_BK)
 
   ! -------------------------------------------------------------------- !
   !    Solid elements:                                                   !
@@ -354,11 +360,11 @@ Subroutine CompDam(  &
   ! -------------------------------------------------------------------- !
   !    Initialize fiber failure                                          !
   ! -------------------------------------------------------------------- !
-  If (m%fiberCompDamFKT .AND. p%fkt_fiber_failure_angle > zero) Then
-    sv%Inel12c = intializeFiberFailure(sv%phi0, p%fkt_fiber_failure_angle, m%G12, m%aPL, m%nPL)
-  Else
-    sv%Inel12c = Huge(zero)   ! Turn off fiber failure by setting the associate inelastic strain to a very large number
-  End If
+    If (m%fiberCompDamFKT .AND. p%fkt_fiber_failure_angle > zero) Then
+      sv%Inel12c = intializeFiberFailure(sv%phi0, p%fkt_fiber_failure_angle, m%G12, m%aPL, m%nPL)
+    Else
+      sv%Inel12c = Huge(zero)   ! Turn off fiber failure by setting the associate inelastic strain to a very large number
+    End If
 
   ! -------------------------------------------------------------------- !
   !    Damage Calculations:                                              !
@@ -374,7 +380,7 @@ Subroutine CompDam(  &
     ! Matrix crack damage evolution
     If (m%matrixDam .AND. sv%d2 > zero) Then
 
-      Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km))
+      Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km),enerInelasNew(km))
 
     ! Fiber compression damage evolution (New model)
     Else If (m%fiberCompDamFKT .AND. sv%d1C > zero) Then
@@ -400,7 +406,7 @@ Subroutine CompDam(  &
 
   ! Scale the energy terms by density
   enerInternNew(km) = enerInternNew(km)/density(km)
-  enerInelasNew(km) = enerInelasNew(km)/density(km)
+  enerInelasNew(km) = enerInelasOld(km) + enerInelasNew(km)/density(km)
 
   End Do master ! End Master Loop
 
