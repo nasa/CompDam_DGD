@@ -77,7 +77,7 @@ $ abaqus job=test_C3D8R_elastic_fiberTension user=../for/CompDam_DGD.for double=
 ### Example input file statements
 Example 1, using an [external material properties file](#defining-the-material-properties-in-a-props-file):
 
-    *Section controls, name=control_name, distortion control=YES, element deletion=YES
+    *Section controls, name=control_name, distortion control=YES
     **
     *Material, name=IM7-8552
     *Density
@@ -118,7 +118,7 @@ Example 1, using an [external material properties file](#defining-the-material-p
 
 Example 2, using an [input deck command](#defining-the-material-properties-in-the-input-deck):
 
-    *Section controls, name=control_name, distortion control=YES, element deletion=YES
+    *Section controls, name=control_name, distortion control=YES
     **
     *Material, name=IM7-8552
     *Density
