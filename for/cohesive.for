@@ -61,7 +61,7 @@ Contains
     Double Precision, intent(INOUT) :: B
     Double Precision, intent(OUT) :: FI
     Double Precision, optional, intent(INOUT) :: damage
-    Double Precision, optional, intent(OUT) :: dGdGc                        ! Dissipated energy per fracture toughness
+    Double Precision, optional, intent(OUT) :: dGdGc                        ! Normalized energy dissipation
 
     ! Locals
     Double Precision :: del                                                  ! Magnitude of current cohesive displacement
@@ -129,40 +129,42 @@ Contains
     End If
 
     FI = MIN(one, del/d0)
-    dGdGc = zero
 
-    DamageEvolution: If (present(damage) .AND. FI == one) Then
+    DamageEvolution: If (present(damage)) Then
+      dGdGc = zero
+      If (FI == one) Then
 
-      ! Cohesive displacements for final failure for pure mode I and mode II
-      delfn = two*GYT/del0n/Pen(2)  ! mode I cohesive final disp.
-      delfs = two*GSL/del0s/KS  ! mode II cohesive final disp.
+        ! Cohesive displacements for final failure for pure mode I and mode II
+        delfn = two*GYT/del0n/Pen(2)  ! mode I cohesive final disp.
+        delfs = two*GSL/del0s/KS  ! mode II cohesive final disp.
 
-      ! Mixed-mode final failure displacements
-      If (B >= one - mode_mix_limit) Then
-        df = delfs
-      Else If (B <= mode_mix_limit) Then
-        df = delfn
-      Else
-        delfnB = ((one - B**eta_BK)*del0n*delfn + KS/Pen(2)*B**eta_BK*del0s*delfs)*(one - B)/del0nB
-        delfsB = SQRT(beta/(one - beta))*delfnB
-        df = SQRT(delfnB*delfnB + delfsB*delfsB)
-      End If
+        ! Mixed-mode final failure displacements
+        If (B >= one - mode_mix_limit) Then
+          df = delfs
+        Else If (B <= mode_mix_limit) Then
+          df = delfn
+        Else
+          delfnB = ((one - B**eta_BK)*del0n*delfn + KS/Pen(2)*B**eta_BK*del0s*delfs)*(one - B)/del0nB
+          delfsB = SQRT(beta/(one - beta))*delfnB
+          df = SQRT(delfnB*delfnB + delfsB*delfsB)
+        End If
 
-      ! Determine the new damage state
-      damage_old = damage  ! Store the current damage variable
-      If (del == zero) Then
-        damage = zero
-      Else
-        damage = df*(del - d0)/del/(df - d0)  ! Calculate the new damage variable
-      End If
-      damage = MIN(damage, damage_max)  ! Cap damage variable
+        ! Determine the new damage state
+        damage_old = damage  ! Store the current damage variable
+        If (del == zero) Then
+          damage = zero
+        Else
+          damage = df*(del - d0)/del/(df - d0)  ! Calculate the new damage variable
+        End If
+        damage = MIN(damage, damage_max)  ! Cap damage variable
 
-      ! Check for damage advancement
-      If (damage <= damage_old) Then  ! If there is no damage progression...
-        damage = damage_old  ! ...use the old damage variable.
-      Else  ! If there is damage progression...
-        ! ...calculate energy dissipated by change in damage state
-        dGdGc = damage/(df/d0*(one - damage) + damage) - damage_old/(df/d0*(one - damage_old) + damage_old)
+        ! Check for damage advancement
+        If (damage <= damage_old) Then  ! If there is no damage progression...
+          damage = damage_old  ! ...use the old damage variable.
+        Else  ! If there is damage progression, calculate the normalized energy dissipation.
+          dGdGc = damage/(df/d0*(one - damage) + damage) - damage_old/(df/d0*(one - damage_old) + damage_old)
+        End If
+
       End If
 
     End If DamageEvolution
