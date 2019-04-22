@@ -472,17 +472,17 @@ Contains
                   m%shearNonlinearity13 = .TRUE.
                   m%schapery = .FALSE.
                   Call log%info("loadMatProps: Shear nonlinearity (1-3 plane) ENABLED")
-                Else If (featureFlags(j:j) == '5') THEN 
+                Else If (featureFlags(j:j) == '5') THEN
                   m%shearNonlinearity12 = .FALSE.
                   m%shearNonlinearity13 = .FALSE.
                   m%schapery = .FALSE.
-                  m%schaefer = .TRUE.		
+                  m%schaefer = .TRUE.
                   Call log%info("loadMatProps: Schaefer non-linearity ENABLED")
                 Else
                   m%shearNonlinearity12 = .FALSE.
                   m%shearNonlinearity13 = .FALSE.
                   m%schapery = .FALSE.
-                  m%schaefer = .FALSE.		
+                  m%schaefer = .FALSE.
                   Call log%info("loadMatProps: pre-peak nonlinearity DISABLED")
                 End If
 
@@ -676,7 +676,7 @@ Contains
     m%toughness_min = Tiny(zero)
     m%toughness_max = Huge(zero)
 
-    m%eta_BK_min = one
+    m%eta_BK_min = Tiny(zero)
     m%eta_BK_max = Huge(zero)
 
     m%cte_min = -one
