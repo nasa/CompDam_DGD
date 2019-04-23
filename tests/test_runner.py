@@ -396,6 +396,11 @@ class SingleElementTests(av.TestCase):
 
     # -----------------------------------------------------------------------------------------
     # Test methods
+    def test_C3D8R_error(self):
+        """ Intentionally cause a DGD convergence error """
+        self.runTest("test_C3D8R_error")
+
+
     def test_C3D8R_matrixTension(self):
         """ Simple tension in the matrix direction, with damage """
         self.runTest("test_C3D8R_matrixTension")

@@ -22,28 +22,32 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   ! Locals
   Integer :: kStep                                     ! Current step number
   Integer :: kInc                                      ! Current increment number
+  Integer :: analysis_status
   Integer, parameter :: randomNumberCount = 10000
   Double Precision :: randomNumbers(randomNumberCount)
 
   ! Common
+  Common /analysis_termination/ analysis_status
   Common randomNumbers
   ! -------------------------------------------------------------------- !
-
 
   kStep = i_Array(i_int_kStep)
   kInc  = i_Array(i_int_kInc)
 
-
-  ! Note that you  can use the MPI communication between parallel Abaqus processes to gather
-  ! and scatter the data.
-
   ! Start of the analysis
   If (lOp == j_int_StartAnalysis) Then
 
-    ! User coding to set up the environment, open files, launch/connect to the external programs, etc.
+    ! Initialize common analysis_status variable
+    analysis_status = 1
 
     ! Initialize random numbers for fiber misalignment here
     Call RANDOM_NUMBER(randomNumbers)
+
+  ! End of the increment
+  Else If (lOp == j_int_EndIncrement) Then
+
+    ! If analysis_status has been changed, cleanly terminate the analysis
+    If (analysis_status == 0) i_Array(i_int_iStatus) = j_int_TerminateAnalysis
 
   End If
 
