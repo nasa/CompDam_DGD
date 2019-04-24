@@ -581,10 +581,10 @@ Contains
             If (sv%d2 >= damage_max) Then
               If (sv%alpha == -999) Then
                 Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
-                Call log%error('Invalid alpha. Check value for alpha in the initial conditions.')
+                Call log%terminate('Invalid alpha. Check value for alpha in the initial conditions.')
               End If
               If (p%terminate_on_no_convergence) Then
-                Call log%error('DGDEvolve failed to converge, terminating analysis.')
+                Call log%terminate('DGDEvolve failed to converge, terminating analysis.')
               Else
                 Call log%warn('Deleting failed element for which no solution could be found (DGDEvolve).')
                 sv%STATUS = 0
@@ -593,7 +593,8 @@ Contains
             End If
             ! ...raise an error and halt the subroutine.
             Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
-            Call log%error('No starting points produced a valid solution (DGDEvolve).')
+            Call log%terminate('No starting points produced a valid solution (DGDEvolve).')
+            Exit MatrixDamage
           End If
 
           cutbacks = 0
@@ -1250,7 +1251,7 @@ Contains
       If (err < tol_DGD .AND. MDet(Fkb) < p%compLimit) Then
         Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
         If (p%terminate_on_no_convergence) Then
-          Call log%error('Highly distorted element (DGDKinkband).')
+          Call log%terminate('Highly distorted element (DGDKinkband).')
         Else
           Call log%warn('Deleting highly distorted element (DGDKinkband).')
           sv%STATUS = 0
@@ -1282,7 +1283,7 @@ Contains
         Else
           Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
           If (p%terminate_on_no_convergence) Then
-            Call log%error('Equilibrium loop reached maximum number of iterations (DGDKinkband).')
+            Call log%terminate('Equilibrium loop reached maximum number of iterations (DGDKinkband).')
           Else
             Call log%warn('Deleting element for which equilibrium loop reached maximum number of iterations (DGDKinkband).')
             sv%STATUS = 0
@@ -1307,7 +1308,7 @@ Contains
         Else
           Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
           If (p%terminate_on_no_convergence) Then
-            Call log%error('Reached max cutback limit (DGDKinkband).')
+            Call log%terminate('Reached max cutback limit (DGDKinkband).')
           Else
             Call log%warn('Reached max cutback limit, deleting element (DGDKinkband).')
             sv%STATUS = 0

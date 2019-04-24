@@ -44,7 +44,8 @@ Module forlog_Mod
     Generic :: debug => debug_str, debug_int, debug_dbl, debug_mat  ! level=4, Maximum amount of information
     Procedure :: info                                ! level=3, Verbose logging
     Procedure :: warn                                ! level=2, Log issues that may impact accuracy of results
-    Procedure :: error                               ! level=1, Log issues that require termination of analysis
+    Procedure :: error                               ! level=1, Log issues that immediately terminate the analysis
+    Procedure :: terminate                           ! level=1, log issues that cleanly terminate the anlaysis
   End Type forlog
 
   Interface str
@@ -260,7 +261,7 @@ Contains
   End Subroutine warn
 
 
-  ! Issues that terminate the analysis
+  ! Issues that require the analysis be immediately terminated, e.g., numerical error
   Subroutine error(this, msg)
 
     ! Arguments
@@ -268,7 +269,7 @@ Contains
     Character*(*), intent(IN) :: msg
 
     ! Locals
-    Dimension INTV(1), REALV(1)    ! For abaqus warning messages
+    Dimension INTV(1), REALV(1)    ! For Abaqus warning messages
     Character(len=8) CHARV(1)      ! For Abaqus warning messages
 
     If (this%level >= 1) Then
@@ -282,6 +283,30 @@ Contains
     End If
   End Subroutine error
 
+
+  ! Issues that require the analysis be cleanly terminated, e.g., nonconvergence
+  Subroutine terminate(this, msg)
+
+    ! Arguments
+    Class(forlog), intent(IN) :: this
+    Character*(*), intent(IN) :: msg
+
+    ! Locals
+    Dimension INTV(1), REALV(1)    ! For abaqus warning messages
+    Character(len=8) CHARV(1)      ! For Abaqus warning messages
+    Common /analysis_termination/ analysis_status
+
+    If (this%level >= 1) Then
+#ifndef PYEXT
+      Call writeToLog(this, ", ERROR, " // msg)
+      analysis_status = 0
+      Call XPLB_ABQERR(-2,msg,INTV,REALV,CHARV)
+#else
+      write(this%fileUnit,*) "ERROR, " // msg
+      stop 1
+#endif
+    End If
+  End Subroutine terminate
 
 
   ! Convert an integer to string
