@@ -580,7 +580,7 @@ Contains
             ! ...and if the matrix damage is already fully developed, delete the element.
             If (sv%d2 >= damage_max) Then
               If (sv%alpha == -999) Then
-                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
+                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDEvolve')
                 Call log%terminate('Invalid alpha. Check value for alpha in the initial conditions.')
               End If
               If (p%terminate_on_no_convergence) Then
@@ -592,7 +592,7 @@ Contains
               Exit MatrixDamage
             End If
             ! ...raise an error and halt the subroutine.
-            Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
+            Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDEvolve')
             Call log%terminate('No starting points produced a valid solution (DGDEvolve).')
             Exit MatrixDamage
           End If
@@ -1001,7 +1001,7 @@ Contains
     End Do MatrixDamage
 
 
-    Call log%info('Exited matrix damage loop, MD: ' // trim(str(MD)))
+    Call log%debug('Exited matrix damage loop, MD: ' // trim(str(MD)))
 
     ! -------------------------------------------------------------------- !
     !    Update elastic energy variable.                                   !
@@ -1175,6 +1175,8 @@ Contains
       ! Initialize all temporary state variables for use in Equilibrium loop:
       Call initializeTemp(sv, m)
 
+
+
       ! -------------------------------------------------------------------- !
       ! Compatibility constraints
       Fm(:,1) = (F(:,1)*sv%Lc(1) - Fkb(:,1)*m%w_kb)/(sv%Lc(1)-m%w_kb)
@@ -1224,6 +1226,7 @@ Contains
       Cauchy = Cauchykb
       Tkb = MATMUL(Cauchykb, R_cr(:,1))  ! Traction on surface with normal in fiber direction
 
+
       ! Failure index for fiber kinking
       sv%rfC = abs((-1*Cauchy(1,1)*cos(two*(sv%phi0+gamma_rphi0)))/((ramberg_osgood(gamma_rphi0 + pert, m%G12, m%aPL, m%nPL) - ramberg_osgood(gamma_rphi0 - pert, m%G12, m%aPL, m%nPL)) / (two * pert)))
 
@@ -1249,7 +1252,7 @@ Contains
 
       ! Check for any inside-out deformation or an overly compressed bulk material
       If (err < tol_DGD .AND. MDet(Fkb) < p%compLimit) Then
-        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
+        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDKinkband')
         If (p%terminate_on_no_convergence) Then
           Call log%terminate('Highly distorted element (DGDKinkband).')
         Else
@@ -1281,7 +1284,7 @@ Contains
           Call log%info('Restarting with modified jacobian.')
           Cycle Equilibrium
         Else
-          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
+          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDKinkband')
           If (p%terminate_on_no_convergence) Then
             Call log%terminate('Equilibrium loop reached maximum number of iterations (DGDKinkband).')
           Else
@@ -1306,7 +1309,7 @@ Contains
           Restart = .True.  ! One restart is allowed; modified jacobian is used
           Call log%info('Restarting with modified jacobian.')
         Else
-          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
+          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDKinkband')
           If (p%terminate_on_no_convergence) Then
             Call log%terminate('Reached max cutback limit (DGDKinkband).')
           Else
@@ -1514,12 +1517,13 @@ Contains
   End Function alpha0_DGD
 
 
-  Subroutine writeDGDArgsToFile(m, p, sv, U, F, F_old, ndir, nshr, DT)
+  Subroutine writeDGDArgsToFile(m, p, sv, U, F, F_old, ndir, nshr, DT, args, called_from)
     ! Print DGDEvolve args at error
 
     Use matProp_Mod
     Use stateVar_Mod
     Use parameters_Mod
+    Use vumatArg_Mod
 
     ! Arguments
     Type(matProps), intent(IN) :: m
@@ -1527,180 +1531,105 @@ Contains
     Type(stateVars), intent(IN) :: sv
     Double Precision, Intent(IN) :: F(3,3), U(3,3), F_old(3,3)               ! Deformation gradient, stretch tensor
     Double Precision, Intent(IN) :: DT                                       ! Delta temperature
+    Type(vumatArg) :: args
+    Character(*), intent(IN) :: called_from
     Integer, intent(IN) :: ndir, nshr
 
-    Integer :: lenOutputDir
-    Character(len=256) :: outputDir, fileName
-    Character(len=32) :: nameValueFmt
+    ! Locals
+    Integer :: lenOutputDir, lenJobName, debugpy_count_local
+    Character(len=256) :: outputDir, fileName, jobName
+    Character(len=32) :: debugpy_count_str, nElement_str
+    Integer, parameter :: file_unit = 101
+    ! -------------------------------------------------------------------- !
 
 #ifndef PYEXT
+    Call VGETJOBNAME(jobName, lenJobName)
     Call VGETOUTDIR(outputDir, lenOutputDir)
-    fileName = trim(outputDir) // '/debug.py'  ! Name of output file
 
-    nameValueFmt = "(A,E21.15E2,A)"
+    ! Sometimes the debug file counter is going to -1; unclear why
+    debugpy_count_local = sv%debugpy_count
+    If (debugpy_count_local < 0) debugpy_count_local = 0
 
-    open(unit = 101, file = fileName)
-    write(101,"(A)") 'featureFlags = {'
-    If (m%matrixDam) Then
-      write(101,"(A)") '    "matrixDam": True,'
-    Else
-      write(101,"(A)") '    "matrixDam": False,'
-    End If
-    If (m%shearNonlinearity12) Then
-      write(101,"(A)") '    "shearNonlinearity12": True,'
-    Else
-      write(101,"(A)") '    "shearNonlinearity12": False,'
-    End If
-    If (m%shearNonlinearity13) Then
-      write(101,"(A)") '    "shearNonlinearity13": True,'
-    Else
-      write(101,"(A)") '    "shearNonlinearity13": False,'
-    End If
-    If (m%fiberTenDam) Then
-      write(101,"(A)") '    "fiberTenDam": True,'
-    Else
-      write(101,"(A)") '    "fiberTenDam": False,'
-    End If
-    If (m%fiberCompDamBL) Then
-      write(101,"(A)") '    "fiberCompDamBL": True,'
-    Else
-      write(101,"(A)") '    "fiberCompDamBL": False,'
-    End If
-    If (m%friction) Then
-      write(101,"(A)") '    "friction": True'
-    Else
-      write(101,"(A)") '    "friction": False'
-    End If
-    write(101, "(A)") '}'
-    write(101, "(A)") 'm = {'
-    write(101, nameValueFmt) '    "E1": ', m%E1, ','
-    write(101, nameValueFmt) '    "E2": ', m%E2, ','
-    write(101, nameValueFmt) '    "G12": ', m%G12, ','
-    write(101, nameValueFmt) '    "v12": ', m%v12, ','
-    write(101, nameValueFmt) '    "v23": ', m%v23, ','
-    write(101, nameValueFmt) '    "YT": ', m%YT, ','
-    write(101, nameValueFmt) '    "SL": ', m%SL, ','
-    write(101, nameValueFmt) '    "GYT": ', m%GYT, ','
-    write(101, nameValueFmt) '    "GSL": ', m%GSL, ','
-    write(101, nameValueFmt) '    "eta_BK": ', m%eta_BK, ','
-    write(101, nameValueFmt) '    "YC": ', m%YC, ','
-    write(101, nameValueFmt) '    "alpha0": ', m%alpha0, ','
-    write(101, nameValueFmt) '    "E3": ', m%E3, ','
-    write(101, nameValueFmt) '    "G13": ', m%G13, ','
-    write(101, nameValueFmt) '    "G23": ', m%G23, ','
-    write(101, nameValueFmt) '    "v13": ', m%v13, ','
-    write(101, "(A)") '    "cte": ['
-    write(101, nameValueFmt) '        ', m%cte(1), ','
-    write(101, nameValueFmt) '        ', m%cte(2), ','
-    write(101, nameValueFmt) '        ', m%cte(3)
-    write(101, "(A)") '    ],'
-    write(101, nameValueFmt) '    "aPL": ', m%aPL, ','
-    write(101, nameValueFmt) '    "nPL": ', m%nPL, ','
-    write(101, nameValueFmt) '    "XT": ', m%XT, ','
-    write(101, nameValueFmt) '    "fXT": ', m%fXT, ','
-    write(101, nameValueFmt) '    "GXT": ', m%GXT, ','
-    write(101, nameValueFmt) '    "fGXT": ', m%fGXT, ','
-    write(101, nameValueFmt) '    "XC": ', m%XC, ','
-    write(101, nameValueFmt) '    "fXC": ', m%fXC, ','
-    write(101, nameValueFmt) '    "GXC": ', m%GXC, ','
-    write(101, nameValueFmt) '    "fGXC": ', m%fGXC, ','
-    write(101, nameValueFmt) '    "mu": ', m%mu
-    write(101, "(A)") '}'
-    write(101, "(A)") 'p = {'
-    write(101, "(A,I1,A)")   '    "cutbacks_max": ', p%cutbacks_max, ','
-    write(101, "(A,I5,A)")   '    "MD_max": ', p%MD_max, ','
-    write(101, "(A,I2,A)")   '    "alpha_inc": ', p%alpha_inc, ','
-    write(101, nameValueFmt) '    "tol_DGD_f": ', p%tol_DGD_f, ','
-    write(101, nameValueFmt) '    "dGdGc_min": ', p%dGdGc_min, ','
-    write(101, nameValueFmt) '    "compLimit": ', p%compLimit, ','
-    write(101, nameValueFmt) '    "penStiffMult": ', p%penStiffMult, ','
-    write(101, nameValueFmt) '    "cutback_amount": ', p%cutback_amount, ','
-    write(101, nameValueFmt) '    "tol_divergence": ', p%tol_divergence
-    write(101, nameValueFmt) '    "schaefer_nr_tolerance": ', p%schaefer_nr_tolerance
-    write(101, nameValueFmt) '    "schaefer_nr_counter_limit": ', p%schaefer_nr_counter_limit
-    write(101, "(A)") '}'
-    write(101, "(A)") 'sv = {'
-    write(101, nameValueFmt) '    "d2": ', sv%d2, ','
-    write(101, nameValueFmt) '    "Fb1": ', sv%Fb1, ','
-    write(101, nameValueFmt) '    "Fb2": ', sv%Fb2, ','
-    write(101, nameValueFmt) '    "Fb3": ', sv%Fb3, ','
-    write(101, nameValueFmt) '    "B": ', sv%B, ','
-    write(101, nameValueFmt) '    "rfT": ', sv%rfT, ','
-    write(101, nameValueFmt) '    "FIm": ', sv%FIm, ','
-    write(101, "(A,I5,A)")   '    "alpha": ', sv%alpha, ','
-    write(101, "(A,I1,A)")   '    "STATUS": ', sv%STATUS, ','
-    write(101, nameValueFmt) '    "Plas12": ', sv%Plas12, ','
-    write(101, nameValueFmt) '    "Inel12": ', sv%Inel12, ','
-    write(101, "(A)") '    "slide": ['
-    write(101, nameValueFmt) '        ', sv%slide(1), ','
-    write(101, nameValueFmt) '        ', sv%slide(2)
-    write(101, "(A)") '    ],'
-    write(101, nameValueFmt) '    "rfC": ', sv%rfC, ','
-    write(101, nameValueFmt) '    "d1T": ', sv%d1T, ','
-    write(101, nameValueFmt) '    "d1C": ', sv%d1C, ','
-    write(101, nameValueFmt) '    "phi0": ', sv%phi0, ','
-    write(101, nameValueFmt) '    "gamma": ', sv%gamma
-    write(101, "(A)") '}'
-    write(101, "(A)") 'Lc = ['
-    write(101, nameValueFmt) '    ', sv%Lc(1), ','
-    write(101, nameValueFmt) '    ', sv%Lc(2), ','
-    write(101, nameValueFmt) '    ', sv%Lc(3), ','
-    write(101, "(A)") ']'
-    write(101, "(A)") 'U = ['
-    write(101, nameValueFmt) '    ', U(1,1), ','
-    write(101, nameValueFmt) '    ', U(2,2), ','
-    write(101, nameValueFmt) '    ', U(3,3), ','
-    write(101, nameValueFmt) '    ', U(1,2), ','
-    write(101, nameValueFmt) '    ', U(2,3), ','
-    write(101, nameValueFmt) '    ', U(3,1), ','
-    write(101, nameValueFmt) '    ', U(2,1), ','
-    write(101, nameValueFmt) '    ', U(3,2), ','
-    write(101, nameValueFmt) '    ', U(1,3), ','
-    write(101, "(A)") ']'
-    write(101, "(A)") 'F = ['
-    write(101, nameValueFmt) '    ', F(1,1), ','
-    write(101, nameValueFmt) '    ', F(2,2), ','
-    write(101, nameValueFmt) '    ', F(3,3), ','
-    write(101, nameValueFmt) '    ', F(1,2), ','
-    write(101, nameValueFmt) '    ', F(2,3), ','
-    write(101, nameValueFmt) '    ', F(3,1), ','
-    write(101, nameValueFmt) '    ', F(2,1), ','
-    write(101, nameValueFmt) '    ', F(3,2), ','
-    write(101, nameValueFmt) '    ', F(1,3), ','
-    write(101, "(A)") ']'
-    write(101, "(A)") 'F_old = ['
-    write(101, nameValueFmt) '    ', F_old(1,1), ','
-    write(101, nameValueFmt) '    ', F_old(2,2), ','
-    write(101, nameValueFmt) '    ', F_old(3,3), ','
-    write(101, nameValueFmt) '    ', F_old(1,2), ','
-    write(101, nameValueFmt) '    ', F_old(2,3), ','
-    write(101, nameValueFmt) '    ', F_old(3,1), ','
-    write(101, nameValueFmt) '    ', F_old(2,1), ','
-    write(101, nameValueFmt) '    ', F_old(3,2), ','
-    write(101, nameValueFmt) '    ', F_old(1,3), ','
-    write(101, "(A)") ']'
-    write(101, "(A,E21.15E2)") 'DT = ', DT
-    write(101, "(A,I1,A)") 'ndir = ', ndir
-    write(101, "(A,I1,A)") 'nshr = ', nshr
-
-    close(101)
+    ! Build up the filename
+    write (nElement_str, *) args%nElement
+    nElement_str = adjustl(nElement_str)
+    write (debugpy_count_str, *) debugpy_count_local
+    debugpy_count_str = adjustl(debugpy_count_str)
+    fileName = trim(outputDir) // '/' // trim(jobName) // '-' // trim(nElement_str) // '-debug-'  ! Name of output file
+    open(unit = file_unit, file = trim(fileName)//trim(debugpy_count_str)// '.py')
+#else
+    fileName = 'pyextmod_debug.py'
+    open(unit = file_unit, file = fileName, status='replace', recl=1000)
 #endif
+    Call writeMaterialPropertiesToFile(file_unit, m)
+    Call writeParametersToFile(file_unit, p)
+    Call writeStateVariablesToFile(file_unit, sv, m)
+    Call write3x3ToFile(file_unit, U, 'U')
+    Call write3x3ToFile(file_unit, F, 'F')
+    Call write3x3ToFile(file_unit, F_old, 'F_old')
+    write(file_unit, "(A,E22.15E2)") 'thickness = ', sv%Lc(3)
+    write(file_unit, "(A,E22.15E2)") 'temp_change = ', DT
+    write(file_unit, "(A,I1,A)") 'ndir = ', ndir
+    write(file_unit, "(A,I1,A)") 'nshr = ', nshr
+    write(file_unit, "(A,I10,A)") 'element = ', args%nElement
+    write(file_unit, "(A,E22.15E2)") 'total_time = ', args%totalTime
+    write(file_unit, "(A,A,A)") 'called_from = "', called_from, '"'
+
+    close(file_unit)
+
     Return
   End Subroutine writeDGDArgsToFile
 
+
+  Subroutine write3x3ToFile(fileUnit, array, label)
+    ! Write a 3x3 tensor to a file as a python dictionary
+    ! Assumes that file opening and closing is handled elsewhere
+
+    ! Arguments
+    Integer, intent(IN) :: fileUnit
+    Double Precision, intent(IN) :: array(3,3)
+    Character(*) :: label
+
+    ! Locals
+    Character(len=32), parameter :: nameValueFmt = "(A,E22.15E2,A)"
+    ! -------------------------------------------------------------------- !
+
+    write(101, "(A)") trim(label) // ' = ['
+    write(101, nameValueFmt) '    ', array(1,1), ','
+    write(101, nameValueFmt) '    ', array(2,2), ','
+    write(101, nameValueFmt) '    ', array(3,3), ','
+    write(101, nameValueFmt) '    ', array(1,2), ','
+    write(101, nameValueFmt) '    ', array(2,3), ','
+    write(101, nameValueFmt) '    ', array(3,1), ','
+    write(101, nameValueFmt) '    ', array(2,1), ','
+    write(101, nameValueFmt) '    ', array(3,2), ','
+    write(101, nameValueFmt) '    ', array(1,3)
+    write(101, "(A)") ']'
+
+  End Subroutine write3x3ToFile
+
+
 #ifdef PYEXT
-  Subroutine log_init(level, fileName)
+  Subroutine log_init(level, fileName, totalTime)
 
     Use forlog_Mod
 
     ! Arguments
     Integer, intent(IN) :: level
     Character(*), intent(IN) :: fileName
+    Double Precision, optional, intent(IN) :: totalTime
+    ! -------------------------------------------------------------------- !
 
     log%fileUnit = 107
     log%level = level
 
     open(log%fileUnit, file=trim(fileName), status='replace', recl=1000)
+
+    ! VUMATArgs
+    If (present(totalTime)) Then
+      log%arg%totalTime = totalTime
+    End If
+
   End Subroutine log_init
 
   Subroutine log_close()

@@ -60,7 +60,7 @@ PATH_TO_FOR = ../for/
 #=======================================================================
 
 # names (without suffix)
-LIBSRC_SOURCES = forlog matrixUtil matProp schapery stress stateVar parameters strain friction cohesive fiberDamage schaefer plasticity DGD
+LIBSRC_SOURCES = vumatArgs forlog matrixUtil matProp schapery stress stateVar parameters strain friction cohesive fiberDamage schaefer plasticity DGD
 
 # file names
 LIBSRC_FILES = $(addsuffix .f90,${LIBSRC_SOURCES})

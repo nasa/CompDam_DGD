@@ -179,14 +179,14 @@ Contains
       END DO
       ! update according dEp according to newton raphson
       IF (ndir + nshr .eq. 6) THEN
-        dEpUpdate = MATMUL(MInverse6x6(J1), J0)
+        dEpUpdate = MATMUL(MInverseLarge(J1), J0)
         ! check that numbers arent NaN in calculated incremntal strain (this will lead to infinite loop)
         IF (dEpUpdate(2) .ne. dEpUpdate(2) .or. dEpUpdate(4) .ne. dEpUpdate(4)) THEN
           Call log%error('a NaN was calculated within the schaefer plastic strain calculation. This will lead to an infinite loop. End simulation')
         END IF
-        dEp = dEp - MATMUL(MInverse6x6(J1), J0)
+        dEp = dEp - MATMUL(MInverseLarge(J1), J0)
       ELSE IF (ndir + nshr .eq. 4) THEN
-        dEp = dEp - MATMUL(MInverse4x4(J1), J0)
+        dEp = dEp - MATMUL(MInverseLarge(J1), J0)
       ELSE 
         Call log%error('Schaefer material prepeak nonlinearity model only supports ndir + nshr=6 and 4 elements')
       END IF

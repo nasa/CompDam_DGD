@@ -68,6 +68,7 @@ Module matProp_Mod
     Double Precision :: thickness
 
     ! Flags for features
+    Character(len=6) :: featureFlags
     Logical :: matrixDam
     Logical :: cohesive
     Logical :: shearNonlinearity12
@@ -95,6 +96,7 @@ Module matProp_Mod
   Public :: checkForSnapBack
   Public :: initializePhi0
   Public :: consistencyChecks
+  Public :: writeMaterialPropertiesToFile
 
 
   ! Reference to object for singleton
@@ -418,6 +420,8 @@ Contains
               featureFlags = '0' // featureFlags
             End Do
           End If
+
+          m%featureFlags = trim(featureFlags)
 
           ! Parse each position into a feature flag
           ! Position 1: Matrix damage
@@ -1137,6 +1141,112 @@ Contains
 
     Return
   End Function initializePhi0
+
+
+  Subroutine writeMaterialPropertiesToFile(fileUnit, m)
+    ! Writes provided material properties to a file as a python dictionary
+    ! Assumes that file opening and closing is handled elsewhere
+
+    ! Arguments
+    Integer, intent(IN) :: fileUnit
+    Type(matProps), intent(IN) :: m
+
+    ! Locals
+    Character(len=32) :: nameValueFmt
+    Double Precision, parameter :: zero=0.d0
+    ! -------------------------------------------------------------------- !
+
+    ! Defines the format for writing the floating point numbers
+    nameValueFmt = "(A,E21.15E2,A)"
+
+    ! Write the feature flags
+    write(101,"(A)") 'featureFlags = {'
+    write(101, "(A,A,A)") '    "integer": "', m%featureFlags, '",'
+    If (m%matrixDam) Then
+      write(101,"(A)") '    "matrixDam": True,'
+    Else
+      write(101,"(A)") '    "matrixDam": False,'
+    End If
+    If (m%shearNonlinearity12) Then
+      write(101,"(A)") '    "shearNonlinearity12": True,'
+    Else
+      write(101,"(A)") '    "shearNonlinearity12": False,'
+    End If
+    If (m%shearNonlinearity13) Then
+      write(101,"(A)") '    "shearNonlinearity13": True,'
+    Else
+      write(101,"(A)") '    "shearNonlinearity13": False,'
+    End If
+    If (m%schapery) Then
+      write(101,"(A)") '    "schapery": True,'
+    Else
+      write(101,"(A)") '    "schapery": False,'
+    End If
+    If (m%schaefer) Then
+      write(101,"(A)") '    "schaefer": True,'
+    Else
+      write(101,"(A)") '    "schaefer": False,'
+    End If
+
+    If (m%fiberTenDam) Then
+      write(101,"(A)") '    "fiberTenDam": True,'
+    Else
+      write(101,"(A)") '    "fiberTenDam": False,'
+    End If
+    If (m%fiberCompDamBL) Then
+      write(101,"(A)") '    "fiberCompDamBL": True,'
+    Else
+      write(101,"(A)") '    "fiberCompDamBL": False,'
+    End If
+    If (m%fiberCompDamFKT) Then
+      write(101,"(A)") '    "fiberCompDamFKT": True,'
+    Else
+      write(101,"(A)") '    "fiberCompDamFKT": False,'
+    End If
+    If (m%friction) Then
+      write(101,"(A)") '    "friction": True'
+    Else
+      write(101,"(A)") '    "friction": False'
+    End If
+    write(101, "(A)") '}'
+
+    ! Write the material properties
+    write(101, "(A)") 'm = ['
+    write(101, nameValueFmt) '    ', m%E1, ',  # 9: E1'
+    write(101, nameValueFmt) '    ', m%E2, ',  # 10: E2'
+    write(101, nameValueFmt) '    ', m%G12, ',  # 11: G12'
+    write(101, nameValueFmt) '    ', m%v12, ',  # 12: v12'
+    write(101, nameValueFmt) '    ', m%v23, ',  # 13: v23'
+    write(101, nameValueFmt) '    ', m%YT, ',  # 14: YT'
+    write(101, nameValueFmt) '    ', m%SL, ',  # 15: SL'
+    write(101, nameValueFmt) '    ', m%GYT, ',  # 16: GYT'
+    write(101, nameValueFmt) '    ', m%GSL, ',  # 17: GSL'
+    write(101, nameValueFmt) '    ', m%eta_BK, ',  # 18: eta_BK'
+    write(101, nameValueFmt) '    ', m%YC, ',  # 19: YC'
+    write(101, nameValueFmt) '    ', m%alpha0, ',  # 20: alpha0'
+    write(101, nameValueFmt) '    ', m%E3, ',  # 21: E3'
+    write(101, nameValueFmt) '    ', m%G13, ',  # 22: G13'
+    write(101, nameValueFmt) '    ', m%G23, ',  # 23: G23'
+    write(101, nameValueFmt) '    ', m%v13, ',  # 24: v13'
+    write(101, nameValueFmt) '    ', m%cte(1), ',  # 25: cte11'
+    write(101, nameValueFmt) '    ', m%cte(2), ',  # 26: cte22'
+    write(101, nameValueFmt) '    ', m%aPL, ',  # 27: aPL'
+    write(101, nameValueFmt) '    ', m%nPL, ',  # 28: nPL'
+    write(101, nameValueFmt) '    ', m%XT, ',  # 29: XT'
+    write(101, nameValueFmt) '    ', m%fXT, ',  # 30: fXT'
+    write(101, nameValueFmt) '    ', m%GXT, ',  # 31: GXT'
+    write(101, nameValueFmt) '    ', m%fGXT, ',  # 32: fGXT'
+    write(101, nameValueFmt) '    ', m%XC, ',  # 33: XC'
+    write(101, nameValueFmt) '    ', m%fXC, ',  # 34: fXC'
+    write(101, nameValueFmt) '    ', m%GXC, ',  # 35: GXC'
+    write(101, nameValueFmt) '    ', m%fGXC, ',  # 36: fGXC'
+    write(101, nameValueFmt) '    ', m%cl, ',  # 37: cl'
+    write(101, nameValueFmt) '    ', m%w_kb, ',  # 38: w_kb'
+    write(101, nameValueFmt) '    ', zero, ',  # 39: none'
+    write(101, nameValueFmt) '    ', m%mu, ',  # 40: mu'
+    write(101, "(A)") ']'
+
+  End Subroutine writeMaterialPropertiesToFile
 
 
 End Module matProp_Mod

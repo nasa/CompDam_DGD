@@ -27,6 +27,7 @@ Module parameters_Mod
     Double Precision :: fkt_fiber_failure_angle                   ! Angle at which fiber failure occurs; no further plastic shear deformation allowed
     Double Precision :: schaefer_nr_tolerance                     ! Tolerance value used to determine if convergence has occurred in newton raphson loop
     Logical :: terminate_on_no_convergence                        ! Set to false to trigger an error, delete the element, and allow the analysis to continue when no converged solution can be found
+    Double Precision :: debug_kill_at_total_time                  ! Time at which to kill analysis (for debugging purposes)
 
     ! min and max values for acceptable range
     Integer, private :: logLevel_min, logLevel_max
@@ -46,12 +47,14 @@ Module parameters_Mod
     Double Precision, private :: kb_decompose_thres_min, kb_decompose_thres_max
     Double Precision, private :: fkt_fiber_failure_angle_min, fkt_fiber_failure_angle_max
     Double Precision, private :: schaefer_nr_tolerance_min, schaefer_nr_tolerance_max
+    Double Precision, private :: debug_kill_at_total_time_min, debug_kill_at_total_time_max
 
   End Type parameters
 
   ! Public interface
   Public :: parameters
   Public :: loadParameters
+  Public :: writeParametersToFile
 
   ! Reference to object for singleton
   type(parameters), Save :: p
@@ -205,6 +208,9 @@ Contains
           Case ('terminate_on_no_convergence')
             Call verifyAndSaveProperty_logical(trim(key), adjustl(value), p%terminate_on_no_convergence)
 
+          Case ('debug_kill_at_total_time')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%debug_kill_at_total_time_min, p%debug_kill_at_total_time_max, p%debug_kill_at_total_time)
+
           Case Default
             Call log%error("loadParameters: Parameter not recognized: " // trim(key))
         End Select
@@ -243,6 +249,7 @@ Contains
     p%schaefer_nr_tolerance = 1.d-6
     p%schaefer_nr_counter_limit = 10000000
     p%terminate_on_no_convergence = .TRUE.
+    p%debug_kill_at_total_time = -1.0d0
 
     ! Maximum and minimum values for parameters to be read from CompDam.parameters file
     p%logLevel_min = 0
@@ -295,6 +302,10 @@ Contains
 
     p%schaefer_nr_counter_limit_min = 0
     p%schaefer_nr_counter_limit_max = Huge(0)
+
+    p%debug_kill_at_total_time_min = -2.0d0
+    p%debug_kill_at_total_time_max = 1000.d0
+
     Return
   End Subroutine initializeParameters
 
@@ -392,6 +403,49 @@ Contains
 
     Return
   End Subroutine verifyAndSaveProperty_logical
+
+
+  Subroutine writeParametersToFile(fileUnit, p)
+    ! Writes provided parameters to a file as a python dictionary
+    ! Assumes that file opening and closing is handled elsewhere
+
+    ! Arguments
+    Integer, intent(IN) :: fileUnit
+    Type(parameters), intent(IN) :: p
+
+    ! Locals
+    Character(len=32) :: nameValueFmt
+    ! -------------------------------------------------------------------- !
+
+    ! Defines the format for writing the floating point numbers
+    nameValueFmt = "(A,E21.15E2,A)"
+
+    ! Write the parameters
+    write(fileUnit, "(A)") 'p = {'
+    write(fileUnit, "(A,I1,A)")   '    "cutbacks_max": ', p%cutbacks_max, ','
+    write(fileUnit, "(A,I5,A)")   '    "MD_max": ', p%MD_max, ','
+    write(fileUnit, "(A,I5,A)")   '    "EQ_max": ', p%EQ_max, ','
+    write(fileUnit, "(A,I2,A)")   '    "alpha_inc": ', p%alpha_inc, ','
+    write(fileUnit, nameValueFmt) '    "tol_DGD_f": ', p%tol_DGD_f, ','
+    write(fileUnit, nameValueFmt) '    "dGdGc_min": ', p%dGdGc_min, ','
+    write(fileUnit, nameValueFmt) '    "compLimit": ', p%compLimit, ','
+    write(fileUnit, nameValueFmt) '    "penStiffMult": ', p%penStiffMult, ','
+    write(fileUnit, nameValueFmt) '    "cutback_amount": ', p%cutback_amount, ','
+    write(fileUnit, nameValueFmt) '    "tol_divergence": ', p%tol_divergence, ','
+    write(fileUnit, nameValueFmt) '    "gamma_max": ', p%gamma_max, ','
+    write(fileUnit, nameValueFmt) '    "kb_decompose_thres": ', p%kb_decompose_thres, ', '
+    write(fileUnit, nameValueFmt) '    "fkt_fiber_failure_angle": ', p%fkt_fiber_failure_angle, ', '
+    write(fileUnit, nameValueFmt) '    "schaefer_nr_tolerance": ', p%schaefer_nr_tolerance, ', '
+    write(fileUnit, nameValueFmt) '    "schaefer_nr_counter_limit": ', p%schaefer_nr_counter_limit, ', '
+    If (p%terminate_on_no_convergence) Then
+      write(101,"(A)") '    "terminate_on_no_convergence": True,'
+    Else
+      write(101,"(A)") '    "terminate_on_no_convergence": False,'
+    End If
+    write(fileUnit, nameValueFmt) '    "debug_kill_at_total_time": ', p%debug_kill_at_total_time
+    write(fileUnit, "(A)") '}'
+
+  End Subroutine writeParametersToFile
 
 
 End Module parameters_Mod
