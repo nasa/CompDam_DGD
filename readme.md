@@ -8,6 +8,7 @@ This software may be used, reproduced, and provided to others only as permitted 
 Copyright 2016 United States Government as represented by the Administrator of the National Aeronautics and Space Administration. No copyright is claimed in the United States under Title 17, U.S. Code. All Other Rights Reserved.
 
 Publications that describe the theories used in this code:
+- Andrew C. Bergan, ["A Three-Dimensional Mesoscale Model for In-Plane and Out-of-Plane Fiber Kinking"](https://arc.aiaa.org/doi/abs/10.2514/6.2019-1548)
 - Andrew C. Bergan, et al., ["Development of a Mesoscale Finite Element Constitutive Model for Fiber Kinking"](https://arc.aiaa.org/doi/10.2514/6.2018-1221) *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
 - Frank A. Leone Jr. ["Deformation gradient tensor decomposition for representing matrix cracks in fiber-reinforced materials"](http://dx.doi.org/10.1016/j.compositesa.2015.06.014) *Composites Part A* (2015) **76**:334-341.
 - Frank A. Leone Jr. ["Representing matrix cracks through decomposition of the deformation gradient tensor in continuum damage mechanics methods"](http://iccm20.org/fullpapers/file?f=Abk7n4gkWV) *Proceedings of the 20th International Conference on Composite Materials*, Copenhagen, Denmark, 19-24 July 2015.
@@ -292,8 +293,6 @@ The fiber kinking theory model implemented here is preliminary and has some know
 
 Relevant single element tests are named starting with `test_C3D8R_fiberCompression_FKT`.
 
-Relevant example problems: `UNC0_C3D8R_FKT_12`, `UNC0_C3D8R_FKT_13`, and `UNC0_C3D8R_FKT_3D`.
-
 ### Friction
 Friction is modeled on the damaged fraction of the cross-sectional area of DGD cracks using the approach of [Alfano and Sacco (2006)](http://doi.org/10.1002/nme.1728). The coefficient of friction *&mu;* must be defined to account for friction on the failed crack surface.
 
@@ -472,18 +471,18 @@ When using the material model with cohesive elements, a different set of state v
 | 16| `COH_slide2`     | Cohesive sliding displacement, transverse direction                   |
 
 ### Initial conditions
-All state variables should be initialized using the `*Initial conditions` command. As a default, all state variables should be initialized as zero, except `CDM_alpha`, `CDM_STATUS`, and `CDM_phi0`.
+All state variables should be initialized using the `*Initial conditions` command. As a default, all state variables should be initialized as zero, except `CDM_alpha`, `CDM_STATUS`, `CDM_phi0_12`, and `CDM_phi0_13`.
 
 The initial condition for `CDM_alpha` can be used to specify a predefined angle for the cohesive surface normal. To specify a predefined `CDM_alpha`, set the initial condition for `CDM_alpha` to an integer (degrees). The range of valid values for `CDM_alpha` depends on the aspect ratio of the element, but values in the range of 0 to 90 degrees are always valid. Setting `CDM_alpha` to -999 will make the subroutine evaluate cracks every 10 degrees in the 2-3 plane to find the correct crack initiation angle. Note that `CDM_alpha` is measured from the 2-axis rotating about the 1-direction. The amount by which alpha is incremented when evaluating matrix crack initiation can be changed from the default of 10 degrees by modifying `alpha_inc` in the `CompDam.parameters` file. Note that `CDM_alpha = 90` only occurs when `CDM_alpha` is initialized as 90; when `CDM_alpha` is initialized to -999, the value of 90 is ignored in the search to find the correct initiation angle since it is assumed that delaminations are handled elsewhere in the finite element model (e.g., using cohesive interface elements).
 
 Since `CDM_STATUS` is used for element deletion, always initialize `CDM_STATUS` to 1.
 
-The initial condition for `CDM_phi0` is used to specify the initial fiber misalignment. One of the followings options is used depending on the initial condition specified for `CDM_phi0` as follows:
-- *&phi;<sub>0</sub>* = 0 :: The value for *&phi;<sub>0</sub>* is calculated for shear instability.
+The initial condition for `CDM_phi0_12` and `CDM_phi0_13` are used to specify the initial fiber misalignment. One of the followings options is used depending on the initial condition specified for `CDM_phi0_12` and `CDM_phi0_13` as follows:
+- *&phi;<sub>0</sub>* = 0 :: The value for *&phi;<sub>0</sub>* is calculated for shear instability. For 3-D kinking, *&phi;<sub>0,12</sub>* = *&phi;<sub>0,13</sub>* is required.
 - *&phi;<sub>0</sub>* &le; 0.5 :: The value provided in the initial condition is used as the initial fiber misalignment.
-- *&phi;<sub>0</sub>* = 1 :: A pseudo random uniform distribution varying spatially in the 1-direction is used. The spatial distribution algorithm relies on an uniform element size and fiber aligned mesh. The random number generator can be set to generate the same realizations or different realizations on multiple nominally identical analyses using the boolean parameter `fkt_random_seed`. When using the random distribution for *&phi;<sub>0</sub>*, the characteristic length must be set to include 6 components: `*Characteristic Length, definition=USER, components=6`.
-- *&phi;<sub>0</sub>* = 2 :: Identical to *&phi;<sub>0</sub>* = 1, with the exception that a different realization is calculated for each ply.
-- *&phi;<sub>0</sub>* = 3 :: (Intended for use with 3-D FKT only) A pseudo random distribution varying spatially in the 1-direction is used with a 2-parameter lognormal distribution for the polar angle and a normal distribution for the azimuthal angle. The parameters starting with `fkt_init_misalignment` are used to control the polar and azimuthal distributions.
+- *&phi;<sub>0</sub>* = 1 :: A pseudo random uniform distribution varying spatially in the 1-direction is used. The spatial distribution algorithm relies on an uniform element size and fiber aligned mesh. The random number generator can be set to generate the same realizations or different realizations on multiple nominally identical analyses using the boolean parameter `fkt_random_seed`. When using the random distribution for *&phi;<sub>0</sub>*, the characteristic length must be set to include 6 components: `*Characteristic Length, definition=USER, components=6`. For 3-D kinking, *&phi;<sub>0,12</sub>* = *&phi;<sub>0,13</sub>* is required.
+- *&phi;<sub>0</sub>* = 2 :: Identical to *&phi;<sub>0</sub>* = 1, with the exception that a different realization is calculated for each ply. For 3-D kinking, *&phi;<sub>0,12</sub>* = *&phi;<sub>0,13</sub>* is required.
+- *&phi;<sub>0</sub>* = 3 :: (Intended for use with 3-D FKT only) A pseudo random distribution varying spatially in the 1-direction is used with a 2-parameter lognormal distribution for the polar angle and a normal distribution for the azimuthal angle. The parameters starting with `fkt_init_misalignment` are used to control the polar and azimuthal distributions. Requires *&phi;<sub>0,12</sub>* = *&phi;<sub>0,13</sub>*.
 
 Pre-existing damage can be modeled by creating an element set for the damaged region and specifying different initial conditions for this element set. For example, to create an intraply matrix crack with no out-of-plane orientation, the following initial conditions could be specified for the cracked elements:
 
@@ -576,7 +575,7 @@ As the `vumatWrapper` is a developmental capability, several important limitatio
 
 
 ## Example problems
-The directory `examples/` includes a collection of example models that use CompDam along with corresponding files that defined the expected results (for use with Abaverify, following the same pattern as the test models in the `tests/` directory. The file `example_runner.py` can be used to automate submission of several models and/or for automatically post-processing the model results to verify that they match the expected results.
+Older versions of CompDam include the directory `examples/` with a single example problem. The `examples/` directory has been removed in this release. It is expected to be reintroduced in a future release with additional example problems.
 
 
 ## Advanced debugging

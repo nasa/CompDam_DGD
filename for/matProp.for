@@ -1168,7 +1168,7 @@ Contains
         Call log%error('Unexpected initial conditions for phi0_12 and phi0_13. Phi012 and phi013 cannot be less than -0.5. Found phi012: ' // trim(str(phi012)) //   &
           ' and phi0_13: ' // trim(str(phi013)))
       Else If ((phi012 == zero .AND. phi013 /= zero) .OR. (phi012 /= zero .AND. phi013 == zero)) Then
-        Call log%error('Unexpected initial conditions for phi0_12 and phi0_13. For 3-D kinking, if both phi012 and phi013 must be zero or nonzero. Found phi012: ' //  &
+        Call log%error('Unexpected initial conditions for phi0_12 and phi0_13. For 3-D kinking, phi012 and phi013 must be both zero or both nonzero. Found phi012: ' //  &
           trim(str(phi012)) // ' and phi0_13: ' // trim(str(phi013)))
       End If
       phi0_input = phi012

@@ -265,7 +265,8 @@ Subroutine CompDam(  &
     m%schaefer = .FALSE.
     m%fiberTenDam = .FALSE.
     m%fiberCompDamBL = .FALSE.
-    m%fiberCompDamFKT = .FALSE.
+    m%fiberCompDamFKT12 = .FALSE.
+    m%fiberCompDamFKT13 = .FALSE.
     m%friction = .FALSE.
   End If
 
