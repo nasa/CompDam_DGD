@@ -76,6 +76,6 @@ terminate_on_no_convergence = .TRUE. // Default .TRUE.
 // DEBUGGING (only activated when > 0 and logLevel > 2)
 // Specify total time at which to kill the analysis. The analysis is killed immediately before CompDam exits if totalTime is >= value
 // specified below. Debug data is written.
-debug_kill_at_total_time = 0.08d0
+debug_kill_at_total_time = 0.d0
 
 // End of file (Do not remove me)

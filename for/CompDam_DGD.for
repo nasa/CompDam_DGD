@@ -255,6 +255,20 @@ Subroutine CompDam(  &
     End Do
   End If
 
+  ! This forces the material to behave elastically during the packager and initial increment. This
+  ! was motivated by issues with Intel MKL in the packager.
+  If (totalTime == 0) Then
+    m%matrixDam = .FALSE.
+    m%shearNonlinearity12 = .FALSE.
+    m%shearNonlinearity13 = .FALSE.
+    m%schapery = .FALSE.
+    m%schaefer = .FALSE.
+    m%fiberTenDam = .FALSE.
+    m%fiberCompDamBL = .FALSE.
+    m%fiberCompDamFKT = .FALSE.
+    m%friction = .FALSE.
+  End If
+
   ! -------------------------------------------------------------------- !
   master: Do km = 1,nblock  ! Master Loop
 
@@ -317,22 +331,22 @@ Subroutine CompDam(  &
   !    Solid elements:                                                   !
   ! -------------------------------------------------------------------- !
   Else ElementType
-  ! -------------------------------------------------------------------- !
-  !    Deformation Gradient Tensor and Right Stretch Tensor              !
-  ! -------------------------------------------------------------------- !
+    ! -------------------------------------------------------------------- !
+    !    Deformation Gradient Tensor and Right Stretch Tensor              !
+    ! -------------------------------------------------------------------- !
     U = Vec2Matrix(stretchNew(km,:))
     F = Vec2Matrix(defgradNew(km,:))
     F_old = Vec2Matrix(defgradOld(km,:))
 
-  ! -------------------------------------------------------------------- !
-  ! As of Abaqus 6.16, the packager receives a defGradNew of (0.999, 0.999, 0.0, 0.001, 0.001)
-  ! for S4R elements. The F(3,3) of 0.0 breaks the initial pass through the VUMAT and the model
-  ! will not run. The following statement is a workaround to this problem.
+    ! -------------------------------------------------------------------- !
+    ! As of Abaqus 6.16, the packager receives a defGradNew of (0.999, 0.999, 0.0, 0.001, 0.001)
+    ! for S4R elements. The F(3,3) of 0.0 breaks the initial pass through the VUMAT and the model
+    ! will not run. The following statement is a workaround to this problem.
     If (totalTime == 0 .AND. nshr == 1) F(3,3) = one
 
-  ! -------------------------------------------------------------------- !
-  !    Define the characteristic element lengths                         !
-  ! -------------------------------------------------------------------- !
+    ! -------------------------------------------------------------------- !
+    !    Define the characteristic element lengths                         !
+    ! -------------------------------------------------------------------- !
     If (sv%Lc(1) == zero) Then
 
       sv%Lc(1) = charLength(km, 1)
@@ -392,9 +406,9 @@ Subroutine CompDam(  &
 
     End If
 
-  ! -------------------------------------------------------------------- !
-  !    Determine and store the stress tensor:                            !
-  ! -------------------------------------------------------------------- !
+    ! -------------------------------------------------------------------- !
+    !    Determine and store the stress tensor:                            !
+    ! -------------------------------------------------------------------- !
     ! Rotation tensor
     Rot = MATMUL(F, MInverse(U))
     ! Cauchy stress in the current configuration
