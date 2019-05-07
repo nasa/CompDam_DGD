@@ -584,7 +584,7 @@ Contains
                 Call log%terminate('Invalid alpha. Check value for alpha in the initial conditions.')
               End If
               If (p%terminate_on_no_convergence) Then
-                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
+                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDEvolve')
                 Call log%terminate('DGDEvolve nonconvergence, terminating analysis.')
               Else
                 Call log%warn('DGDEvolve nonconvergence, deleting failed element.')
