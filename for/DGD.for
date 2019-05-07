@@ -104,16 +104,14 @@ Contains
 
     ! Compute the Green-Lagrange strain tensor: eps
     Call Strains(F, m, DT, ndir, eps)
-    ! Compute the Green-Lagrange strain tensor: previous step
+    ! Compute the Green-Lagrange strain tensor: previous increment
     Call Strains(F_old, m, DT, ndir, eps_old)
 
     ! Check fiber tension or fiber compression damage
-    If (eps(1,1) >= -1d-6) Then    ! Fiber tension
+    If (eps(1,1) >= -1d-6) Then  ! Fiber tension
 
       ! Set rfC for failure index output
-      If (sv%rfC == one) Then
-        sv%rfC = zero
-      End If
+      If (sv%rfC <= one) sv%rfC = zero
 
       ! Compute the plastic strains and remove from the strain tensor
       Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old, .FALSE.)
@@ -136,9 +134,7 @@ Contains
     Else  ! Compression in 1-dir
 
       ! Set rfT for failure index output
-      If (sv%rfT == one) Then
-        sv%rfT = zero
-      End If
+      If (sv%rfT <= one) sv%rfT = zero
 
       ! Check for fiber compression damage initiation
       If (m%fiberCompDamFKT) Then
@@ -208,9 +204,8 @@ Contains
           d1 = sv%d1C
 
           ! Load reversal
-          If (d1 > sv%d1T) Then
-            sv%d1T = d1
-          End If
+          If (d1 > sv%d1T) sv%d1T = d1
+          
         End If
 
         ! Build the stiffness matrix

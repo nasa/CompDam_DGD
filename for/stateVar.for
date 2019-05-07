@@ -128,14 +128,14 @@ Contains
       sv%Ep_schaefer(5) = zero
       sv%Ep_schaefer(6) = zero
       sv%fp = zero
-    END IF     
-    sv%rfT = MAX(one, stateOld(14))
+    END IF
+    sv%rfT = stateOld(14)  ! MAX(one, stateOld(14))
     sv%slide(1) = stateOld(15)
     sv%slide(2) = stateOld(16)
     sv%rfC =stateOld(17)
-    IF (m%fiberCompDamBL) Then
-      sv%rfC = MAX(one, sv%rfC)
-    End If
+    ! IF (m%fiberCompDamBL) Then
+    !   sv%rfC = MAX(one, sv%rfC)
+    ! End If
     sv%d1T = MAX(zero, stateOld(18))
     sv%d1C = zero
 

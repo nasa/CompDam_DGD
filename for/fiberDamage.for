@@ -43,7 +43,6 @@ Contains
     eps_0_fn = (-E1+SQRT(E1**two+four*E1*cl*XT))/(two*E1*cl)
     E1_secant = XT/eps_0_fn
 
-    ! Fiber tension failure criterion
     If (cl > 0) Then  ! Account for fiber nonlinearity
       If (d1T > 0) Then   ! Use secant stiffness
         E1_temp = E1_secant
@@ -53,6 +52,8 @@ Contains
     Else
       E1_temp = E1
     End If
+
+    ! Fiber tension failure criterion
     FIfT = E1_temp/XT*eps(1,1)
 
     ! Update damage threshold
@@ -79,7 +80,7 @@ Contains
       ! Find the combined damage variable, d1T
       d1T = n*(dmg_1 - dmg_2) + dmg_2
 
-      ! Prevent healing; If the current damage is less than previous damage, use previous damage
+      ! Prevent healing; if the current damage is less than previous damage, use previous damage
       If (d1T < d1T_temp) d1T = d1T_temp
 
       ! Delete element when it becomes fully damaged
@@ -90,7 +91,7 @@ Contains
 
     Else
       ! This is only executed before any damage has occurred
-      ! Since rfT is that state variable, it acts as the failure index before damage
+      ! If no damage has occurred, use rfT as a fiber tension failure criterion state variable
       rfT = FIfT
 
     End If
@@ -99,7 +100,7 @@ Contains
   End Subroutine FiberTenDmg
 
 
-  Pure Subroutine FiberCompDmg(eps,ndir,E1,XC,GXC,n,m,Lc,cl,rfT,rfC,d1T,d1C,STATUS)
+  Pure Subroutine FiberCompDmg(eps, ndir, E1, XC, GXC, n, m, Lc, cl, rfT, rfC, d1T, d1C, STATUS)
     ! The purpose of this subroutine is to evaluate fiber damage.
     ! This subroutine is for compression-only fiber damage.
 
@@ -139,9 +140,8 @@ Contains
     eps_0_fn = -(-E1+SQRT(E1**two-four*E1*cl*XC))/(two*E1*cl)
     E1_secant = XC/eps_0_fn
 
-    ! Fiber compression failure criterion
     If (cl > 0) Then  ! Account for fiber nonlinearity
-      If (d1C > 0) Then   ! Use secant stiffness
+      If (d1C > 0) Then  ! Use secant stiffness
         E1_temp = E1_secant
       Else  ! Use tangent stiffmess
         E1_temp = E1*(1+cl*eps(1,1))
@@ -149,15 +149,12 @@ Contains
     Else
       E1_temp = E1
     End If
+
+    ! Fiber compression failure criterion
     FIfC = -E1_temp/XC*eps(1,1)
 
     ! Update damage threshold
-    If (FIfC > rfC) Then
-      rfC = FIfC
-
-      ! For load reversal
-      ! If (rfC > rfT) rfT = rfC
-    End If
+    If (FIfC > rfC) rfC = FIfC
 
     ! Determine d1C if damage has occurred
     If (rfC > one) Then
@@ -177,7 +174,7 @@ Contains
       dmg_1 = MIN(one, eps_f_1*(eps_rfC - eps_0)/eps_rfC/(eps_f_1 - eps_0))
       dmg_2 = MIN(one, eps_f_2*(eps_rfC - eps_0)/eps_rfC/(eps_f_2 - eps_0))
 
-      ! Find the combined damage variable, d1T
+      ! Find the combined damage variable, d1C
       d1C = n*(dmg_1 - dmg_2) + dmg_2
 
       ! Prevent healing; If the current damage is less than previous damage, use previous damage
@@ -191,7 +188,7 @@ Contains
 
     Else
       ! This is only executed before any damage has occurred
-      ! Since rfC is that state variable, it acts as the failure index before damage
+      ! If no damage has occurred, use rfC as a fiber compression failure criterion state variable
       rfC = FIfC
 
       ! If there's no damage in tension, set rfT to zero
