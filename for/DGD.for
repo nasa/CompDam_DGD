@@ -584,9 +584,10 @@ Contains
                 Call log%terminate('Invalid alpha. Check value for alpha in the initial conditions.')
               End If
               If (p%terminate_on_no_convergence) Then
-                Call log%terminate('DGDEvolve failed to converge, terminating analysis.')
+                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT)
+                Call log%terminate('DGDEvolve nonconvergence, terminating analysis.')
               Else
-                Call log%warn('Deleting failed element for which no solution could be found (DGDEvolve).')
+                Call log%warn('DGDEvolve nonconvergence, deleting failed element.')
                 sv%STATUS = 0
               End If
               Exit MatrixDamage
