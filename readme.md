@@ -17,11 +17,11 @@ Publications that describe the theories used in this code:
 Examples of this code being applied can be found in the following publications:
 - Andrew C. Bergan and Wade C. Jackson, ["Validation of a Mesoscale Fiber Kinking Model through Test and Analysis of Double Edge Notch Compression Specimens"](http://dpi-proceedings.com/index.php/asc33/article/view/26003) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
 - Imran Hyder, et al., ["Implementation of a Matrix Crack Spacing Parameter in a Continuum Damage Mechanics Finite Element Model"](http://dpi-proceedings.com/index.php/asc33/article/view/26052) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
-- Frank A. Leone Jr., et al., ["Benchmarking Mixed Mode Matrix Failure in Progressive Damage and Failure Analysis Methods"](http://dpi-proceedings.com/index.php/asc33/article/view/26030) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
+- Frank Leone, et al., ["Benchmarking Mixed Mode Matrix Failure in Progressive Damage and Failure Analysis Methods"](http://dpi-proceedings.com/index.php/asc33/article/view/26030) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
 - Brian Justusson, et al., et al., ["Quantification of Error Associated with Using Misaligned Meshes in Continuum Damage Mechanics Material Models for Matrix Crack Growth Predictions in Composites"](http://www.dpi-proceedings.com/index.php/asc33/article/view/26097) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
 - Kyongchan Song, et al. ["Continuum Damage Mechanics Models for the Analysis of Progressive Damage in Cross-Ply and Quasi-Isotropic Panels Subjected to Static Indentation"](https://arc.aiaa.org/doi/10.2514/6.2018-1466) *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
 - Imran Hyder, et al. ["Assessment of Intralaminar Progressive Damage and Failure Analysis Using an Efficient Evaluation Framework"](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20170010326.pdf) *32nd American Society for Composites (ASC) Annual Technical Conference*, West Lafayette, Indiana, 22-25 October 2017.
-- Frank A. Leone Jr., et al. ["Fracture-Based Mesh Size Requirements for Matrix Cracks in Continuum Damage Mechanics Models"](https://doi.org/10.2514/6.2017-0198) *AIAA SciTech Forum*, Grapevine, Texas, 9-13 January 2017.
+- Frank A. Leone, et al. ["Fracture-Based Mesh Size Requirements for Matrix Cracks in Continuum Damage Mechanics Models"](https://doi.org/10.2514/6.2017-0198) *AIAA SciTech Forum*, Grapevine, Texas, 9-13 January 2017.
 - Mark McElroy, et al. ["Simulation of delamination-migration and core crushing in a CFRP sandwich structure"](https://doi.org/10.1016/j.compositesa.2015.08.026) *Composites Part A* (2015) **79**:192-202.
 
 For any questions, please contact the developers:
@@ -348,7 +348,7 @@ Material properties can be defined in the input deck. Any optional material prop
 | 15 | *S<sub>L</sub>*        | SL       | Shear strength                                | F/L<sup>2</sup>                                | 0 < *S<sub>L</sub>* < &infin;            |                 |
 | 16 | *G<sub>Ic</sub>*       | GYT      | Mode I fracture toughness                     | F/L                                            | 0 < *G<sub>Ic</sub>* < &infin;           | ASTM D5528      |
 | 17 | *G<sub>IIc</sub>*      | GSL      | Mode II fracture toughness                    | F/L                                            | 0 < *G<sub>IIc</sub>* < &infin;          | ASTM D7905      |
-| 18 | *&eta;*                | eta_BK   | BK exponent for mode-mixity                   | -                                              | 1 &le; *&eta;* < &infin;                 |                 |
+| 18 | *&eta;*                | eta_BK   | BK exponent for mode-mixity                   | -                                              | 0 < *&eta;* < &infin;                 |                 |
 | 19 | *Y<sub>C</sub>*        | YC       | Transverse compressive strength               | F/L<sup>2</sup>                                | 0 < *Y<sub>C</sub>* < &infin;            | ASTM D3410      |
 | 20 | *&alpha;<sub>0</sub>*  | alpha0   | Fracture plane angle for pure trans. comp.    | Radians                                        | 0 &le; *&alpha;<sub>0</sub>* &le; &pi;/2 |                 |
 |    | ------                 |          |                                               |                                                |                                          |                 |
@@ -683,8 +683,8 @@ We invite your contributions to CompDam_DGD! Please submit contributions (includ
 If you use CompDam, please cite using the following BibTex entry:
 
     @misc{CompDam,
-    title={CompDam - Deformation Gradient Decomposition (DGD), v2.3.1},
-    author={Leone Jr., F. A., Bergan, A. C., D\'avila, C. G. },
+    title={CompDam - Deformation Gradient Decomposition (DGD), v2.4.0},
+    author={Leone, F. A., Bergan, A. C., D\'avila, C. G. },
     note={https://github.com/nasa/CompDam_DGD},
-    year={2018}
+    year={2019}
     }
