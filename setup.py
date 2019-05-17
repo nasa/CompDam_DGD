@@ -59,8 +59,9 @@ if __name__ == "__main__":
 
 
     except subprocess.CalledProcessError:
+        os.rename(os.path.join(os.getcwd(), 'for', 'version.for.nogit'), os.path.join(os.getcwd(), 'for', 'version.for'))
         print "Git not found"
-        print "NOTICE: If you intend to make contributions to the CompDam code base, using git is required.\nTo setup CompDam using git, type:\n\tgit clone https://github.com/nasa/CompDam_DGD.git\nSee the readme for more details."
+        print "NOTICE: If you intend to make contributions to the CompDam code base, using git is required.\n\tTo setup CompDam using git, type:\n\t\tgit clone https://github.com/nasa/CompDam_DGD.git\n\tSee the readme for more details.\n"
 
     # Check for the installation of abaverify
     try:
