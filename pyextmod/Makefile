@@ -11,6 +11,8 @@ PYTHON   = python
 #                     additional flags
 #=======================================================================
 
+# -Dname = predefine name as macro with definition 1. Used to enabled PYEXT mod fpp flag.
+
 ifeq ($(F90),gfortran)
 	FPP      = gfortran -E -DPYEXT
 	FPP_F90FLAGS = -x f95-cpp-input -fPIC -DPYEXT
@@ -21,9 +23,9 @@ endif
 
 ifeq ($(F90),ifort)
 
-	FPP      = gfortran -E # gfortran f90wrap temp files only. not compilation
-	FPP_F90FLAGS = -x f95-cpp-input -fPIC
-	F90FLAGS = -fpscomp logicals -fPIC # use 1 and 0 for True and False
+	FPP      = gfortran -E -DPYEXT # gfortran f90wrap temp files only. not compilation
+	FPP_F90FLAGS = -x f95-cpp-input -fPIC -DPYEXT
+	F90FLAGS = -fpscomp logicals -fPIC -cpp -DPYEXT # use 1 and 0 for True and False
     FCOMP    = intelem # for f2py
     LIBS =
 endif
@@ -136,12 +138,12 @@ libsrc.a: ${LIBSRC_OBJECTS}
 
 _${PYTHON_MODN}.so: libsrc.a ${LIBSRC_FPP_FILES}
 	f90wrap -m ${PYTHON_MODN} ${LIBSRC_WRAP_FPP_FILES} -k ${KIND_MAP}
-	f2py-f90wrap --fcompiler=$(FCOMP) --build-dir . -c -m _${PYTHON_MODN} -L. -lsrc f90wrap*.f90
+	f2py-f90wrap --fcompiler=$(FCOMP) --build-dir . -c -m _${PYTHON_MODN} -L. -lsrc f90wrap*.f90 --link-lapack_opt
 
 
 _${PYTHON_MODN}_pkg.so: libsrc.a ${LIBSRC_FPP_FILES}
 	f90wrap -m ${PYTHON_MODN}_pkg ${LIBSRC_WRAP_FPP_FILES} -k ${KIND_MAP} -P
-	f2py-f90wrap --fcompiler=$(FCOMP) --build-dir . -c -m _${PYTHON_MODN}_pkg -L. -lsrc f90wrap*.f90
+	f2py-f90wrap --fcompiler=$(FCOMP) --build-dir . -c -m _${PYTHON_MODN}_pkg -L. -lsrc f90wrap*.f90 --link-lapack_opt
 
 
 test: _${PYTHON_MODN}.so _${PYTHON_MODN}_pkg.so

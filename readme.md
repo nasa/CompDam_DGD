@@ -58,7 +58,9 @@ After cloning the CompDam_DGD git repository, it is necessary to run the setup s
 $ python setup.py
 ```
 
-The main purpose of the setup.py script is to 1) create the `for/version.for` file and 2) add git-hooks that automatically update the `for/version.for`.
+The main purpose of the setup.py script is to 1) set the `for/version.for` file and 2) add git-hooks that automatically update the `for/version.for`.
+
+In the event that you do not have access to python, rename `for/version.for.nogit` to `for/version.for` manually. The additional configuration done by `setup.py` is not strictly required.
 
 ### Abaqus environment file settings
 The `abaqus_v6.env` file must have [`/fpp`](https://software.intel.com/en-us/node/678201), [`/Qmkl:sequential`](https://software.intel.com/en-us/node/678038), and [`/free`](https://software.intel.com/en-us/node/678227) in the `ifort` command where the format for Windows is used. The corresponding Linux format is: `-fpp`, `-free`, and `-mkl=sequential`. The `/fpp` option enables the Fortran preprocessor, which is required for the code to compile correctly. The `/free` option sets the compiler to free-formatting for the source code files. The `/Qmkl:sequential` enables the [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/intel-mkl), which provides optimized and verified functions for many mathematical operations. The MKL is used in this code for calculating eigenvalues and eigenvectors.
