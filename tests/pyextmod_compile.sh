@@ -9,4 +9,4 @@ source ~/.bashrc
 source activate pyextmod
 cd ../pyextmod
 make clean
-make
+make $MAKE_F90
