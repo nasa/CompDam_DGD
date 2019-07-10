@@ -611,30 +611,30 @@ $ conda config --add channels conda-forge
 
 Conda stores python packages in containers called environments. Create a new environment:
 ```
-$ conda create --name pyextmod python=2.7
+$ conda create --name compdam python=2.7
 ```
 and switch to your new environment:
 ```
-$ source activate pyextmod
+$ source activate compdam
 ```
-which will add `(pyextmod)` to the prompt. Install `numpy`, `matplotlib`, and `f90wrap` by typing:
+which will add `(compdam)` to the prompt. Install `numpy`, `matplotlib`, and `f90wrap` by typing:
 ```
-(pyextmod) $ conda install numpy matplotlib f90wrap
+(compdam) $ conda install numpy matplotlib f90wrap
 ```
 After typing 'y' in response to the prompt asking if you would like to proceed, Conda will install `f90wrap` and all of its dependencies. This completes the setup process. These steps only need to be executed once.
 
-Note, you can exit the Conda environment by typing `source deactivate`. When you open a new session, you will need to activate the conda environment by typing `source activate pyextmod`.
+Note, you can exit the Conda environment by typing `source deactivate`. When you open a new session, you will need to activate the conda environment by typing `source activate compdam`.
 
 ### Example usage
 This section describes how to compile CompDam into a python extension module and run a simple example.
 
 The relevant files are in the `pyextmod` directory, so set `pyextmod` as your current working directory.
 
-The bash shell is required. Type `bash` to open a bash shell session if you are using a different shell. Activate the environment in which you have installed the dependencies listed above, e.g. `source activate testing_pyextmod`.
+The bash shell is required. Type `bash` to open a bash shell session if you are using a different shell. Activate the environment in which you have installed the dependencies listed above, e.g. `source activate compdam`.
 
 Next compile the python extension module by executing `make` in the `pyextmod` directory as follows:
 ```
-(pyextmod) CompDam_DGD/pyextmod> make
+(compdam) CompDam_DGD/pyextmod> make
 ```
 
 When you execute `make`, the Fortran modules in the `for` directory are compiled to object files, the shared library `_CompDam_DGD.so` is built, and the Python extension module interface `CompDam_DGD.py` is created. A large amount of output is given in the terminal. After the module is created, most of the functionality of CompDam is available in python with `import CompDam_DGD`.
@@ -646,7 +646,7 @@ It is necessary to recompile the CompDam after making changes to the Fortran cod
 Note that portions of CompDam that are specific to Abaqus are hidden from `f90wrap` using the preprocessor directive `#ifndef PYEXT`.
 
 ### Associated scripts
-In the `tests` directory the shell scripts `pyextmod_compile.sh` and `pyextmod_run.sh` are available to help streamline execution of the python extension module. Both must be executed with the `-i` option. The script `pyextmod_run.sh` loads a debug file and executes the specified DGD routine. The DGD routine and the debug file are specified as arguments as follows:
+In the `tests` directory the shell scripts `pyextmod_compile.sh` and `pyextmod_run.sh` are available to help streamline execution of the python extension module. These two scripts assume that conda environment called `compdam` is available with `abaverify` and `f90wrap`. Both must be executed with the `-i` option. The script `pyextmod_run.sh` loads a debug file and executes the specified DGD routine. The DGD routine and the debug file are specified as arguments as follows:
 ```
 $ bash -i pyextmod_run.sh dgdevolve <job-name>
 ```

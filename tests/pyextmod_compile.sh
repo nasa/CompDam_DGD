@@ -6,7 +6,7 @@
 
 source ~/.bashrc
 
-source activate pyextmod
+source activate compdam
 cd ../pyextmod
 make clean
 make $MAKE_F90

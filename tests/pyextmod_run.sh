@@ -6,6 +6,6 @@
 
 source ~/.bashrc
 
-source activate pyextmod
+source activate compdam
 cd ../pyextmod
 python verify_debug.py $1 ../tests/testOutput/$2

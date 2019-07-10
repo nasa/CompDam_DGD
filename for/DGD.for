@@ -468,6 +468,7 @@ Contains
     Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
 
     ! -------------------------------------------------------------------- !
+
     Call log%debug('Start of DGDEvolve')
 
     damage_max = one ! Maximum value for damage variables
@@ -1575,7 +1576,7 @@ Contains
     write (debugpy_count_str, *) debugpy_count_local
     debugpy_count_str = adjustl(debugpy_count_str)
     fileName = trim(outputDir) // '/' // trim(jobName) // '-' // trim(nElement_str) // '-debug-'  ! Name of output file
-    open(unit = file_unit, file = trim(fileName)//trim(debugpy_count_str)// '.py')
+    open(unit = file_unit, file = trim(fileName)// '0.py')
 #else
     fileName = 'pyextmod_debug.py'
     open(unit = file_unit, file = fileName, status='replace', recl=1000)
