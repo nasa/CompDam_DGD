@@ -91,6 +91,9 @@ def plotFailureEnvelope(baseName, abscissaIdentifier, ordinateIdentifier, abciss
 
     # Try to import matplotlib
     try:
+        import matplotlib as mpl
+        if os.environ.get('DISPLAY', '') == '':
+            mpl.use('Agg')
         import matplotlib.pyplot as plt
 
         # Read the failure envelope data
