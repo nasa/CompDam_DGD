@@ -3,7 +3,7 @@
 **
 *Parameter
  length = 0.2
- displacement = 0.01
+ displacement = 0.02*length
  stepDuration = 0.1
 **
 ** NODES
@@ -127,7 +127,7 @@ ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
  U, RF
 *OUTPUT, HISTORY, frequency=1
 *Energy Output
- ALLIE, ALLKE
+ ALLIE, ALLKE, ALLPD, ALLSE
 *NODE OUTPUT, NSET=Y+
  U
 *NODE OUTPUT, NSET=Y+

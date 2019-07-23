@@ -1,51 +1,36 @@
+tau = 90  # Stress at 5% strain from RO law
 aPL = 4.412E-10
 nPL = 5.934
-G13 = 5290.
-enerPlas = aPL/G13*90.65**(nPL + 1.)*nPL/(nPL + 1.)*0.2**3
-enerFrac = 0.788*0.2*0.2
-enerTotal = enerPlas+enerFrac
+G12 = 5290.
+enerElas = 0.5*tau**2/G12*0.1*0.1*0.1
+enerPlas = aPL/G12*tau**(nPL + 1.)*nPL/(nPL + 1.)*0.1**3
 
 parameters = {
-"results": [
-        {
+	"results": [
+		{
             "type": "max",
-            "step": "Step-7",
             "identifier":
                 {
-                    "symbol": "S13",
+                    "symbol": "S12",
                     "elset": "ALL_ELEMS",
                     "position": "Element 1 Int Point 1"
                 },
-            "referenceValue": 90.65,
-            "tolerance": 0.01
+            "referenceValue": tau,
+            "tolerance": 0.01*tau
         },
         {
             "type": "max",
-            "step": "Step-9",
             "identifier":
                 {
-                    "symbol": "S13",
+                    "symbol": "SDV_CDM_d2",
                     "elset": "ALL_ELEMS",
                     "position": "Element 1 Int Point 1"
                 },
-            "referenceValue": 91.08,
-            "tolerance": 0.01
+            "referenceValue": 0.0,
+            "tolerance": 0.0
         },
         {
             "type": "max",
-            "step": "Step-11",
-            "identifier":
-                {
-                    "symbol": "S13",
-                    "elset": "ALL_ELEMS",
-                    "position": "Element 1 Int Point 1"
-                },
-            "referenceValue": 79.96,
-            "tolerance": 0.05
-        },
-        {
-            "type": "max",
-            "step": "Step-17",
             "identifier":
                 {
                     "symbol": "SDV_CDM_d1T",
@@ -57,7 +42,6 @@ parameters = {
         },
         {
             "type": "max",
-            "step": "Step-17",
             "identifier":
                 {
                     "symbol": "SDV_CDM_d1C",
@@ -79,22 +63,22 @@ parameters = {
             "tolerance": 0.1
         },
         {
-            "type": "tabular",
+            "type": "max",
+            "identifier": "Strain energy: ALLSE for Whole Model",   # Recoverable strain energy
+            "referenceValue": enerElas,   # Elastic strain energy * volume: 0.5*stress^2/G12*LC1*LC2*LC3
+            "tolerance": 0.02*enerElas
+        },
+        {
+            "type": "max",
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
-            "referenceValue": [
-                            (0.0, 0.0),
-                            (0.10, aPL/G13*69.2368**(nPL + 1.)*nPL/(nPL + 1.)*0.2**3),  # End of step 1 (all plasticity)
-                            (0.25, aPL/G13*79.045**(nPL + 1.)*nPL/(nPL + 1.)*0.2**3),  # End of step 3 (all plasticity)
-                            (0.40, aPL/G13*85.5842**(nPL + 1.)*nPL/(nPL + 1.)*0.2**3),  # End of step 5 (all plasticity)
-                            (0.55, aPL/G13*90.6525**(nPL + 1.)*nPL/(nPL + 1.)*0.2**3),  # End of step 7 (all plasticity)
-                            ],
-            "tolerance_percentage": 0.05
+            "referenceValue": enerPlas,  # Plastic energy dissipation from RO law * volume: aPL/Modulus*tau**(nPL + one)*nPL/(nPL + one)*LC1*LC2*LC3
+            "tolerance": 0.02*enerPlas  # Enfore 2% error maximum. Note most of the error is related to large strain.
         },
         {
             "type": "finalValue",
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
-            "referenceValue": enerTotal,  # Total energy dissipation (plasticity + fracture)
-            "tolerance": 0.02*enerTotal
+            "referenceValue": enerPlas,  # Plastic energy dissipation from RO law * volume: aPL/Modulus*tau**(nPL + one)*nPL/(nPL + one)*LC1*LC2*LC3
+            "tolerance": 0.02*enerPlas
         }
 	]
 }

@@ -1,3 +1,7 @@
+E2 = 9080.
+strain = 0.02
+enerElas = 0.5*strain**2*E2*0.2*0.2*0.2
+
 parameters = {
 	"results": [
         {
@@ -16,8 +20,8 @@ parameters = {
                 }
             ],
             "window": [0.0001, 0.005],  # [min, max] in x
-            "referenceValue": 9080, # E2
-            "tolerance": 90.8 # 1%
+            "referenceValue": E2,
+            "tolerance": 0.01*E2 # 1%
         },
         {
             "type": "max",
@@ -69,6 +73,12 @@ parameters = {
                 },
             "referenceValue": 0.0,
             "tolerance": 0.1
+        },
+        {
+            "type": "max",
+            "identifier": "Strain energy: ALLSE for Whole Model",   # Recoverable strain energy
+            "referenceValue": enerElas,   # Elastic strain energy * volume
+            "tolerance": 0.03*enerElas
         }
 	]
 }

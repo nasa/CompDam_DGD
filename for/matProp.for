@@ -79,6 +79,8 @@ Module matProp_Mod
     Logical :: fiberCompDamBL
     Logical :: fiberCompDamFKT12
     Logical :: fiberCompDamFKT13
+    Logical :: accumulateDissipPlasEnergy
+    Logical :: accumulateDissipFractEnergy
     Logical :: friction
 
   End Type matProps
@@ -428,8 +430,8 @@ Contains
           ! Position 1: Matrix damage
           ! Position 2: Peak-peak nonlinearity (shear plasticity or schapery micro-damage)
           ! Position 3: Fiber tensile damage
-          ! Position 4: Fiber compression damage, CDM [Mutually exclusive with Position 5]
-          ! Position 5: Fiber compression damage, DGD [Mutually exclusive with Position 4]
+          ! Position 4: Fiber compression damage
+          ! Position 5: Energy accumulation
           ! Position 6: Friction
 
           ! Default friction to enabled
@@ -531,8 +533,22 @@ Contains
                 End If
 
               Case (5)
-                If (featureFlags(j:j) == '1') Then
-                  Call log%info("loadMatProps: feature flag position 5 is not used.")
+                If (featureFlags(j:j) == '0') Then
+                  m%accumulateDissipPlasEnergy = .TRUE.
+                  m%accumulateDissipFractEnergy = .TRUE.
+                  Call log%info("loadMatProps: dissipated inelastic energy due to plasticity and fracture will be summed")
+                Else If (featureFlags(j:j) == '1') Then
+                  m%accumulateDissipPlasEnergy = .FALSE.
+                  m%accumulateDissipFractEnergy = .TRUE.
+                  Call log%info("loadMatProps: dissipated inelastic energy due to plasticity is being ignored. Only dissipated fracture energy will be recorded")
+                Else If (featureFlags(j:j) == '2') Then
+                  m%accumulateDissipPlasEnergy = .TRUE.
+                  m%accumulateDissipFractEnergy = .FALSE.
+                  Call log%info("loadMatProps: dissipated inelastic energy due to fracture is being ignored. Only dissipated plastic energy will be recorded")
+                Else
+                  m%accumulateDissipPlasEnergy = .FALSE.
+                  m%accumulateDissipFractEnergy = .FALSE.
+                  Call log%info("loadMatProps: all dissipated inelastic energy accumulation DISABLED")
                 End If
 
               Case (6)

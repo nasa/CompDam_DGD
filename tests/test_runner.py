@@ -518,6 +518,11 @@ class SingleElementTests(av.TestCase):
         self.runTest("test_C3D8R_nonlinearShear12")
 
 
+    def test_C3D8R_nonlinearShear12_monotonic(self):
+        """ Nonlinear shear model, monotonic loading """
+        self.runTest("test_C3D8R_nonlinearShear12_monotonic")
+
+
     def test_C3D8R_nonlinearShear12_withFKT(self):
         """ Nonlinear shear model, loading and unloading, with FKT """
         self.runTest("test_C3D8R_nonlinearShear12_withFKT")

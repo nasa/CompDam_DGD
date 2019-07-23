@@ -90,9 +90,9 @@
 ** INITIAL CONDITIONS
 **
 *Initial Conditions, Type=Solution
-ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-            0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
-            0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+ ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0,       0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0,       0.d0,  0.d0,  0.d0
 *BOUNDARY
   Y-, 2, 2, 0
   X-, 1, 1, 0
@@ -132,7 +132,7 @@ ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
  U, RF
 *OUTPUT, HISTORY, frequency=1
 *Energy Output
- ALLIE, ALLKE
+ ALLIE, ALLKE, ALLPD, ALLSE
 *NODE OUTPUT, NSET=Y+
  U
 *NODE OUTPUT, NSET=Y+

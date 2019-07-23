@@ -8,8 +8,8 @@ This software may be used, reproduced, and provided to others only as permitted 
 Copyright 2016 United States Government as represented by the Administrator of the National Aeronautics and Space Administration. No copyright is claimed in the United States under Title 17, U.S. Code. All Other Rights Reserved.
 
 Publications that describe the theories used in this code:
+- Andrew C. Bergan, ["A Three-Dimensional Mesoscale Model for In-Plane and Out-of-Plane Fiber Kinking"](https://arc.aiaa.org/doi/abs/10.2514/6.2019-1548) *AIAA SciTech Forum*, San Diego, California, 7-11 January 2019.
 - Carlos Dávila, ["From S-N to the Paris Law with a New Mixed-Mode Cohesive Fatigue Model"](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf) NASA/TP-2018-219838, June 2018.
-- Andrew C. Bergan, ["A Three-Dimensional Mesoscale Model for In-Plane and Out-of-Plane Fiber Kinking"](https://arc.aiaa.org/doi/abs/10.2514/6.2019-1548)
 - Andrew C. Bergan, et al., ["Development of a Mesoscale Finite Element Constitutive Model for Fiber Kinking"](https://arc.aiaa.org/doi/10.2514/6.2018-1221) *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
 - Frank A. Leone Jr. ["Deformation gradient tensor decomposition for representing matrix cracks in fiber-reinforced materials"](http://dx.doi.org/10.1016/j.compositesa.2015.06.014) *Composites Part A* (2015) **76**:334-341.
 - Frank A. Leone Jr. ["Representing matrix cracks through decomposition of the deformation gradient tensor in continuum damage mechanics methods"](http://iccm20.org/fullpapers/file?f=Abk7n4gkWV) *Proceedings of the 20th International Conference on Composite Materials*, Copenhagen, Denmark, 19-24 July 2015.
@@ -411,7 +411,7 @@ The positions correspond to the features as follows:
 - Position 2: Shear nonlinearity (1=Ramberg-Osgood 1-2 plane, 2=Schapery, 3=Ramberg-Osgood 3-D, 4=Ramberg-Osgood 1-3 plane, 5=Schaefer || more information [here](#shear-nonlinearity))
 - Position 3: Fiber tensile damage
 - Position 4: Fiber compression damage (1=max strain, 2=N/A, 3=FKT-12, 4=FKT-13, 5=FKT-3D || more information [here](#fiber-compression-damage))
-- Position 5: *reserved*
+- Position 5: Energy output contribution (0=all mechanisms, 1=only fracture energy, 2=only plastic energy)
 - Position 6: Friction
 
 For example, `101000` indicates that the model will run with matrix damage and fiber tension damage enabled; `120001` indicates that the model will run with matrix damage, in-plane shear nonlinearity using Schapery theory, and friction; and `200000` indicates that the model is being applied to cohesive elements.

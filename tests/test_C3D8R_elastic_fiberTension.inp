@@ -5,7 +5,7 @@
  l = 0.5
  t = 0.5
  stepDuration = 1.0
- displacement = 0.02
+ displacement = 0.02*l
 **
 ** PARTS
 **
@@ -145,7 +145,7 @@ Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 **
 *Output, history, frequency=1
 *Energy Output
- ALLIE, ALLKE
+ ALLIE, ALLKE, ALLPD, ALLSE
 *Node Output, nset=Part-1-1.loadApp
  RF1, U1
 *Element Output, elset=Part-1-1.all

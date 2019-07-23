@@ -118,6 +118,8 @@ ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 *Node Output
  U, RF
 *OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
 *NODE OUTPUT, NSET=Y+
  U, RF
 *ELEMENT OUTPUT, ELSET=ALL_ELEMS
@@ -140,6 +142,8 @@ ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 *Node Output
  U, RF
 *OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
 *NODE OUTPUT, NSET=Y+
  U,RF
 *ELEMENT OUTPUT, ELSET=ALL_ELEMS
@@ -163,6 +167,8 @@ ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 *Node Output
  U, RF
 *OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
 *NODE OUTPUT, NSET=Y+
  U, RF
 *ELEMENT OUTPUT, ELSET=ALL_ELEMS
@@ -185,6 +191,8 @@ ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 *Node Output
  U, RF
 *OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
 *NODE OUTPUT, NSET=Y+
  U,RF
 *ELEMENT OUTPUT, ELSET=ALL_ELEMS
@@ -208,6 +216,8 @@ ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 *Node Output
  U, RF
 *OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
 *NODE OUTPUT, NSET=Y+
  U, RF
 *ELEMENT OUTPUT, ELSET=ALL_ELEMS
@@ -230,6 +240,8 @@ ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 *Node Output
  U, RF
 *OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
 *NODE OUTPUT, NSET=Y+
  U,RF
 *ELEMENT OUTPUT, ELSET=ALL_ELEMS

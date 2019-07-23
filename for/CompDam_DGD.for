@@ -75,7 +75,7 @@ End Subroutine VUMAT
 Subroutine CompDam(  &
   ! Read only (unmodifiable) variables:
   nblock,ndir,nshr,nstatev,nfieldv,nprops,lanneal,stepTime,     &
-  totalTime,dt,cmname,coordMp,charLength,props,density,         &
+  totalTime,dt,cmname,coordMp,charLength,props,density_abq,     &
   strainInc,relSpinInc,tempOld,stretchOld,defgradOld,fieldOld,  &
   stressOld,stateOld,enerInternOld,enerInelasOld,tempNew,       &
   stretchNew,defgradNew,fieldNew,                               &
@@ -97,7 +97,7 @@ Subroutine CompDam(  &
   Implicit Double Precision (a-h, o-z)
   Parameter (j_sys_Dimension = 2, n_vec_Length = 136, maxblk = n_vec_Length)
 
-  Double Precision :: props(nprops), density(nblock), coordMp(nblock,*), charLength(nblock,*),           &
+  Double Precision :: props(nprops), density_abq(nblock), coordMp(nblock,*), charLength(nblock,*),       &
     strainInc(nblock,ndir+nshr), relSpinInc(nblock,nshr), tempOld(nblock), tempNew(nblock),              &
     stretchOld(nblock,ndir+nshr), defgradOld(nblock,ndir+nshr+nshr), fieldOld(nblock,nfieldv),           &
     stressOld(nblock,ndir+nshr), stateOld(nblock,nstatev), enerInternOld(nblock), enerInelasOld(nblock), &
@@ -131,6 +131,7 @@ Subroutine CompDam(  &
   Double Precision :: delta(3)  ! Cohesive displacement-jump vector
   Double Precision :: AdAe
   Double Precision :: dGdGc  ! dissipated cohesive energy per fracture toughness
+  Double Precision :: density_current         ! Current density calculated from Fbulk (ignores the cohesive crack displacement)
   Logical :: Sliding
 
   ! Parameters
@@ -330,7 +331,9 @@ Subroutine CompDam(  &
 
     ! Update internal and inelastic energy terms
     enerInternNew(km) = DOT_PRODUCT(T_coh, delta)/two
+    enerInternNew(km) = enerInternNew(km)/density_abq(km)
     enerInelasNew(km) = dGdGc*(m%GYT + (m%GSL - m%GYT)*sv%B**m%eta_BK)
+    enerInelasNew(km) = enerInelasOld(km) + enerInelasNew(km)/density_abq(km)
 
   ! -------------------------------------------------------------------- !
   !    Solid elements:                                                   !
@@ -382,6 +385,11 @@ Subroutine CompDam(  &
     End If
 
     ! -------------------------------------------------------------------- !
+    !    Initialize inelastic energy to the previous value                 !
+    ! -------------------------------------------------------------------- !
+    enerInelasNew(km) = enerInelasOld(km)
+
+    ! -------------------------------------------------------------------- !
     !    Initialize fiber failure                                          !
     ! -------------------------------------------------------------------- !
     If (m%fiberCompDamFKT12 .AND. p%fkt_fiber_failure_angle > zero) Then
@@ -401,19 +409,19 @@ Subroutine CompDam(  &
     ! Damage initiation prediction
     If (.NOT. (m%matrixDam .AND. sv%d2 > zero) .AND. .NOT. ((m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) .AND. sv%d1C > zero)) Then
 
-      Call DGDInit(U,F,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km), F_old)
+      Call DGDInit(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),density_abq(km),Cauchy,enerInternNew(km),enerInelasNew(km))
 
     End If
 
     ! Matrix crack damage evolution
     If (m%matrixDam .AND. sv%d2 > zero) Then
 
-      Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km),enerInelasNew(km))
+      Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),density_abq(km),Cauchy,enerInternNew(km),enerInelasNew(km))
 
     ! Fiber compression damage evolution (FKT decomposition)
     Else If ((m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) .AND. sv%d1C > zero) Then
 
-      Call DGDKinkband(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km))
+      Call DGDKinkband(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km),enerInelasNew(km))
 
     End If
 
@@ -455,10 +463,6 @@ Subroutine CompDam(  &
   !    Store the updated state variables:                                !
   ! -------------------------------------------------------------------- !
   stateNew(km,:) = storeStateVars(sv, nstatev, m)
-
-  ! Scale the energy terms by density
-  enerInternNew(km) = enerInternNew(km)/density(km)
-  enerInelasNew(km) = enerInelasOld(km) + enerInelasNew(km)/density(km)
 
   ! -------------------------------------------------------------------- !
   !    Kill job for debugging purposes                                   !

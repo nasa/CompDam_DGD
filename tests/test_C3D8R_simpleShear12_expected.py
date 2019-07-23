@@ -1,3 +1,5 @@
+enerFrac = 0.788*0.1*0.1
+
 parameters = {
 	"results": [
 		{
@@ -73,6 +75,18 @@ parameters = {
                 },
             "referenceValue": 0.0,
             "tolerance": 0.1
+        },
+        {
+            "type": "max",
+            "identifier": "Plastic dissipation: ALLPD for Whole Model",
+            "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GSL*LC1*LC3
+            "tolerance": 0.01*enerFrac
+        },
+        {
+            "type": "finalValue",
+            "identifier": "Plastic dissipation: ALLPD for Whole Model",
+            "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GSL*LC1*LC3
+            "tolerance": 0.01*enerFrac
         }
 	]
 }

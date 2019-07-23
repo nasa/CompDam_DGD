@@ -1,3 +1,8 @@
+enerFrac = 0.277*0.1*0.1
+E2 = 9080.
+YT = 50
+enerElas = 0.5*YT**2/E2*0.1*0.1*0.1
+
 parameters = {
 	"results": [
 		{
@@ -8,8 +13,8 @@ parameters = {
                     "elset": "ALL_ELEMS",
                     "position": "Element 1 Int Point 1"
                 },
-            "referenceValue": 50, # YT
-            "tolerance": 0.05
+            "referenceValue": YT, # YT
+            "tolerance": 0.001*YT
         },
         {
             "type": "disp_at_zero_y",
@@ -74,6 +79,24 @@ parameters = {
                 },
             "referenceValue": 0.0,
             "tolerance": 0.1
+        },
+        {
+            "type": "max",
+            "identifier": "Plastic dissipation: ALLPD for Whole Model",
+            "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GYT*LC1*LC3
+            "tolerance": 0.01*enerFrac
+        },
+        {
+            "type": "finalValue",
+            "identifier": "Plastic dissipation: ALLPD for Whole Model",
+            "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GYT*LC1*LC3
+            "tolerance": 0.01*enerFrac
+        },
+        {
+            "type": "max",
+            "identifier": "Strain energy: ALLSE for Whole Model",   # Recoverable strain energy
+            "referenceValue": enerElas,   # Elastic strain energy * volume
+            "tolerance": 0.03*enerElas
         }
 	]
 }

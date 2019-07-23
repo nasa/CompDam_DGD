@@ -3,7 +3,7 @@ Module plasticity_mod
 
 Contains
 
-  Subroutine Plasticity(m, sv, p, ndir, nshr, eps, eps_old_in, use_temp)
+  Subroutine Plasticity(m, sv, p, ndir, nshr, eps, eps_old, enerPlas, use_temp)
     ! This is the main entry point for plasticity calculations
 
     Use matProp_Mod
@@ -18,15 +18,18 @@ Contains
     Type(parameters), intent(IN) :: p                    ! parameters object (contains information like convergence tolerance which can dictate behavior of subroutines)
     Integer, intent(IN) :: ndir, nshr
     Double Precision, intent(INOUT) :: eps(ndir,ndir)    ! Strain tensor
-    Double Precision, optional, intent(IN) :: eps_old_in(ndir, ndir)   ! Strain tensor
+    Double Precision, intent(IN) :: eps_old(ndir, ndir)   ! Strain tensor, last increment
+    Double Precision, intent(OUT) :: enerPlas             ! Increment of dissipated plastic energy
     Logical, optional :: use_temp                       ! Set to true to use temporary state variables (default=False)
 
     ! Locals
     Logical :: use_temporary_sv
-    Double Precision:: eps_old(ndir, ndir)   ! Strain tensor
+    Double Precision :: enerPlas_temp                   ! Temporary dissipated plastic energy
 
     Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
     ! -------------------------------------------------------------------- !
+
+    enerPlas = zero
 
     ! Set default behavior for use_temp
     If (present(use_temp)) Then
@@ -34,46 +37,32 @@ Contains
     Else
       use_temporary_sv = .FALSE.
     End If
-    If (PRESENT(eps_old_in)) THEN
-      eps_old = eps_old_in
-    ELSE 
-      eps_old = zero
-    End If
 
     If (m%shearNonlinearity12) Then
       If (use_temporary_sv) Then
-        If (m%fiberCompDamFKT12) Then
-          sv%d_eps12_temp = Sign(one, (eps(1,2) - eps_old(1,2)))
-        End If
-        Call ro_plasticity(two*eps(1,2), sv%d_eps12_temp, m%G12, m%aPL, m%nPL, sv%Inel12c, sv%Plas12_temp, sv%Inel12_temp)
+        Call ro_plasticity(two*eps(1,2), two*eps_old(1,2), m%G12, m%aPL, m%nPL, sv%Inel12c, sv%Plas12_temp, sv%Inel12_temp, enerPlas_temp)
         eps(1,2) = eps(1,2) - sv%Plas12_temp/two
         eps(2,1) = eps(1,2)
       Else
-        If (m%fiberCompDamFKT12) Then
-          sv%d_eps12 = Sign(one, (eps(1,2) - eps_old(1,2)))
-        End If
-        Call ro_plasticity(two*eps(1,2), sv%d_eps12, m%G12, m%aPL, m%nPL, sv%Inel12c, sv%Plas12, sv%Inel12)
+        Call ro_plasticity(two*eps(1,2), two*eps_old(1,2), m%G12, m%aPL, m%nPL, sv%Inel12c, sv%Plas12, sv%Inel12, enerPlas_temp)
         eps(1,2) = eps(1,2) - sv%Plas12/two
         eps(2,1) = eps(1,2)
       End IF
+      enerPlas = enerPlas_temp
     End If
     If (m%shearNonlinearity13) Then
       If (use_temporary_sv) Then
-        If (m%fiberCompDamFKT13) Then
-          sv%d_eps13_temp = Sign(one, (eps(1,3) - eps_old(1,3)))
-        End If
-        Call ro_plasticity(two*eps(1,3), sv%d_eps13_temp, m%G13, m%aPL, m%nPL, sv%Inel13c, sv%Plas13_temp, sv%Inel13_temp)
+        Call ro_plasticity(two*eps(1,3), two*eps_old(1,3), m%G13, m%aPL, m%nPL, sv%Inel13c, sv%Plas13_temp, sv%Inel13_temp, enerPlas_temp)
         eps(1,3) = eps(1,3) - sv%Plas13_temp/two
         eps(3,1) = eps(1,3)
       Else
-        If (m%fiberCompDamFKT13) Then
-          sv%d_eps13 = Sign(one, (eps(1,3) - eps_old(1,3)))
-        End If
-        Call ro_plasticity(two*eps(1,3), sv%d_eps13, m%G13, m%aPL, m%nPL, sv%Inel13c, sv%Plas13, sv%Inel13)
+        Call ro_plasticity(two*eps(1,3), two*eps_old(1,3), m%G13, m%aPL, m%nPL, sv%Inel13c, sv%Plas13, sv%Inel13, enerPlas_temp)
         eps(1,3) = eps(1,3) - sv%Plas13/two
         eps(3,1) = eps(1,3)
       End If
+      enerPlas = enerPlas_temp + enerPlas
     End If
+
     If (m%schaefer) Then
     	! Update Ep_schaefer and f (yield function)
       Call schaefer(m, p, m%schaefer_a6,  m%schaefer_b2,  m%schaefer_n, m%schaefer_A, eps, eps_old, ndir, nshr, sv%Ep_schaefer, sv%fp)
@@ -85,7 +74,7 @@ Contains
   End Subroutine Plasticity
 
 
-  Subroutine ro_plasticity(strain, d_strain_sign, modulus, aPL, nPL, inel_max, Plas, Inel)
+  Subroutine ro_plasticity(strain, strainOld, modulus, aPL, nPL, inel_max, Plas, Inel, enerPlas)
     ! The purpose of this subroutine is to calculate the plastic and inelastic strains
     ! for the given total strain state and nonlinear stress-strain curve.
 
@@ -93,21 +82,29 @@ Contains
 
     ! Arguments
     Double Precision, intent(IN) :: modulus                 ! Elastic modulus (eg G12)
-    Double Precision, intent(IN) :: strain, d_strain_sign   ! Strain
+    Double Precision, intent(IN) :: strain, strainOld       ! Strain
     Double Precision, intent(IN) :: aPL, nPL                ! NL shear strain properties
     Double Precision, intent(IN) :: inel_max                ! Maximum inelastic shear strain, for fiber failure criterion
     Double Precision, intent(INOUT) :: Plas, Inel
+    Double Precision, optional, intent(OUT) :: enerPlas             ! Increment of dissipated plastic energy
 
     ! Locals
     Double Precision :: epsEff,tau,Inel_trial,ff0,ff1,tol
+    Double Precision :: d_strain_sign
+    Double Precision :: epsEffOld, tauOld
     Integer :: E, E_max
     Double Precision, parameter :: zero=0.d0, one=1.d0
     ! -------------------------------------------------------------------- !
 
+    ! Sign of the change in strain
+    d_strain_sign = Sign(one, (strain - strainOld))
+
     ! effective strain (used to account for unloading and reloading)
+    epsEffOld = ABS(strainOld - Plas) + Inel
     epsEff = ABS(strain - Plas) + Inel
 
     ! Compute stress following the Ramberg-Osgood curve
+    tauOld = ramberg_osgood(epsEffOld, modulus, aPL, nPL)
     tau = ramberg_osgood(epsEff, modulus, aPL, nPL)
 
     ! Compute the inelastic strain (independent of unloading/reloading) and plastic strain (depends on loading direction) 
@@ -118,6 +115,13 @@ Contains
       End If
       Plas = Plas + (Inel_trial - Inel)*d_strain_sign
       Inel = Inel_trial
+      If (present(enerPlas)) Then
+        enerPlas = aPL/Modulus*tau**(nPL + one)*nPL/(nPL + one) - aPL/Modulus*tauOld**(nPL + one)*nPL/(nPL + one)
+      End If
+    Else
+      If (present(enerPlas)) Then
+        enerPlas = zero
+      End If
     End If
 
     Return

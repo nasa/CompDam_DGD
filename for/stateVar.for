@@ -39,6 +39,10 @@ Module stateVar_Mod
     Double Precision :: direct(9)
     Double Precision :: Ep_schaefer(6) ! Total plastic strain for schaefer theory
     Double Precision :: fp ! yield function value
+    Double Precision :: enerPlasOld   ! Increment of dissipated plastic energy
+    Double Precision :: enerPlasNew   ! Increment of dissipated plastic energy
+    Double Precision :: enerFracOld   ! Increment of dissipated fracture energy
+    Double Precision :: enerFracNew   ! Increment of dissipated fracture energy
 
     ! Calculated once at the start of the analysis, not passed to abaqus
     ! Since this value depends on phi0, it needs to be a state variable and not global calculated parameter
@@ -47,16 +51,14 @@ Module stateVar_Mod
 
     ! Stored for debugging only
     Integer :: debugpy_count
-    Double Precision :: d_eps12, d_eps13
     Double Precision :: old(nstatev_max)
 
     ! Temporary values
     Double Precision :: Plas12_temp
     Double Precision :: Inel12_temp
-    Double Precision :: d_eps12_temp
     Double Precision :: Plas13_temp
     Double Precision :: Inel13_temp
-    Double Precision :: d_eps13_temp
+    Double Precision :: enerPlas_temp
     Double Precision :: Sr_temp
 
   End Type stateVars
@@ -84,7 +86,6 @@ Contains
     sv%old(1:nstatev) = stateOld
 
     ! Global variable (not returned to abaqus)
-    sv%d_eps12 = zero
     sv%Inel12c = Huge(zero)  ! Initialize to a large positive number so it is not reached (turns off fiber failure)
     sv%Inel13c = Huge(zero)  ! Initialize to a large positive number so it is not reached (turns off fiber failure)
 
@@ -289,12 +290,10 @@ Contains
     If (m%shearNonlinearity12) Then
       sv%Plas12_temp = sv%Plas12
       sv%Inel12_temp = sv%Inel12
-      sv%d_eps12_temp = sv%d_eps12
     End If
     If (m%shearNonlinearity13) Then
       sv%Plas13_temp = sv%Plas13
       sv%Inel13_temp = sv%Inel13
-      sv%d_eps13_temp = sv%d_eps13
     End If
 
     If (m%schapery) Then
@@ -319,12 +318,10 @@ Contains
     If (m%shearNonlinearity12) Then
       sv%Plas12 = sv%Plas12_temp
       sv%Inel12 = sv%Inel12_temp
-      sv%d_eps12 = sv%d_eps12_temp
     End If
     If (m%shearNonlinearity13) Then
       sv%Plas13 = sv%Plas13_temp
       sv%Inel13 = sv%Inel13_temp
-      sv%d_eps13 = sv%d_eps13_temp
     End If
 
     If (m%schapery) Then

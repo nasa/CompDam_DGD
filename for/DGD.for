@@ -4,7 +4,7 @@ Module DGD_Mod
 Contains
 
 
-  Subroutine DGDInit(U, F, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern, F_old)
+  Subroutine DGDInit(U, F, F_old, m, p, sv, ndir, nshr, DT, density_abq, Cauchy, enerIntern, enerInelas)
     ! Checks for the initiation of matrix damage, represented as a DGD
     ! cohesive crack. If the crack orientation is a priori unknown, it
     ! will be determined in this subroutine.
@@ -30,8 +30,10 @@ Contains
     Integer, intent(IN) :: ndir
     Integer, intent(IN) :: nshr
     Double Precision, intent(IN) :: DT
+    Double Precision, intent(IN) :: density_abq                            ! Density as provided by abaqus
     Double Precision, intent(OUT) :: Cauchy(ndir,ndir)                     ! Cauchy stress
-    Double Precision, intent(OUT) :: enerIntern                            ! Internal energy
+    Double Precision, intent(INOUT) :: enerIntern                          ! Internal energy per mass
+    Double Precision, intent(INOUT) :: enerInelas                          ! Inelastic energy per mass
 
     ! -------------------------------------------------------------------- !
     ! Locals
@@ -68,6 +70,9 @@ Contains
     Double Precision :: R_phi0(3,3), R_phi0_12(3,3), R_phi0_13(3,3)              ! Rotation to the misaligned frame (FKT)
     Double Precision :: gamma_rphi0                                        ! Shear strain in the misaligned frame
 
+    ! Energy
+    Double Precision :: enerPlasInc                                        ! Increment of dissipated plastic energy
+
     ! Miscellaneous
     Double Precision :: rad_to_deg, deg_to_rad
     Double Precision :: eye(3,3)
@@ -92,14 +97,6 @@ Contains
     sv%Fb3   = zero
     pk2_fiberDir = zero
 
-    ! The sign of the change in shear strain, used in the shear nonlinearity subroutine. Previously was a state variable.
-    If (m%shearNonlinearity12) Then
-      sv%d_eps12 = Sign(one, (F(1,1)*F(1,2) + F(2,1)*F(2,2) + F(3,2)*F(3,1)) - (F_old(1,1)*F_old(1,2) + F_old(2,1)*F_old(2,2) + F_old(3,2)*F_old(3,1)))
-    End If
-    If (m%shearNonlinearity13) Then
-      sv%d_eps13 = Sign(one, (F(1,1)*F(1,3) + F(2,1)*F(2,3) + F(3,1)*F(3,3)) - (F_old(1,1)*F_old(1,3) + F_old(2,1)*F_old(2,3) + F_old(3,2)*F_old(3,3)))
-    End If
-
     ! Reference configuration
     X = zero; X(1,1) = sv%Lc(1); X(2,2) = sv%Lc(2); X(3,3) = sv%Lc(3)
     F_inverse_transpose = MInverse(TRANSPOSE(F))
@@ -116,7 +113,7 @@ Contains
       If (sv%rfC <= one) sv%rfC = zero
 
       ! Compute the plastic strains and remove from the strain tensor
-      Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old, .FALSE.)
+      Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old, enerPlasInc, .FALSE.)
 
       ! Evaluate fiber tension failure criteria and damage variable
       If (m%fiberTenDam) Then
@@ -169,7 +166,7 @@ Contains
         eps_old = MATMUL(TRANSPOSE(R_phi0), MATMUL(eps_old, R_phi0))
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old)
+        Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old, enerPlasInc)
 
         ! Get total 1,2 strain component
         gamma_rphi0 = two*(eps(1,2) + sv%Plas12/two)
@@ -210,7 +207,7 @@ Contains
       Else
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old)
+        Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old, enerPlasInc)
 
         If (m%fiberCompDamBL) Then
           Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), m%cl, sv%rfT, sv%rfC, sv%d1T, sv%d1C, sv%STATUS)
@@ -356,20 +353,31 @@ Contains
     End If
 
     ! -------------------------------------------------------------------- !
-    !    Update elastic energy variable.                                   !
+    !    Update energy variables                                           !
     ! -------------------------------------------------------------------- !
+    ! Inelastic (unrecoverable) energy
+    If (m%accumulateDissipPlasEnergy) Then
+      sv%enerPlasNew = sv%enerPlasOld + enerPlasInc   ! For debugging, can be remove
+      enerInelas = enerInelas + enerPlasInc/density_abq
+    End If
+
+    ! Internal (recoverable + unrecoverable) energy
+    ! Total elastic energy
     enerIntern = zero
     Do I=1,3
       Do J=1,3
         enerIntern = enerIntern + 0.5d0*stress(I,J)*eps(I,J)
       End Do
     End Do
+    enerIntern = enerIntern/density_abq
+    ! Add total dissipated (unrecoverable) energy
+    enerIntern = enerIntern + enerInelas
 
     Return
   End Subroutine DGDInit
 
 
-  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern, enerInelas)
+  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, density_abq, Cauchy, enerIntern, enerInelas)
     ! Determines the matrix damage state variable based on the current   !
     ! deformation and mode mixity.                                       !
 
@@ -394,8 +402,10 @@ Contains
     Double Precision, Intent(IN) :: F(3,3), U(3,3), F_old(3,3)               ! Deformation gradient, stretch tensor
     Double Precision, Intent(IN) :: DT                                       ! Delta temperature
     Integer, intent(IN) :: ndir, nshr
+    Double Precision, intent(IN) :: density_abq
     Double Precision, Intent(OUT) :: Cauchy(ndir,ndir)
-    Double Precision, Intent(OUT) :: enerIntern, enerInelas
+    Double Precision, intent(INOUT) :: enerIntern                            ! Internal energy per mass
+    Double Precision, intent(INOUT) :: enerInelas                            ! Inelastic energy per mass
 
     ! -------------------------------------------------------------------- !
     ! Locals
@@ -460,6 +470,11 @@ Contains
     Double Precision :: d1T_temp, d1C_temp                                   ! Fiber damage variables, from previous converged solution
     Double Precision :: d1
 
+    ! Energy
+    Double Precision :: density_bulk                                         ! Current density of the bulk material
+    Double Precision :: enerPlasInc                                          ! Increment of dissipated plastic energy
+    Double Precision :: enerFracInc                                          ! Increment of dissipated fracture energy
+
     ! Friction
     Double Precision :: slide_old(2)
     Integer :: forced_sticking
@@ -479,7 +494,7 @@ Contains
 
     ! Initialize outputs
     sv%FIm = zero
-    enerInelas = zero
+    enerFracInc = zero
 
     X = zero; X(1,1) = sv%Lc(1); X(2,2) = sv%Lc(2); X(3,3) = sv%Lc(3) ! Ref. Config.
 
@@ -522,6 +537,9 @@ Contains
     F_bulk(3,Q) = sv%Fb3
 
     If (Length(F_bulk(:,Q)) == zero) F_bulk(Q,Q) = one
+
+    ! Old strains
+    Call Strains(F_bulk, m, DT, ndir, eps_old)
 
     ! Initialize the displ across the cohesive interface as zero
     delta_coh = zero
@@ -673,19 +691,11 @@ Contains
           crack_open = .False.
         End If
 
-        ! Calculate the sign of the change in shear strain (for shear nonlinearity subroutine)
-        If (m%shearNonlinearity12 .AND. Q == 2) Then
-           sv%d_eps12_temp = Sign(one, (F(1,1)*F_bulk(1,2) + F(2,1)*F_bulk(2,2) + F_bulk(3,2)*F(3,1)) - (F_old(1,1)*sv%Fb1 + F_old(2,1)*sv%Fb2 + sv%Fb3*F_old(3,1)))
-        End If
-        If (m%shearNonlinearity13 .AND. Q == 3) Then
-           sv%d_eps13_temp = Sign(one, (F(1,1)*F_bulk(1,3) + F(2,1)*F_bulk(2,3) + F_bulk(3,1)*F(3,3)) - (F_old(1,1)*sv%Fb1 + F_old(2,1)*sv%Fb2 + F_old(3,2)*sv%Fb3))
-        End If
-
         ! Compute the Green-Lagrange strain tensor for the bulk material: eps
         Call Strains(F_bulk, m, DT, ndir, eps)
 
         ! Compute the plastic strains and remove from the strain tensor
-        Call Plasticity(m, sv, p, ndir, nshr, eps, use_temp=.TRUE.)
+        Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old, enerPlasInc, use_temp=.TRUE.)
 
         ! -------------------------------------------------------------------- !
         !    Evaluate the CDM fiber failure criteria and damage variable:      !
@@ -792,9 +802,10 @@ Contains
         End If
 
         ! Check for any inside-out deformation or an overly compressed bulk material
-        If (err < tol_DGD .AND. MDet(F_bulk) < p%compLimit) Then
+        F_bulk_det = MDet(F_bulk)
+        If (err < tol_DGD .AND. F_bulk_det < p%compLimit) Then
 
-          Call log%warn('det(F_bulk) is below limit: ' // trim(str(MDet(F_bulk))) // ' Restart: ' // trim(str(restarts)))
+          Call log%warn('det(F_bulk) is below limit: ' // trim(str(F_bulk_det)) // ' Restart: ' // trim(str(restarts)))
 
           ! Restart using new starting point
           Restart = .True.
@@ -887,7 +898,7 @@ Contains
 
           Y = MATMUL(F_bulk_inverse, F_bulk_d(:,:,I))
           tr = Y(1,1) + Y(2,2) + Y(3,3)
-          Cauchy_d(:,:,I) = (MATMUL(MATMUL(F_bulk_d(:,:,I), stress) + MATMUL(F_bulk, stress_d(:,:,I)), TRANSPOSE(F_bulk)) + MATMUL(MATMUL(F_bulk, stress), TRANSPOSE(F_bulk_d(:,:,I))))/MDet(F_bulk) - Cauchy*tr
+          Cauchy_d(:,:,I) = (MATMUL(MATMUL(F_bulk_d(:,:,I), stress) + MATMUL(F_bulk, stress_d(:,:,I)), TRANSPOSE(F_bulk)) + MATMUL(MATMUL(F_bulk, stress), TRANSPOSE(F_bulk_d(:,:,I))))/F_bulk_det - Cauchy*tr
 
           T_d(:,I) = MATMUL(Cauchy_d(:,:,I), R_cr(:,2)) + MATMUL(Cauchy, R_cr_d(:,2,I))
         End Do
@@ -992,7 +1003,7 @@ Contains
         EXIT MatrixDamage
       Else
         Call log%debug('Change in matrix damage variable, d2 ' // trim(str(sv%d2)))
-        enerInelas = enerInelas + dGdGc*(m%GYT + (m%GSL - m%GYT)*sv%B**m%eta_BK)
+        enerFracInc = enerFracInc + dGdGc*(m%GYT + (m%GSL - m%GYT)*sv%B**m%eta_BK)
       End If
 
       ! Check for convergence based on rate of energy dissipation
@@ -1017,19 +1028,37 @@ Contains
     ! -------------------------------------------------------------------- !
     !    Update elastic energy variable.                                   !
     ! -------------------------------------------------------------------- !
+    ! Update density
+    density_bulk = density_abq*(MDet(F)/F_bulk_det)
+
+    ! Inelastic energy
+    If (m%accumulateDissipPlasEnergy) Then
+      sv%enerPlasNew = sv%enerPlasOld + enerPlasInc   ! For debugging (not currently used)
+      enerInelas = enerInelas + enerPlasInc/density_bulk
+    End If
+    If (m%accumulateDissipFractEnergy) Then
+      sv%enerFracNew = sv%enerFracOld + enerFracInc   ! For debugging (not currently used)
+      enerInelas = enerInelas + enerFracInc/sv%Lc(2)/density_bulk
+    End If
+
+    ! Internal energy
     enerIntern = zero
     Do I=1,3
       Do J=1,3
         enerIntern = enerIntern + 0.5d0*stress(I,J)*eps(I,J)
       End Do
     End Do
+    enerIntern = enerIntern/density_bulk
+    ! Add total dissipated (unrecoverable) energy
+    enerIntern = enerIntern + enerInelas
+
 
     ! -------------------------------------------------------------------- !
     Return
   End Subroutine DGDEvolve
 
 
-  Subroutine DGDKinkband(U, F, F_old, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern)
+  Subroutine DGDKinkband(U, F, F_old, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern, enerInelas)
 
     Use forlog_Mod
     Use matrixAlgUtil_Mod
@@ -1049,7 +1078,8 @@ Contains
     Double Precision, Intent(IN) :: DT                                       ! Delta temperature
     Integer, intent(IN) :: ndir, nshr
     Double Precision, Intent(OUT) :: Cauchy(ndir,ndir)
-    Double Precision, Intent(OUT) :: enerIntern
+    Double Precision, intent(INOUT) :: enerIntern                            ! Internal energy per mass
+    Double Precision, intent(INOUT) :: enerInelas                            ! Inelastic energy per mass
 
     ! -------------------------------------------------------------------- !
     ! Locals
@@ -1111,6 +1141,9 @@ Contains
     Double Precision :: dTkb_dFkb1(3,3)
     Double Precision :: Ym(3,3), Ykb(3,3)
     Double Precision :: dplas12, dinel12, dplas13, dinel13
+
+    ! Energy
+    Double Precision :: enerPlasInc                                        ! Increment of dissipated plastic energy
 
     ! -------------------------------------------------------------------- !
 
@@ -1236,7 +1269,7 @@ Contains
       ! -------------------------------------------------------------------- !
       Call Strains(Fkb, m, DT, ndir, epskb)
       epskb = MATMUL(TRANSPOSE(R_phi0), MATMUL(epskb, R_phi0))
-      Call Plasticity(m, sv, p, ndir, nshr, epskb, epskb_old, use_temp=.TRUE.)
+      Call Plasticity(m, sv, p, ndir, nshr, epskb, epskb_old, enerPlasInc, use_temp=.TRUE.)
       gamma_rphi0 = two*(epskb(1,2) + sv%Plas12_temp/two)
       Call StiffFuncNL(m, ndir, nshr, d1, zero, zero, epskb, Stiff, sv%Sr)
       pk2_fiberDirkb = Hooke(Stiff, epskb, nshr) ! 2PK in the fiber direction
@@ -1389,10 +1422,10 @@ Contains
         If (restarts .EQ. 1) Then
           dplas12 = sv%Plas12_temp
           dinel12 = sv%Inel12_temp
-          Call ro_plasticity(two*dEkb_dFkb1(1,2,I), sv%d_eps12_temp, m%G12, m%aPL, m%nPL, sv%Inel12c, dplas12, dinel12)
+          Call ro_plasticity(two*dEkb_dFkb1(1,2,I), Sign(one, (epskb(1,2) - epskb_old(1,2))), m%G12, m%aPL, m%nPL, sv%Inel12c, dplas12, dinel12)
           dEkb_dFkb1(1,2,I) = dEkb_dFkb1(1,2,I) - dplas12/two
           dEkb_dFkb1(2,1,I) = dEkb_dFkb1(1,2,I)
-          Call ro_plasticity(two*dEkb_dFkb1(1,3,I), sv%d_eps13_temp, m%G13, m%aPL, m%nPL, sv%Inel13c, dplas13, dinel13)
+          Call ro_plasticity(two*dEkb_dFkb1(1,3,I), Sign(one, (epskb(1,3) - epskb_old(1,3))), m%G13, m%aPL, m%nPL, sv%Inel13c, dplas13, dinel13)
           dEkb_dFkb1(1,3,I) = dEkb_dFkb1(1,3,I) - dplas13/two
           dEkb_dFkb1(3,1,I) = dEkb_dFkb1(1,3,I)
         End If
