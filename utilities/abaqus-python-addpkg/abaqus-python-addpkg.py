@@ -129,7 +129,7 @@ def _get_conda_packages(verbose, env):
 
 def _get_abaqus_version(abaqus_cmd):
 	ri = subprocess.check_output(abaqus_cmd + ' information=release', shell=True).decode('utf-8')
-	grps = re.search(r'^Abaqus (20\d+|6.\d+).(.*)$', ri, re.MULTILINE).groups()
+	grps = re.search(r'^Abaqus (20\d+|6.\d+)\.*(.*)$', ri, re.MULTILINE).groups()
 	year = grps[0]
 	hotfix = grps[1]
 	return (year, hotfix)
