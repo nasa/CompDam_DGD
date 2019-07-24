@@ -68,19 +68,74 @@ def _get_conda_abq_environments():
 	return conda_abq_envs
 
 
-def _get_conda_packages(env):
+def _get_conda_packages(verbose, env):
+	"""
+	Uses conda list and pip list to get a complete list of python packages in the current environment
+	"""
+
+	# For return
+	pkgs = []
+
+	# Check that the conda environment exists
+	ce = _get_conda_abq_environments()
+	if env not in ce:
+		print('\nERROR: no conda environment {0} exists, which means there are no packages to list.\n'.format(env))
+		print('Maybe you want to use a different version of abaqus? Try the --abaqus-cmd option.\n')
+		print('To install Abaqus packages in python try: ')
+		print('> abaqus-python-addpkg.py install package_1, [package_2, ...]')
+		print('\nExiting...\n')
+		sys.exit()
+
+	# Check conda
+	if verbose:
+		print('Generating a list of packages in the conda environment: ' + env)
+		print('Running command: ' + 'conda list -n '+env)
 	res = subprocess.check_output('conda list -n '+env).decode('utf-8')
 	# Check for err
 	if 'EnvironmentLocationNotFound' in res:
 		raise ValueError('No conda environment named: ' + env)
 	# Return a list of packages
-	pkgs_list = [pkg.split() for pkg in res.split('\n') if not pkg.startswith('#')]
-	pkgs = []
-	[pkgs.append({'name': pkg[0], 'version': pkg[1], 'channel': pkg[2]}) for pkg in pkgs_list if len(pkg) == 3]
+	pkgs_list_conda = [pkg.split() for pkg in res.split('\n') if not pkg.startswith('#')]
+	[pkgs.append({'name': pkg[0], 'version': pkg[1], 'channel': pkg[2]}) for pkg in pkgs_list_conda if len(pkg) == 3]
+	conda_pkg_names = [pkg['name'] for pkg in pkgs]
+
+	# Check pip too
+	cmd = 'conda activate ' + env + '&pip list --disable-pip-version-check'
+	if verbose:
+		print('Checking pip')
+		print('Running command: ' + cmd)
+	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	stdout, stderr = p.communicate()
+	if stdout:
+		res = stdout.decode('utf-8')
+		pkgs_list_pip = [pkg.split() for pkg in res.split('\n')[2:]]
+		for pkg in pkgs_list_pip:
+			if len(pkg) > 1:
+				name = pkg[0]
+				if name not in conda_pkg_names:
+					if len(pkg) == 2:
+						pkgs.append({'name': pkg[0], 'version': pkg[1], 'channel': ''})
+					elif len(pkg) == 3:
+						pkgs.append({'name': pkg[0], 'version': pkg[1], 'channel': pkg[2]})
+	if stderr:
+		if 'DEPRECATION' not in stderr.decode('utf-8'):
+			print('\nERROR while attempting to install a pip package.')
+			print(stderr)
+			print('Exiting ...\n')
+			sys.exit()
+
 	return pkgs
 
 
-def _get_abaqus_python_loc(version):
+def _get_abaqus_version(abaqus_cmd):
+	ri = subprocess.check_output(abaqus_cmd + ' information=release', shell=True).decode('utf-8')
+	grps = re.search(r'^Abaqus (20\d+|6.\d+).(.*)$', ri, re.MULTILINE).groups()
+	year = grps[0]
+	hotfix = grps[1]
+	return (year, hotfix)
+
+
+def _get_abaqus_python_loc(abaqus_cmd):
 	"""
 	Get the paths to the python interpreter for CAE and the solver
 	returns (path_to_cae_python, path_to_solver_python)
@@ -88,16 +143,11 @@ def _get_abaqus_python_loc(version):
 
 	rel_path_to_py = 'tools\\SMApy\\python2.7'
 
-	# Get the abaqus python interpreter locations
-	ri = subprocess.check_output('abaqus information=release', shell=True).decode('utf-8')
+	# Get the abaqus version information
+	(abq_year, abq_hotfix) = _get_abaqus_version(abaqus_cmd)
 
-	# Check the abqus version
-	grps = re.search(r'^Abaqus (20\d+|6.\d+)(.*)$', ri, re.MULTILINE).groups()
-	abq_version_full = 'Abaqus ' + ''.join(grps)
-	abq_version = grps[0]
-	if abq_version != version:
-		print('Fix me TODO')
-		raise Exception('The specified version is not the version called with abaqus')
+	# Get the abaqus python interpreter locations
+	ri = subprocess.check_output(abaqus_cmd + ' information=release', shell=True).decode('utf-8')
 
 	# CAE
 	abq_cae_dirs = [l for l in ri.split('\n') if l.startswith('Abaqus is located in the directory')]
@@ -130,19 +180,19 @@ def _info(args):
 	"""
 
 	# Default behavior
-	if not args.list_envs and not args.list_pkgs:
-		print('Abaqus ' + args.abaqus_version)
+	if not args.list_envs and not args.list_pkgs and not args.show_abaqus_python_directory and not args.test_pkg:
+		print('Using Abaqus ' + args.abaqus_year)
 		ce = _get_conda_abq_environments()
 		if ce:
-			if 'abq_' + args.abaqus_version in ce:
+			if 'abq_' + args.abaqus_year in ce:
 				print('')
-				print('Conda environment for Abaqus ' + args.abaqus_version + ': abq_'+ args.abaqus_version)
+				print('Conda environment for Abaqus ' + args.abaqus_year + ': abq_'+ args.abaqus_year)
 				print('To see the packages that are installed, try:')
-				print('> abaqus-python-addpkg info --list-pkgs')
+				print('> abaqus-python-addpkg.py info --list-pkgs')
 				print('')
 			else:
 				print('')
-				print('No conda environment for Abaqus ' + args.abaqus_version)
+				print('No conda environment for Abaqus ' + args.abaqus_year)
 				print('Found the following conda environments for abaqus: ')
 				[print(v) for v in ce]
 				print('')
@@ -150,7 +200,7 @@ def _info(args):
 			print('')
 			print('No conda environment for Abaqus')
 			print('To install Abaqus packages in python try: ')
-			print('> abaqus-python-addpkg install package_1, [package_2, ...]')
+			print('> abaqus-python-addpkg.py install package_1, [package_2, ...]')
 			print('')
 
 	# List of conda environments
@@ -162,12 +212,56 @@ def _info(args):
 
 	# List packages
 	if args.list_pkgs:
-		# TODO: format nicely
-		pkgs = _get_conda_packages(env='abq_'+args.abaqus_version)
+		pkgs = _get_conda_packages(verbose=args.verbose, env='abq_'+args.abaqus_year)
+
+		# Format nicely
+		col_name = [pkg['name'] for pkg in pkgs]
+		col_name_width = max([len(u) for u in col_name]) + 4
+
+		col_version = [pkg['version'] for pkg in pkgs]
+		col_version_width = max([len(u) for u in col_version]) + 4
+
 		print('')
-		print('Name, Version, Build Channel')
-		[print(pkg['name']+', '+pkg['version']+', '+pkg['channel']) for pkg in pkgs]
+		header = 'Name'.ljust(col_name_width+2)
+		header += ' Version'.ljust(col_version_width+2)
+		header += ' Build/Location\n'
+		header += '----'.ljust(col_name_width+2)
+		header += ' -------'.ljust(col_name_width)
+		header += ' ----------------------'
+		print(header)
+		for row in pkgs:
+			row_formatted = ' ' + row['name'].ljust(col_name_width+3)
+			row_formatted += row['version'].ljust(col_version_width+2)
+			row_formatted += row['channel']
+			print(row_formatted)
 		print('')
+
+	if args.show_abaqus_python_directory:
+		(cae_dir, solver_dir) = _get_abaqus_python_loc(args.abaqus_cmd)
+		print('')
+		print('CAE python installation: ' + cae_dir)
+		print('Solver python installation: ' + solver_dir)
+		print('')
+
+	if args.test_pkg:
+		(cae_dir, solver_dir) = _get_abaqus_python_loc(args.abaqus_cmd)
+		with open('abaqus_python_addpkg_temp.py', 'w') as f:
+			f.write('import {0}\n'.format(','.join(args.test_pkg)))
+		print('Checking imports using CAE: ' + cae_dir)
+		cmd = args.abaqus_cmd + ' cae nogui=abaqus_python_addpkg_temp.py'
+		if args.verbose:
+			print('Running command: ' + cmd)
+		try:
+			p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+			stdout, stderr = p.communicate()
+			stdout = stdout.decode('utf-8')
+			if 'Abaqus Error' in stdout:
+				print('\nERROR while attempting import. Package(s) not installed properly.')
+				print(stdout)
+			else:
+				print('Successfully imported {0}'.format(args.test_pkg))
+		finally:
+			os.remove('abaqus_python_addpkg_temp.py')
 
 
 def _install(args):
@@ -178,13 +272,13 @@ def _install(args):
 	# Make sure at least one package was specified
 	if not args.conda and not args.local and not args.pip:
 		print('Must specify at least one package to install. For example, to install scipy, try:')
-		print('> abaqus-python-addpkg install --conda scipy ')
+		print('> abaqus-python-addpkg.py install --conda scipy ')
 		print('')
 		print('To install a package using pip, try:')
-		print('> abaqus-python-addpkg install --pip plotly')
+		print('> abaqus-python-addpkg.py install --pip plotly')
 		print('')
 		print('To install a local package (equivalent to pip install -e), try:')
-		print('> abaqus-python-addpkg install --local path/to/local/package')
+		print('> abaqus-python-addpkg.py install --local path/to/local/package')
 		print('')
 		return
 
@@ -201,17 +295,17 @@ def _install(args):
 			print('Must specify at least one package other than numpy and python to install')
 			print('')
 			print('For example, to install scipy, try:')
-			print('> abaqus-python-addpkg install --conda scipy')
+			print('> abaqus-python-addpkg.py install --conda scipy')
 			print('')
 			return
 
 	# Check for an existing conda environment
 	preexisting_conda_env = False
 	ce = _get_conda_abq_environments()
-	conda_env_name = 'abq_'+args.abaqus_version
+	conda_env_name = 'abq_'+args.abaqus_year
 	if conda_env_name in ce:
 		preexisting_conda_env = True
-		print('Found existing conda environment: ' + 'abq_' + args.abaqus_version)
+		print('Found existing conda environment: ' + 'abq_' + args.abaqus_year)
 
 	# If not using conda, make sure conda environment is available. If not, add conda env w/ pip
 	install_abq_env = False
@@ -238,24 +332,24 @@ def _install(args):
 	}
 
 	# Abaqus version check
-	if args.abaqus_version not in compat.keys():
-		raise ValueError('Abaqus ' + args.abaqus_version + ' is not a supported version of Abaqus')
+	if args.abaqus_year not in compat.keys():
+		raise ValueError('Abaqus ' + args.abaqus_year + ' is not a supported version of Abaqus')
 
 	# Build the conda packages to install
 	if args.conda or install_abq_env:
 
 		# First, specify python and numpy versions for compatibility purposes
 		pkgs_to_install = []
-		pkgs_to_install.append('python='+compat[args.abaqus_version]['python'])
+		pkgs_to_install.append('python='+compat[args.abaqus_year]['python'])
 		pkgs_to_install.append('pip')
-		pkgs_to_install.append('numpy='+compat[args.abaqus_version]['numpy'])
+		pkgs_to_install.append('numpy='+compat[args.abaqus_year]['numpy'])
 
 		# Then, install user specified pacakages
 		# If specified packages are in the compatibilities list, use the known versions
 		# otherwise, leave the version unspecified
 		for arg in args.conda:
-			if arg in compat[args.abaqus_version].keys():
-				pkgs_to_install.append(arg + '=' + compat[args.abaqus_version][arg])
+			if arg in compat[args.abaqus_year].keys():
+				pkgs_to_install.append(arg + '=' + compat[args.abaqus_year][arg])
 			else:
 				pkgs_to_install.append(arg)
 
@@ -273,7 +367,7 @@ def _install(args):
 
 	# Add local packages
 	if args.local and len(args.local) > 0:
-		cmd = 'activate '+conda_env_name+'&cd ' + os.path.abspath(args.local[0]) + '&python setup.py develop&deactivate'
+		cmd = 'conda activate '+conda_env_name+'&cd ' + os.path.abspath(args.local[0]) + '&python setup.py develop&conda deactivate'
 		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 		stdout, stderr = p.communicate()
 		if stderr:
@@ -285,7 +379,7 @@ def _install(args):
 	# Add pip packages
 	if args.pip and len(args.pip) > 0:
 		for pip_package in args.pip:
-			cmd = 'activate '+conda_env_name+'&pip install ' + pip_package + '&deactivate'
+			cmd = 'conda activate '+conda_env_name+'&pip install ' + pip_package + '&conda deactivate'
 			if args.verbose:
 				print('Executing: ' + cmd)
 			p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -303,7 +397,7 @@ def _install(args):
 	p = subprocess.Popen('conda info --base', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 	stdout, stderr = p.communicate()
 	src_dir = os.path.join(stdout.decode().rstrip()+'\\envs\\'+conda_env_name+'\\Lib\\site-packages')
-	(abqpy_cae_path, abqpy_solver_path) = _get_abaqus_python_loc(args.abaqus_version)
+	(abqpy_cae_path, abqpy_solver_path) = _get_abaqus_python_loc(args.abaqus_cmd)
 	dest_dir = os.path.join(abqpy_cae_path, 'Lib\\site-packages')
 	_copy_contents_recursively_no_overwrite(src_dir, dest_dir)
 
@@ -322,7 +416,7 @@ def _restore(args):
 	rel_path_sp = 'Lib\\site-packages'
 
 	# Get the paths to the python interpreters
-	(abqpy_cae_path, abqpy_solver_path) = _get_abaqus_python_loc(args.abaqus_version)
+	(abqpy_cae_path, abqpy_solver_path) = _get_abaqus_python_loc(args.abaqus_cmd)
 
 	# print(abqpy_cae_path)
 	# print(abqpy_solver_path)
@@ -336,13 +430,13 @@ def _restore(args):
 	shutil.copytree(os.path.join(abqpy_solver_path, rel_path_sp), cae_sp)
 
 	# Revert the conda environment
-	conda_env_name = 'abq_'+args.abaqus_version
+	conda_env_name = 'abq_'+args.abaqus_year
 	ce = _get_conda_abq_environments()
 	if conda_env_name in ce:
 		cmd = 'conda env remove --name '+conda_env_name
 		out = subprocess.check_call(cmd, shell=True)
 
-	print('Restored abaqus ' + args.abaqus_version + ' to the original packages')
+	print('Restored abaqus ' + args.abaqus_year + ' to the original packages')
 	return
 
 
@@ -352,7 +446,7 @@ if __name__ == "__main__":
 
 	# Arguments
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-a', '--abaqus-version', default='2017', type=str, help='Specify the version of abaqus to use')
+	parser.add_argument('-a', '--abaqus-cmd', default='abaqus', type=str, help='Specify the command to use to run abaqus')
 	parser.add_argument('-v', '--verbose', action='store_true', default=False, help='Print information for debugging')
 	subparsers = parser.add_subparsers()
 
@@ -360,6 +454,8 @@ if __name__ == "__main__":
 	parser_info = subparsers.add_parser('info', help='Get information about python packages installed to the abaqus python environment')
 	parser_info.add_argument('-l', '--list-envs', action='store_true', default=False, help='List the conda environments created to replicate the abaqus python environments')
 	parser_info.add_argument('-L', '--list-pkgs', action='store_true', default=False, help='List the packages installed in the abaqus python environment')
+	parser_info.add_argument('--show-abaqus-python-directory', action='store_true', default=False, help='Prints the directory of the abaqus python installation')
+	parser_info.add_argument('--test-pkg', action='store', nargs='+', help='Attempts to import the provided package(s) to check if it is installed')
 	parser_info.set_defaults(func=_info)
 
 	# install
@@ -373,10 +469,24 @@ if __name__ == "__main__":
 	parser_install = subparsers.add_parser('restore', help='Restore the abaqus python environment to the as-installed state')
 	parser_install.set_defaults(func=_restore)
 
-
 	# Parse the args
 	if len(sys.argv)==1:
+		print('\nERROR: the script expects one or more arguments. Here is the usage overview\n')
+		print('Argument list: ' + str(sys.argv))
+		print('')
 		parser.print_help(sys.stderr)
 		sys.exit(1)
 	args = parser.parse_args()
+
+	# Get the details on the abaqus year and hot fix (for when multiple versions of abaqus are installed)
+	(year, hotfix) = _get_abaqus_version(args.abaqus_cmd)
+	args.abaqus_year = year
+	args.abaqus_hotfix = hotfix
+	if args.verbose:
+		print('Using abaqus commmand: ' + args.abaqus_cmd)
+		print('Using abaqus year: ' + args.abaqus_year)
+		if args.abaqus_hotfix:
+			print('Using abaqus hotfix: ' + args.abaqus_hotfix)
+
+	# Call the appropriate entry point
 	args.func(args)
