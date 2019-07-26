@@ -408,7 +408,7 @@ Subroutine CompDam(  &
     ! Matrix crack damage evolution
     If (m%matrixDam .AND. sv%d2 > zero) Then
 
-      Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km),enerInelasNew(km), stepTime, totalTime, dt)
+      Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km),enerInelasNew(km))
 
     ! Fiber compression damage evolution (FKT decomposition)
     Else If ((m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) .AND. sv%d1C > zero) Then

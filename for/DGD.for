@@ -220,7 +220,7 @@ Contains
 
           ! Load reversal
           If (d1 > sv%d1T) sv%d1T = d1
-          
+
         End If
 
         ! Build the stiffness matrix
@@ -369,7 +369,7 @@ Contains
   End Subroutine DGDInit
 
 
-  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern, enerInelas, stepTime, totalTime, dtime)
+  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern, enerInelas)
     ! Determines the matrix damage state variable based on the current   !
     ! deformation and mode mixity.                                       !
 
@@ -396,7 +396,6 @@ Contains
     Integer, intent(IN) :: ndir, nshr
     Double Precision, Intent(OUT) :: Cauchy(ndir,ndir)
     Double Precision, Intent(OUT) :: enerIntern, enerInelas
-    Double Precision :: stepTime, totalTime, dtime
 
     ! -------------------------------------------------------------------- !
     ! Locals

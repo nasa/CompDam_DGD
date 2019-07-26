@@ -43,58 +43,10 @@ cutback_amount = 0.5d0 // Default value: 0.5d0
 tol_DGD_f = 1.d-4 // Default value: 1.d-4
 
 
-// minimum amount of fracture energy dissipated per MD increment, Double precision
-dGdGc_min = 1.d-12 // Default value: 1.d-12
-// maximum number of damage increments per solution increment, Integer
-MD_max = 1000 // Default value: 1000
-
-// maximum number of equilibrium iterations per solution increment for kink band model, Integer
-EQ_max = 1000 // Default value: 1000
-
-
-// minimum acceptable determinant of F_bulk, Double precision
-compLimit = 0.25d0 // Default value: 0.25d0
-
-
-// Tolerance for divergence of internal Newton Raphson loop. Triggers divergence logic if (err - err_old)/err_old > tol_divergence
-tol_divergence = 1.d-6 // Default value: 0.1d0
-
-// maximum value for shear strain. If this value is exceeded, the element is deleted. Set to zero to disable.
-gamma_max = 4.d0 // Default value: 4.d0
-
-// Ratio of kink band width to element size at which decomposition is used. Set to 0 to turn off decomposition for kinking.
-kb_decompose_thres = 0.99d0 // Default value: 0.99d0
-
-// Fiber failure angle [degrees]. Set to < 0 to disable.
-fkt_fiber_failure_angle = -1.d0
-
-// Schaefer Theory Parameters
-
-// Schaefer Newton Raphson Tolerance. The convergence loop calculates a J0 vector (which should tend towards the zero vector).
-// A residual is calculated with the norm of that vector. Newton Raphson loop convergence is defined as when the residual is less than the below tolerance value:
-schaefer_nr_tolerance = 1.d-6 //Default 1.d-6
-
-// The Schaefer Newton Raphson loop counter limit. If a Schaefer Newton Raphson takes more than this number of loops, then a warning message is printed.
-// A high number of iterations might indicate that Newton Raphson loop won't converge
-schaefer_nr_counter_limit = 10000000 // Default 10000000
-
-// Determines the behavior when internal convergence cannot be found.
-// Defaults to .TRUE. in which case the analysis is terminated when no converged solution is found
-// Setting to .FALSE. triggers a warning, deletes the element, and proceeds with the analysis
-terminate_on_no_convergence = .TRUE. // Default .TRUE.
-
 // DEBUGGING (only activated when > 0 and logLevel > 2)
 // Specify total time at which to kill the analysis. The analysis is killed immediately before CompDam exits if totalTime is >= value
 // specified below. Debug data is written.
 debug_kill_at_total_time = -1.d0
 
-// Set to true to use the time as the seed for initial fiber misalignment to get different results for each realization
-fkt_random_seed = .FALSE.  // Default .FALSE.
-
-// Initial fiber misalignments (only activated when the 3-D fiber kinking model is enabled, feature flag = '5', and the initial condition for phi0 is 3.0)
-fkt_init_misalignment_azi_mu = 0.d0  // Default 0.d0, Normal distribution mean in degrees
-fkt_init_misalignment_azi_sigma = 45.0d0  // Default 45.0d0, Normal distribution variance in degrees
-fkt_init_misalignment_polar_shape = 0.676d0  // Default 0.676d0, Lognormal distribution shape parameter in degrees
-fkt_init_misalignment_polar_scale = 2.25d0   // Default 2.25d0, Lognormal distribution scale parameter in degrees
 
 // End of file (Do not remove me)
