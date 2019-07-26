@@ -82,6 +82,8 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   Implicit Double Precision (a-h, o-z)
   Integer, parameter :: j_sys_Dimension = 2, n_vec_Length = 136, maxblk = n_vec_Length
 
+  Include 'mpif.h'
+
   ! Arguments
   Dimension i_Array(niArray), r_Array(nrArray)
 
@@ -97,10 +99,9 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   ! Contents of r_Array
   Integer, parameter :: i_flt_TotalTime = 1, i_flt_StepTime = 2, i_flt_dTime = 3
 
-
   ! Locals
   Integer :: kStep                                     ! Current step number
-  Integer :: kInc                                      ! Current increment number
+  Integer :: increment                                      ! Current increment number
   Integer :: analysis_status
   Double Precision :: randomNumbers1(10000), randomNumbers2(10000)
   Double Precision :: randomNumbers3(10000), randomNumbers4(10000)
@@ -109,16 +110,80 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   Integer :: values(8)
   Type(parameters) :: p
 
-  Dimension INTV(1), REALV(1)    ! For abaqus warning messages
+  Dimension INTV(1), REALV(1)    ! For Abaqus warning messages
   Character(len=8) CHARV(1)      ! For Abaqus warning messages
+
+  ! Fatigue
+  Integer :: fatigue_parameters(2), increment_old
+  Double Precision :: cycles_per_increment(1), cycles_per_increment_old
+  Double Precision :: cycles, cycles_old
+  ! fatigue_parameters(1) is an integer flag for whether fatigue damage is considered in the curret step (1 = .TRUE.)
+  ! fatigue_parameters(2) is an integer flag for whether fatigue damage has propagated above a threshold value (1 = .TRUE.)
+  Pointer(ptr_fatigue_int, fatigue_parameters)  ! pointer for fatigue parameters integer array
+  Pointer(ptr_fatigue_dbl, cycles_per_increment)  ! pointer for fatigue parameters real array
+  Logical :: update_inc2cycles_log
+
+  ! MPI
+  Integer :: ABA_COMM_WORLD  ! communicator that Abaqus defines for its worker processes
+  Integer :: process_rank  ! Process number or rank
+  Integer :: ierr  ! Error status
+
+  ! Job names, file names, and unit numbers
+  Character(len=256) :: outputDir, jobName, inc2cycles_filename
+  Integer :: lenOutputDir, lenJobName
+  Integer, parameter :: inc2cycles_file_unit = 15
 
   ! Common
   Common /analysis_termination/ analysis_status
   Common randomNumbers1, randomNumbers2, randomNumbers3, randomNumbers4
+
+  Interface UserUtilities
+
+    Function GETCOMMUNICATOR() result(communicator)
+      ! Utility function GETCOMMUNICATOR can be called from any Abaqus user subroutine. Returns a communicator (type INTEGER) that
+      ! Abaqus defines for its worker processes, similar to MPI_COMM_WORLD. The communicator thus obtained can be used for
+      ! subsequent MPI communication routines. In a nonparallel run, communicators do not exist and GET_COMMUNICATOR() returns 0.
+      ! See 'Obtaining parallel processes information' in the Abaqus documentation for more details.
+      Integer(kind=4) :: communicator
+    End Function GETCOMMUNICATOR
+
+  End Interface UserUtilities
+
+  Interface
+    ! See 'Allocatable arrays' in the Abaqus documentation for more details on the following functions.
+    Function SMAIntArrayCreate(ID, SIZE, INITVAL)
+      ! Create or resize a global integer array.
+      Integer(kind=8) :: SMAIntArrayCreate  ! Returns an address that can be associated with a Fortran pointer
+      Integer(kind=4) :: ID       ! Arbitrary integer chosen by the user, used later to access this array
+      Integer(kind=4) :: SIZE     ! max value is INT_MAX ( 2,147,483,647 )
+      Integer(kind=4) :: INITVAL  ! initialization value for each element in the array
+    End Function SMAIntArrayCreate
+
+    Function SMAIntArrayAccess(ID)
+      ! Access an existing global integer array.
+      Integer(kind=8) :: SMAIntArrayAccess  ! Returns an address that can be associated with a Fortran pointer
+      Integer(kind=4) :: ID  ! Array ID
+    End Function SMAIntArrayAccess
+
+    Function SMARealArrayCreateDP(ID, SIZE, INITVAL)
+      ! Create or resize a global real array.
+      Integer(kind=8) :: SMARealArrayCreateDP  ! Returns a pointer to the newly allocated array
+      Integer(kind=4), intent(IN) :: ID        ! Arbitrary integer chosen by the user, used later to locate this array
+      Integer(kind=4), intent(IN) :: SIZE      ! max value is INT_MAX ( 2,147,483,647 )
+      Double Precision, intent(IN) :: INITVAL  ! (optional) initial value for each element of the array
+    End Function SMARealArrayCreateDP
+
+    Function SMARealArrayAccess(ID)
+      ! Access an existing global real array.
+      Integer(kind=8) :: SMARealArrayAccess  ! Returns an address that can be associated with a Fortran pointer
+      Integer(kind=4) :: ID   ! Array ID
+    End Function SMARealArrayAccess
+
+  End Interface
   ! -------------------------------------------------------------------- !
 
   kStep = i_Array(i_int_kStep)
-  kInc  = i_Array(i_int_kInc)
+  increment = i_Array(i_int_kInc)
 
   ! Start of the analysis
   If (lOp == j_int_StartAnalysis) Then
@@ -128,6 +193,10 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
 
     ! Load the CompDam solution parameters
     p = loadParameters()
+
+    ! Global integer array for fatigue parameters
+    ptr_fatigue_int = SMAIntArrayCreate(1, 2, 0)  ! create the pointer for fatigue parameters array
+    ptr_fatigue_dbl = SMARealArrayCreateDP(2, 1, p%cycles_per_increment)  ! create the pointer for fatigue parameters array
 
     ! Initialize random numbers for fiber misalignment here
     If (p%fkt_random_seed) Then
@@ -145,11 +214,91 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
     limits = (/-180.d0, 180.d0/)
     Call gaussian_marsaglia(n, p%fkt_init_misalignment_azi_mu, p%fkt_init_misalignment_azi_sigma, randomNumbers4, limits)
 
-  ! End of the increment
+  ! Start of a step
+  Else If (lOp == j_int_StartStep) Then
+
+    p = loadParameters()  ! Load the CompDam solution parameters
+    ptr_fatigue_int = SMAIntArrayAccess(1)  ! Access the pointer for fatigue parameters
+
+    ! Check to see if this is a fatigue step
+    FatigueStepSetup: If (kStep == p%fatigue_step) Then  ! This is a fatigue step
+
+      fatigue_parameters(1) = 1  ! Set fatigue_parameter(1) (fatigue step indicator for within the VUMAT) to 1
+
+      ! Create a log file for the ratio of solution increments to fatigue cycles
+      Call VGETRANK(process_rank)
+      If (process_rank == 0) Then
+        ptr_fatigue_dbl = SMARealArrayAccess(2)
+        Call VGETJOBNAME(jobName, lenJobName)
+        Call VGETOUTDIR(outputDir, lenOutputDir)
+        inc2cycles_filename = trim(outputDir) // '/' // trim(jobName) // '_inc2cycles.log'
+        open(inc2cycles_file_unit, file=inc2cycles_filename, status='replace', action='write')
+        write(inc2cycles_file_unit,"(A9, A22, A22)") 'increment', 'cycles_per_increment', 'cycles'
+        write(inc2cycles_file_unit,"(I9, ES22.12E2, ES22.12E2)") 0, cycles_per_increment(1), 0.0
+        close(inc2cycles_file_unit)
+      End If
+
+    Else FatigueStepSetup  ! This is not a fatigue step
+
+      fatigue_parameters(1) = 0  ! Set fatigue_parameter(1) (fatigue step indicator for within the VUMAT) to 0
+
+    End If FatigueStepSetup
+
+  ! End of an increment
   Else If (lOp == j_int_EndIncrement) Then
 
     ! If analysis_status has been changed, cleanly terminate the analysis
     If (analysis_status == 0) i_Array(i_int_iStatus) = j_int_TerminateAnalysis
+
+    ptr_fatigue_int = SMAIntArrayAccess(1)  ! Access the pointer for fatigue parameters
+
+    ! Check the rate of fatigue damage progression and adjust solution parameters if necessary
+    FatigueIncrement: If (fatigue_parameters(1) == 1) Then
+
+      ptr_fatigue_dbl = SMARealArrayAccess(2)
+
+      ! Synchronize fatigue damage progression parameter across processes
+      ABA_COMM_WORLD = GETCOMMUNICATOR()
+      If (ABA_COMM_WORLD /= 0) Then
+        Call MPI_Allreduce(MPI_IN_PLACE, fatigue_parameters(2), 1, MPI_INTEGER, MPI_MAX, ABA_COMM_WORLD, ierr)
+      End If
+
+      FatigueParameterUpdate: If (fatigue_parameters(2) == 1) Then
+        Continue
+      Else FatigueParameterUpdate
+        update_inc2cycles_log = .FALSE.
+        ! If fatigue damage has not progressed...
+        If (fatigue_parameters(2) == 0 .AND. cycles_per_increment(1) < 1.d5) Then
+          cycles_per_increment(1) = cycles_per_increment(1)*1.1d0  ! ...increase the number of cycles represented by a solution increment.
+          update_inc2cycles_log = .TRUE.
+        ! If fatigue damage is progressing too quickly...
+        Else If (fatigue_parameters(2) == 2 .AND. cycles_per_increment(1) > 1.d-5) Then
+          cycles_per_increment(1) = cycles_per_increment(1)/1.1d0  ! ...decrease the number of cycles represented by a solution increment.
+          update_inc2cycles_log = .TRUE.
+        End If
+
+        FatigueLog: If (update_inc2cycles_log) Then
+          ! Update the inc2cycles log file
+          Call VGETRANK(process_rank)
+          If (process_rank == 0) Then
+            Call VGETJOBNAME(jobName, lenJobName)
+            Call VGETOUTDIR(outputDir, lenOutputDir)
+            inc2cycles_filename = trim(outputDir) // '/' // trim(jobName) // '_inc2cycles.log'
+            open(inc2cycles_file_unit, file=inc2cycles_filename, status='old', action='READWRITE', position='append')
+            backspace(inc2cycles_file_unit)
+            read(inc2cycles_file_unit,"(I9, ES22.12E2, ES22.12E2)") increment_old, cycles_per_increment_old, cycles_old
+            cycles = cycles_old + (increment - increment_old)*cycles_per_increment_old
+            write(inc2cycles_file_unit,"(I9, ES22.12E2, ES22.12E2)") increment, cycles_per_increment(1), cycles
+            close(inc2cycles_file_unit)
+          End If
+        End If FatigueLog
+
+      End If FatigueParameterUpdate
+
+      ! Reset fatigue damage progression variable, i.e., fatigue_parameters(2)
+      fatigue_parameters(2) = 0
+
+    End If FatigueIncrement
 
   End If
 

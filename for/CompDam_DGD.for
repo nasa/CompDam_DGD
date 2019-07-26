@@ -304,7 +304,11 @@ Subroutine CompDam(  &
     sv%Fb2 = delta(2)  ! Normal direction
     sv%Fb3 = delta(3)  ! Second shear direction
 
-    Call cohesive_damage(m, delta, Pen, delta(2), sv%B, sv%FIm, sv%d2, dGdGc)
+    If (totalTime == 0) Then  ! Avoids calculating damage during the packager and the first solution increment
+      Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm)
+    Else
+      Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm, sv%d2, dGdGc)
+    End If
 
     If (m%friction .AND. delta(2) <= zero) Then  ! Closed cracks without friction
       AdAe = sv%d2/(sv%d2 + (one - sv%d2)*two*Pen(1)*m%GSL/(m%SL*m%SL))
@@ -404,7 +408,7 @@ Subroutine CompDam(  &
     ! Matrix crack damage evolution
     If (m%matrixDam .AND. sv%d2 > zero) Then
 
-      Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km),enerInelasNew(km))
+      Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km),enerInelasNew(km), stepTime, totalTime, dt)
 
     ! Fiber compression damage evolution (FKT decomposition)
     Else If ((m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) .AND. sv%d1C > zero) Then
@@ -424,7 +428,7 @@ Subroutine CompDam(  &
     stressNew(km,:) = Matrix2Vec(CauchyABQ, nshr)
 
     ! -------------------------------------------------------------------- !
-    !    Excesive shear strain errors                                      !
+    !    Excessive shear strain errors                                      !
     ! -------------------------------------------------------------------- !
     If (m%shearNonlinearity12) Then
       If (sv%Inel12 < stateOld(km,13)) Then

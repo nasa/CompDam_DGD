@@ -25,11 +25,11 @@ def copyMatProps():
     copyAdditionalFiles(propsFiles)
 
 
-def copyParametersFile():
+def copyParametersFile(jobName='CompDam'):
     '''
     Helper for dealing with .parameters files
     '''
-    copyAdditionalFiles('CompDam.parameters')
+    copyAdditionalFiles(jobName + '.parameters')
 
 
 def copyAdditionalFiles(files):
@@ -86,7 +86,7 @@ def evaluate_pyextmod_output(abaverify_obj, jobName, arguments):
 
 def plotFailureEnvelope(baseName, abscissaIdentifier, ordinateIdentifier, abcissaStrengths, ordinateStrengths):
     """
-    Create a plot of the failure envelope. Does noting if matplotlib import fails.
+    Create a plot of the failure envelope. Does nothing if matplotlib import fails.
     """
 
     # Try to import matplotlib
@@ -103,7 +103,7 @@ def plotFailureEnvelope(baseName, abscissaIdentifier, ordinateIdentifier, abciss
             for line in fe:
                 lineSplit = line.split(', ')
 
-                # Hanle the header row separately
+                # Handle the header row separately
                 if len(data) == 0:
                     for i in range(0, len(lineSplit)):
                         data[lineSplit[i]] = list()
@@ -433,9 +433,9 @@ class SingleElementCohesiveTests(av.TestCase):
 
     # -----------------------------------------------------------------------------------------
     # Test methods
-    def test_COH3D8_mode1(self):
+    def test_COH3D8_normal(self):
         """ Single cohesive element test for mode I response """
-        self.runTest("test_COH3D8_mode1")
+        self.runTest("test_COH3D8_normal")
 
     def test_COH3D8_shear13(self):
         """ Single cohesive element test for 1-3 shear loading """
@@ -460,6 +460,24 @@ class SingleElementCohesiveTests(av.TestCase):
     def test_COH3D8_shear23_friction(self):
         """ Single cohesive element test for 2-3 shear loading with friction """
         self.runTest("test_COH3D8_shear23_friction")
+
+
+class SingleElementCohesiveFatigueTests(av.TestCase):
+    """
+    Single element models to test the cohesive element fatigue model
+    """
+
+    # -----------------------------------------------------------------------------------------
+    # Test methods
+    def test_COH3D8_fatigue_normal(self):
+        """ Single cohesive element fatigue test for mode I loading """
+        copyParametersFile("test_COH3D8_fatigue_normal")
+        self.runTest("test_COH3D8_fatigue_normal")
+
+    def test_COH3D8_fatigue_shear13(self):
+        """ Single cohesive element fatigue test for 1-3 shear loading """
+        copyParametersFile("test_COH3D8_fatigue_shear13")
+        self.runTest("test_COH3D8_fatigue_shear13")
 
 
 class SingleElementTests(av.TestCase):

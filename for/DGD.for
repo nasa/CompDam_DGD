@@ -305,7 +305,7 @@ Contains
         ! -------------------------------------------------------------------- !
         !    Evaluate the cohesive law initiation criterion                    !
         ! -------------------------------------------------------------------- !
-        Call cohesive_damage(m, delta, Pen, delta(2), B_temp, FIm_temp)
+        Call cohesive_damage(m, p, delta, Pen, delta(2), B_temp, FIm_temp)
 
         ! -------------------------------------------------------------------- !
         !    Save the values corresponding to the maximum failure criteria     !
@@ -369,7 +369,7 @@ Contains
   End Subroutine DGDInit
 
 
-  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern, enerInelas)
+  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern, enerInelas, stepTime, totalTime, dtime)
     ! Determines the matrix damage state variable based on the current   !
     ! deformation and mode mixity.                                       !
 
@@ -396,6 +396,7 @@ Contains
     Integer, intent(IN) :: ndir, nshr
     Double Precision, Intent(OUT) :: Cauchy(ndir,ndir)
     Double Precision, Intent(OUT) :: enerIntern, enerInelas
+    Double Precision :: stepTime, totalTime, dtime
 
     ! -------------------------------------------------------------------- !
     ! Locals
@@ -984,7 +985,7 @@ Contains
       If (MD == 1) delta_n_init = MIN(zero, delta_coh(2,Q))
 
       ! Update the cohesive damage variable
-      Call cohesive_damage(m, delta_coh(:,Q), Pen, delta_n_init, sv%B, sv%FIm, sv%d2, dGdGc)
+      Call cohesive_damage(m, p, delta_coh(:,Q), Pen, delta_n_init, sv%B, sv%FIm, sv%d2, dGdGc)
 
       ! Check for damage advancement
       If (sv%d2 <= damage_old) Then  ! If there is no damage progression,
@@ -1559,7 +1560,7 @@ Contains
     Integer :: lenOutputDir, lenJobName, debugpy_count_local
     Character(len=256) :: outputDir, fileName, jobName
     Character(len=32) :: debugpy_count_str, nElement_str
-    Integer, parameter :: file_unit = 101
+    Integer, parameter :: file_unit = 105
     ! -------------------------------------------------------------------- !
 
 #ifndef PYEXT

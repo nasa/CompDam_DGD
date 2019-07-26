@@ -1,0 +1,443 @@
+*Heading
+DCB parametric fatigue
+**
+*Parameter
+********************************************************************************
+**Geometry parameters
+********************************************************************************
+CL = 50.8        # Length of Crack
+XL = 7.5         # Refined mesh for extension
+TW = 1.00        # Total width of DCB Specimen
+TBL = 2.25       # Thickness of bottom arm
+TTL = 2.25       # Thickness of top arm
+TL = CL + 3.0*TBL + XL  # Total length
+BL = 0.93*CL     # Coarse length of precracked area
+HL = XL + CL     # Maximum crack length at end of analysis
+********************************************************************************
+**Material parameters
+********************************************************************************
+YT = 80.0
+SL = 99.0
+K1 = 1.E5
+GIc = 0.214
+GIIc = 0.59
+**
+YTb = 0.8
+SLb = 1.0
+K1b = 1.E3
+GIcb = 0.140
+GIIcb = 0.193
+**
+YC = 199.8  # compressive matrix strength
+BK_eta = 2.1  # Benzeggagh-Kenane mode mixity exponent
+alpha0 = 0.925  # 2--3 plane crack angle under pure matrix compression [radians]
+**
+density = 1.57e-09  # Density for carbon/epoxy materials
+********************************************************************************
+** Loading parameters
+********************************************************************************
+AppliedDisplacement = 1.92
+**
+time_inc = 1.e-07  # target delta-time for mass scaling
+**
+time_1 = 0.05  # time duration for step 1 (load)
+time_2 = 0.15  # time duration for step 2 (fatigue)
+********************************************************************************
+** Meshing Parameters
+********************************************************************************
+NEW=  6    # Number of element in width direction (y-dir)
+NET=  3    # Number of element in sublamina
+NEA= 24    # Number of element in length direction before Crack, coarse(x-dir)
+NEB= 20    # Number of element in length direction before Crack, fine  (x-dir)
+NEC=200    # Number of element in length direction after Crack (x-dir)
+NED= 20    # Number of element in length direction after cracking (x-dir)
+**
+top_arm_element_thickness = TTL/NET
+bot_arm_element_thickness = TBL/NET
+********************************************************************************
+** Material definitions
+********************************************************************************
+*Material, name=IM7-8552_Tape
+*Elastic, type=LAMINA
+ 146671., 8703., 0.32, 5164., 5164., 3001.
+*Density
+<density>,
+********************************************************************************
+*Material, name=cohesive
+*Density
+<density>,
+*Depvar
+19,
+1, COH_dmg
+2, COH_delta_s1
+3, COH_delta_n
+4, COH_delta_s2
+5, COH_B
+9, COH_FI
+11, COH_STATUS
+*User Material, constants=40
+200000, , 0., , , , , ,
+, , , , , <YT>, <SL>, <GIc>,
+<GIIc>, <BK_eta>, <YC>, <alpha0>, <K1>, , , ,
+, , , , , , , ,
+, , , , , , , 0.0
+**
+*Material, name=bridge
+*Density
+<density>,
+*Depvar
+19,
+1, COH_dmg
+2, COH_delta_s1
+3, COH_delta_n
+4, COH_delta_s2
+5, COH_B
+9, COH_FI
+11, COH_STATUS
+*User Material, constants=40
+200000, , 0., , , , , ,
+, , , , , <YTb>, <SLb>, <GIcb>,
+<GIIcb>, <BK_eta>, <YC>, <alpha0>, <K1b>, , , ,
+, , , , , , , ,
+, , , , , , , 0.0
+********************************************************************************
+*Initial Conditions, type=SOLUTION
+COH, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+0.0, 0.0, 0, 1, 0.0, 0.0, 0.0, 0.0,
+0.0, 0.0, 0.0, 0.0
+*Initial Conditions, type=SOLUTION
+COHB, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+0.0, 0.0, 0, 1, 0.0, 0.0, 0.0, 0.0,
+0.0, 0.0, 0.0, 0.0
+********************************************************************************
+** Generating Mesh
+********************************************************************************
+*Parameter
+NEL=NEA+NEB+NEC+NED    # Element increment low by low
+NNL=NEL+1              # Node increment low by low
+HTW=TW/2               # Half width
+**
+NTNL=50000*NET
+NETS=(NET+1)*50000
+COH_F=NET*50000*4+10000
+COH_B=NET*50000*4+20000
+**
+** Node index number definition
+A=1
+B=1+NEA
+C=B+NEB
+D=C+NEC
+E=D+NED
+F=1+(NNL)*NEW
+G=F+NEA
+H=G+NEB
+I=H+NEC
+J=I+NED
+**
+AT=1+NET*50000
+FT=F+NET*50000
+DT=D+NET*50000
+IT=I+NET*50000
+**
+ATT=A+(2*NET+1)*50000
+FTT=F+(2*NET+1)*50000
+EM1=E+50000
+EM2=EM1+50000
+ET=EM2+50000
+JM1=J+50000
+JM2=JM1+50000
+JT=JM2+50000
+**
+A2=2
+A3=A+2+NEL
+A4=A3-1
+A5=1+50000
+A6=A2+50000
+A7=A3+50000
+A8=A4+50000
+**
+B2=B+1
+B3=B+2+NEL
+B4=B3-1
+B5=B+50000
+B6=B2+50000
+B7=B3+50000
+B8=B4+50000
+**
+C2=C+1
+C3=C+2+NEL
+C4=C3-1
+C5=C+50000
+C6=C2+50000
+C7=C3+50000
+C8=C4+50000
+**
+D2=D+1
+D3=D+2+NEL
+D4=D3-1
+D5=D+50000
+D6=D2+50000
+D7=D3+50000
+D8=D4+50000
+**
+K=A+NETS
+K2=A2+NETS
+K3=A3+NETS
+K4=A4+NETS
+K5=A5+NETS
+K6=A6+NETS
+K7=A7+NETS
+K8=A8+NETS
+**
+L=B+NETS
+L2=B2+NETS
+L3=B3+NETS
+L4=B4+NETS
+L5=B5+NETS
+L6=B6+NETS
+L7=B7+NETS
+L8=B8+NETS
+**
+M=C+NETS
+M2=C2+NETS
+M3=C3+NETS
+M4=C4+NETS
+M5=C5+NETS
+M6=C6+NETS
+M7=C7+NETS
+M8=C8+NETS
+**
+N=D+NETS
+N2=D2+NETS
+N3=D3+NETS
+N4=D4+NETS
+N5=D5+NETS
+N6=D6+NETS
+N7=D7+NETS
+N8=D8+NETS
+**
+CM1=M-50000
+CM2=M2-50000
+CM3=M3-50000
+CM4=M4-50000
+CM5=M
+CM6=M2
+CM7=M3
+CM8=M4
+**
+CN1=N-50000
+CN2=N2-50000
+CN3=N3-50000
+CN4=N4-50000
+CN5=N
+CN6=N2
+CN7=N3
+CN8=N4
+********************************************************************************
+** Create Nodes
+********************************************************************************
+*Node
+<A>,  0.0, 0.0, 0.0
+<B>, <BL>, 0.0, 0.0
+<C>, <CL>, 0.0, 0.0
+<D>, <HL>, 0.0, 0.0
+<E>, <TL>, 0.0, 0.0
+**
+<F>,  0.0, <TW>, 0.0
+<G>, <BL>, <TW>, 0.0
+<H>, <CL>, <TW>, 0.0
+<I>, <HL>, <TW>, 0.0
+<J>, <TL>, <TW>, 0.0
+**
+*Ngen, nset=TIP_LINE_AB
+<A>, <F>, <E>
+*Ngen, nset=LINE_BB
+<B>, <G>, <E>
+*Ngen, nset=CRACK_FRONT_B
+<C>, <H>, <E>
+*Ngen, nset=MIDDLE_LINE_B
+<D>, <I>, <E>
+*Ngen, nset=END_LINE_B
+<E>, <J>, <E>
+**
+*Nfill, nset=OPEN_FRONT_AB
+TIP_LINE_AB, LINE_BB, <NEA>,1
+*Nfill, nset=OPEN_FRONT_BB
+LINE_BB, CRACK_FRONT_B, <NEB>,1
+*Nfill, nset=MIDDEL_BB
+CRACK_FRONT_B, MIDDLE_LINE_B, <NEC>, 1
+*Nfill, nset=END_BB
+MIDDLE_LINE_B, END_LINE_B, <NED>, 1
+**
+*Ncopy, OLD SET=OPEN_FRONT_AB, change number=<NTNL>, shift, new set=OPEN_FRONT_AT
+0, 0, <TBL>
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=OPEN_FRONT_BB, change number=<NTNL>, shift, new set=OPEN_FRONT_BT
+0, 0, <TBL>
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=MIDDEL_BB, change number=<NTNL>, shift, new set=MIDDEL_BT
+0, 0, <TBL>
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=END_BB, change number=<NTNL>, shift, new set=END_BT
+0, 0, <TBL>
+0, 0, 0, 0, 0, 1, 0
+**
+*Nfill, nset=BOTTOM_LAYER
+OPEN_FRONT_AB, OPEN_FRONT_AT, <NET>, 50000
+OPEN_FRONT_BB, OPEN_FRONT_BT, <NET>, 50000
+MIDDEL_BB, MIDDEL_BT, <NET>, 50000
+END_BB, END_BT, <NET>, 50000
+**
+*Ncopy, OLD SET=BOTTOM_LAYER, change number=<NETS>, shift, new set=TOP_LAYER
+0, 0, <TTL>
+0, 0, 0, 0, 0, 1, 0
+**
+*Nset, nset=TIP_LINE_AT, generate
+<ATT>, <FTT>, <E>
+*Nset, nset= END_LINE_T, generate
+<ET>, <JT>, <E>
+*Nset, nset= END_LINE_M, generate
+<EM1>, <JM1>, <E>
+<EM2>, <JM2>, <E>
+********************************************************************************
+** Create Elements
+********************************************************************************
+*Element, type=SC8R
+1, 1, 2, <A3>, <A4>, <A5>, <A6>, <A7>, <A8>
+<B>, <B>, <B2>, <B3>, <B4>, <B5>, <B6>, <B7>, <B8>
+<C>, <C>, <C2>, <C3>, <C4>, <C5>, <C6>, <C7>, <C8>
+<D>, <D>, <D2>, <D3>, <D4>, <D5>, <D6>, <D7>, <D8>
+**
+<K>, <K>, <K2>, <K3>, <K4>, <K5>, <K6>, <K7>, <K8>
+<L>, <L>, <L2>, <L3>, <L4>, <L5>, <L6>, <L7>, <L8>
+<M>, <M>, <M2>, <M3>, <M4>, <M5>, <M6>, <M7>, <M8>
+<N>, <N>, <N2>, <N3>, <N4>, <N5>, <N6>, <N7>, <N8>
+**
+*Elgen, elset=OPEN_BOTTOM_A
+1, <NEA>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>,50000, 50000
+*Elgen, elset=OPEN_BOTTOM_B
+<B>, <NEB>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>,50000, 50000
+*Elgen, elset=MIDDLE_BOTTOM
+<C>, <NEC>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>,50000, 50000
+*Elgen, elset=END_BOTTOM
+<D>, <NED>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>,50000, 50000
+**
+*Elset, elset=BOTTOM_LAYER
+OPEN_BOTTOM_A, OPEN_BOTTOM_B, MIDDLE_BOTTOM, END_BOTTOM,
+**
+*Elgen, elset=OPEN_TOP_A
+<K>, <NEA>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>,50000, 50000
+*Elgen, elset=OPEN_TOP_B
+<L>, <NEB>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>,50000, 50000
+*Elgen, elset=MIDDLE_TOP
+<M>, <NEC>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>,50000, 50000
+*Elgen, elset=END_TOP
+<N>, <NED>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>,50000, 50000
+*Elset, ELSET=TOP_LAYER
+OPEN_TOP_A, OPEN_TOP_B, MIDDLE_TOP, END_TOP,
+**
+*Element, type=COH3D8
+ <COH_F>, <CM1>, <CM2>, <CM3>, <CM4>, <CM5>, <CM6>, <CM7>, <CM8>
+ <COH_B>, <CN1>, <CN2>, <CN3>, <CN4>, <CN5>, <CN6>, <CN7>, <CN8>
+*Elgen, elset=FRONT_COH
+ <COH_F>, <NEC>, 1 , 1 , <NEW>, <NNL>, <NEL>, 1, 50000, 50000
+*Elgen, elset=BACK_COH
+ <COH_B>, <NED>, 1 , 1 , <NEW>, <NNL>, <NEL>, 1, 50000, 50000
+*Elset, elset=COH
+ FRONT_COH, BACK_COH
+*Elcopy, element shift=1000000, oldset=COH, new set=COHB, shift nodes=0
+********************************************************************************
+** Section definition
+********************************************************************************
+*Orientation, name=OID_0
+ 1., 0., 0., 0, 1., 0
+ 3, 0.
+**
+*Shell Section, elset=BOTTOM_LAYER, material=IM7-8552_Tape, orientation=OID_0
+<bot_arm_element_thickness>, 5
+*Shell Section, elset=TOP_LAYER, material=IM7-8552_Tape, orientation=OID_0
+<top_arm_element_thickness>, 5
+**
+*Cohesive section, elset=COH, response=TRACTION SEPARATION, material=cohesive, thickness=SPECIFIED
+1.0
+*Cohesive section, elset=COHB, response=TRACTION SEPARATION, material=bridge, thickness=SPECIFIED
+1.0
+********************************************************************************
+** Boundary conditions and constraints
+********************************************************************************
+*Node, nset=T_Node
+ 9999998, 0., 0., 0.
+*Node, nset=B_Node
+ 9999999, 0., 0., 0.
+**
+*Equation
+ 2
+ TIP_LINE_AT, 3, 1., T_Node, 3, -1.
+ 2
+ TIP_LINE_AB, 3, 1., B_Node, 3, -1.
+*Boundary
+ TIP_LINE_AT, 1, 2, 0.
+ TIP_LINE_AB, 1, 2, 0.
+********************************************************************************
+** Amplitude functions
+********************************************************************************
+*Amplitude, name=Amp-Load, definition=SMOOTH STEP
+0.0, 0.0, <time_1>, <AppliedDisplacement>
+********************************************************************************
+** Filter to halt analysis when damage grows into the coarse region
+*Filter, name=haltOnFailure, operator=MAX, limit=0.1, halt=ANALYSIS
+********************************************************************************
+*Step, name=Load, nlgeom=YES
+*Dynamic, explicit
+, <time_1>
+*Variable mass scaling, dt=<time_inc>, type=below min, freq=1
+**
+*Boundary, type=DISPLACEMENT, amplitude=Amp-Load
+T_Node, 3, 3, 0.5
+B_Node, 3, 3, -0.5
+**
+*Output, history, freq=500
+*Energy Output
+ALLSE, ALLPD, ALLKE, ALLVD, ALLWK, ALLMW
+*Node Output, nset=T_Node
+RF3, U3
+**
+*Output, field, number interval=20
+*Node Output
+U,
+*Element Output
+S, EMSF
+*Element Output, elset=COH
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
+*Element Output, elset=COHB
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
+**
+*End Step
+********************************************************************************
+*Step, name=Fatigue, nlgeom=YES
+*Dynamic, explicit
+, <time_2>
+*Variable mass scaling, dt=<time_inc>, type=below min, freq=1
+**
+** History output to halt analysis when damage grows into the coarse region
+*Output, history, frequency=500, filter=haltOnFailure
+*Element Output, elset=BACK_COH
+ SDV1
+**
+*Output, history, freq=1
+*Energy Output
+ALLSE, ALLPD, ALLKE, ALLVD, ALLWK, ALLMW
+*Node Output, nset=T_Node
+RF3, U3
+**
+*Output, field, number interval=200
+*Node Output
+U,
+*Element Output
+S,
+*Element Output, elset=COH
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
+*Element Output, elset=COHB
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
+**
+*End Step

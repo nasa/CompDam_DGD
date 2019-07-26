@@ -8,6 +8,8 @@
 #define VGETJOBNAME GETJOBNAME
 #define XPLB_ABQERR STDB_ABQERR
 #define XPLB_EXIT XIT
+#define VGETRANK GETRANK
+#define VGETNUMCPUS GETNUMCPUS 
 
 ! Include, via preprocessor, the source file containing the VUMAT subroutine to be wrapped. Using the preprocessor
 !  include statement is necessary so that the above #define commands propagate through all relevant source files.

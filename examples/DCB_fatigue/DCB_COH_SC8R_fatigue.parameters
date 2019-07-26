@@ -28,15 +28,11 @@ fatigue_R_ratio = 0.1d0
 cycles_per_increment = 1.d-4
 
 // thresholds for fatigue damage progression, Double precision
-fatigue_damage_min_threshold = 5.d-7
-fatigue_damage_max_threshold = 1.d-4
+fatigue_damage_min_threshold = 5.d-5
+fatigue_damage_max_threshold = 1.d-2
 
 // first analysis step to model fatigue, Integer
-fatigue_step = 1000000
-
-
-// increment for which the matrix failure criterion is evaluated [degrees], Integer
-alpha_inc = 10 // Default value: 10
+fatigue_step = 2
 
 
 // maximum number of cut-backs in the DGD equilibrium convergence loop, Integer

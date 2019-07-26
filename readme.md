@@ -8,6 +8,7 @@ This software may be used, reproduced, and provided to others only as permitted 
 Copyright 2016 United States Government as represented by the Administrator of the National Aeronautics and Space Administration. No copyright is claimed in the United States under Title 17, U.S. Code. All Other Rights Reserved.
 
 Publications that describe the theories used in this code:
+- Carlos Dávila, ["From S-N to the Paris Law with a New Mixed-Mode Cohesive Fatigue Model"](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf) NASA/TP-2018-219838, June 2018.
 - Andrew C. Bergan, ["A Three-Dimensional Mesoscale Model for In-Plane and Out-of-Plane Fiber Kinking"](https://arc.aiaa.org/doi/abs/10.2514/6.2019-1548)
 - Andrew C. Bergan, et al., ["Development of a Mesoscale Finite Element Constitutive Model for Fiber Kinking"](https://arc.aiaa.org/doi/10.2514/6.2018-1221) *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
 - Frank A. Leone Jr. ["Deformation gradient tensor decomposition for representing matrix cracks in fiber-reinforced materials"](http://dx.doi.org/10.1016/j.compositesa.2015.06.014) *Composites Part A* (2015) **76**:334-341.
@@ -36,6 +37,8 @@ For any questions, please contact the developers:
 - [Elements](#elements)
 - [Material properties](#material-properties)
 - [State variables](#state-variables)
+- [Implicit solver compatibility](#implicit-solver-compatibility)
+- [Fatigue analyses](#fatigue-analyses)
 - [Example problems](#example-problems)
 - [Advanced debugging](#advanced-debugging)
 - [Python extension module](#python-extension-module)
@@ -50,7 +53,7 @@ For any questions, please contact the developers:
 The user subroutine source code is located in the `for` directory. The main entry point is `CompDam_DGD.for`.
 
 ### Prerequisites
-[Intel Fortran Compiler](https://software.intel.com/en-us/fortran-compilers) version 11.1 or newer is required to compile the code ([more information about compiler versions](usersubroutine-prerequisites.md)). It is recommended that Abaqus 2016 or newer is used with this code. Current developments and testing are conducted with Abaqus 2017. Python supporting files require Python 2.7.
+[Intel Fortran Compiler](https://software.intel.com/en-us/fortran-compilers) version 11.1 or newer is required to compile the code ([more information about compiler versions](usersubroutine-prerequisites.md)). It is recommended that Abaqus 2016 or newer is used with this code. Current developments and testing are conducted with Abaqus 2019. Python supporting files require Python 2.7.
 
 ### Initial setup
 After cloning the CompDam_DGD git repository, it is necessary to run the setup script file `setup.py` located in the repository root directory:
@@ -226,7 +229,7 @@ where *&gamma;*<sub>12</sub> is the shear strain and *&tau;*<sub>12</sub> is the
 
 Prior to the initiation of matrix damage (i.e., `CDM_d2 = 0`), the nonlinear shear response due to the above equation is plastic, and the unloading/reloading slope is unchanged. No pre-peak nonlinearity is applied to the matrix tensile or compressive responses (i.e., *&sigma;<sub>22</sub>*).
 
-The required material inputs are the two parameters in the above equation: *&alpha;*<sub>PL</sub> and *n*<sub>PL</sub>. Note that the same constants are used for the 1-2 and 1-3 planes under the assumption of transverse isotropy (see [Seon et al. 2017](http://dpi-proceedings.com/index.php/asc32/article/view/15267)). For the 1-2 plane, the state variables `CDM_Plas12` and `CDM_Inel12` are used to track the current plastic shear strain and the total amount of inelastic plastic shear strain that has occurred through the local deformation history, respectively. For cases of monotonic loading, `CDM_Plas12` and `CDM_Inel12` should have the same magnitude. Likewise, the state variables `CDM_Plas13` and `CDM_Inel13` are utilized for the 1-3 plane. The [feature flags](#contrlling-which-features-are-enabled) can be used to enable this Ramberg-Osgood model in the 1-2 plane, 1-3 plane, or both planes.
+The required material inputs are the two parameters in the above equation: *&alpha;*<sub>PL</sub> and *n*<sub>PL</sub>. Note that the same constants are used for the 1-2 and 1-3 planes under the assumption of transverse isotropy (see [Seon et al. (2017)](http://dpi-proceedings.com/index.php/asc32/article/view/15267)). For the 1-2 plane, the state variables `CDM_Plas12` and `CDM_Inel12` are used to track the current plastic shear strain and the total amount of inelastic plastic shear strain that has occurred through the local deformation history, respectively. For cases of monotonic loading, `CDM_Plas12` and `CDM_Inel12` should have the same magnitude. Likewise, the state variables `CDM_Plas13` and `CDM_Inel13` are utilized for the 1-3 plane. The [feature flags](#controlling-which-features-are-enabled) can be used to enable this Ramberg-Osgood model in the 1-2 plane, 1-3 plane, or both planes.
 
 #### Schapery micro-damage
 Matrix nonlinearity in the 1-2 plane can also be modeled using Schapery theory, in which all pre-peak matrix nonlinearity is attributed to the initiation and development of micro-scale matrix damage. With this approach, the local stress/strain curves will unload to the origin, and not develop plastic strain. A simplified version of the approach of [Pineda and Waas](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20120000914.pdf) is here applied. The micro-damage functions *e<sub>s</sub>* and *g<sub>s</sub>* are limited to third degree polynomials for ease of implementation. As such, four fitting parameters are required for each of *e<sub>s</sub>* and *g<sub>s</sub>* to define the softening of the matrix normal and shear responses to micro-damage development.
@@ -240,13 +243,13 @@ where *S<sub>r</sub>* is the micro-damage reduced internal state variable. These
 #### Schaefer
 Shear nonlinearity in the 1-2 plane can be modeled using the Schaefer prepeak model. In this model, effective plastic strain is related to effective plastic stress through the power law:
 
-*&epsilon;*<sub>plastic</sub> = *A &sigma;*<sup>*n*</sup> 
+*&epsilon;*<sub>plastic</sub> = *A &sigma;*<sup>*n*</sup>
 
 Additionally, a yield criterion function (effective stress) is defined as:
 
 *f* = *&sigma;* = (*S*<sub>22</sub> + *a*<sub>6</sub> *S*<sub>12</sub><sup>2</sup>)<sup>1/2</sup> + *b*<sub>2</sub> *S*<sub>22</sub>
 
-where *a*<sub>6</sub>, *b*<sub>2</sub>, *A* and *n* are material constants needed for the Schaefer prepeak material model. These four material properties must be defined in an [external material properties file](#defining-the-material-properties-in-a-props-file). Additionally, when definining  *a*<sub>6</sub>, *b*<sub>2</sub>, *A* and *n* in the external material properties file the variables are prefixed with schaefer_ (to disambiguate the otherwise nondescript material property names and symbols). 
+where *a*<sub>6</sub>, *b*<sub>2</sub>, *A* and *n* are material constants needed for the Schaefer prepeak material model. These four material properties must be defined in an [external material properties file](#defining-the-material-properties-in-a-props-file). Additionally, when defining  *a*<sub>6</sub>, *b*<sub>2</sub>, *A* and *n* in the external material properties file the variables are prefixed with schaefer_ (to disambiguate the otherwise nondescript material property names and symbols).
 
 The above two equations are used in concert to determine plastic strain through the relationship:
 
@@ -267,24 +270,24 @@ Load reversal assumptions from [Maimí et al. (2007)](http://doi.org/10.1016/j.m
 #### Model 2: Placeholder
 
 #### Model 3, 4, 5: Fiber kinking theory (FKT)
-A model based on Budiansky's fiber kinking theory from [Budiansky 1983](https://doi.org/10.1016/0045-7949(83)90141-4), [Budiansky and Fleck 1993](https://doi.org/10.1016/0022-5096(93)90068-Q), and [Budiansky et al. 1998](https://doi.org/10.1016/S0022-5096(97)00042-2) implemented using the DGD framework to model in-plane (1-2) and/or out-of-plane (1-3) fiber kinking. The model is described in detail in [Bergan et al. 2018](https://arc.aiaa.org/doi/10.2514/6.2018-1221), [Bergan and Jackson 2018](http://dpi-proceedings.com/index.php/asc33/article/view/26003), and [Bergan 2019](https://arc.aiaa.org/doi/abs/10.2514/6.2019-1548). The model accounts for fiber kinking due to shear instability by considering an initial fiber misalignment, nonlinear shear stress-strain behavior via Ramberg-Osgood, and geometric nonlinearity. Fiber failure can be introduced by specifying a critical fiber rotation angle.
+A model based on Budiansky's fiber kinking theory from [Budiansky (1983)](https://doi.org/10.1016/0045-7949(83)90141-4), [Budiansky and Fleck (1993)](https://doi.org/10.1016/0022-5096(93)90068-Q), and [Budiansky et al. (1998)](https://doi.org/10.1016/S0022-5096(97)00042-2) implemented using the DGD framework to model in-plane (1-2) and/or out-of-plane (1-3) fiber kinking. The model is described in detail in [Bergan et al. (2018)](https://arc.aiaa.org/doi/10.2514/6.2018-1221), [Bergan and Jackson (2018)](http://dpi-proceedings.com/index.php/asc33/article/view/26003), and [Bergan (2019)](https://arc.aiaa.org/doi/abs/10.2514/6.2019-1548). The model accounts for fiber kinking due to shear instability by considering an initial fiber misalignment, nonlinear shear stress-strain behavior via Ramberg-Osgood, and geometric nonlinearity. Fiber failure can be introduced by specifying a critical fiber rotation angle.
 
 The required material properties are: XC, YC, wkb, alpha0, alpha_PL, and n_PL. The [feature flag](#controlling-which-features-are-enabled) for fiber compression should be set to '3', '4', or '5' to activate this model feature. Model '3' enables in-plane (1-2 plane) fiber kinking. Model '4' enables out-of-plane (1-3 plane) fiber kinking. Model '5' enables fiber kinking in both planes (uncoupled). This feature requires 25 state variables to be defined and initialized. The relevant state variables are:
 - `CDM_phi0_12`: initial fiber misalignment (radians) in the 1-2 plane.
 - `CDM_phi0_13`: initial fiber misalignment (radians) in the 1-3 plane.
 - `CDM_gamma_12`: rotation of the fibers due to loading (radians) in the 1-2 plane.
-- `CDM_gamma_13`: rotation of the fibers due to loading (radians) in the 1-3 plane. 
+- `CDM_gamma_13`: rotation of the fibers due to loading (radians) in the 1-3 plane.
 - `CDM_Fbi`: the components of the first column of `Fm` used for decomposing the element where `i=1,2,3`.
 
 The current fiber misalignment is `CDM_phi0_1i + CDM_gamma_1i` where `i=2 or 3`.
 
 The initial conditions for the state variable `CDM_phi0_12` and `CDM_phi0_13` determine the initial fiber misalignments as described in [initial conditions](#initial-conditions).
 
-A fiber failure criterion described in [Bergan and Jackson 2018](http://dpi-proceedings.com/index.php/asc33/article/view/26003) is implemented to represent the material behavior in confined conditions under large strains (post failure). The fiber failure criterion is satisfied when
+A fiber failure criterion described in [Bergan and Jackson (2018)](http://dpi-proceedings.com/index.php/asc33/article/view/26003) is implemented to represent the material behavior in confined conditions under large strains (post failure). The fiber failure criterion is satisfied when
 
 *&phi;* &ge; *&phi;*<sub>ff,c</sub>
 
-where *&phi;* is the current fiber rotation. Once the fiber failure critierion is satisfied, the plastic shear strain is held constant. The value for *&phi;*<sub>ff,c</sub> is defined as the parameter `fkt_fiber_failure_angle` since it is not a well-defined material property. The fiber failure criterion is disabled when *&phi;*<sub>ff,c</sub> < 0. The same angle is used for in-plane and out-of-plane kinking.
+where *&phi;* is the current fiber rotation. Once the fiber failure criterion is satisfied, the plastic shear strain is held constant. The value for *&phi;*<sub>ff,c</sub> is defined as the parameter `fkt_fiber_failure_angle` since it is not a well-defined material property. The fiber failure criterion is disabled when *&phi;*<sub>ff,c</sub> < 0. The same angle is used for in-plane and out-of-plane kinking.
 
 The fiber kinking theory model implemented here is preliminary and has some known shortcomings and caveats:
 - The model has only been tested for C3D8R. Limited application with C3D6 demonstrated issues. No testing has been completed for other element types.
@@ -308,7 +311,7 @@ The strain is calculated using the deformation gradient tensor provided by the A
 Hooke's law is applied using the Green-Lagrange strain to calculate the 2<sup>nd</sup> Piola-Kirchhoff stress *S*.
 
 ### Fiber nonlinearity
-Nonlinear elastic behavior in the fiber direction can be introduced with the material property c<sub>*l*</sub>. The expression used follows [Kowalski 1988](https://www.astm.org/DIGITAL_LIBRARY/STP/PAGES/STP26136S.htm):
+Nonlinear elastic behavior in the fiber direction can be introduced with the material property c<sub>*l*</sub>. The expression used follows [Kowalski (1988)](https://www.astm.org/DIGITAL_LIBRARY/STP/PAGES/STP26136S.htm):
 
 *E<sub>1</sub>* = *E<sub>1</sub>*(1 + c<sub>*l*</sub>*&epsilon;*<sub>11</sub>)
 
@@ -328,7 +331,7 @@ A set of material properties must be defined for the material of interest. This 
 Material properties can be defined in the input deck or in a separate `.props` file. Definition of the material properties in a `.props` file is more convenient and generally preferred since it isolates the material properties from the structural model definition.
 
 #### Defining the material properties in a `.props` file
-Using a `.props` file is a versatile means of defining material properties. The subroutine looks for a file named as `jobName_materialName` where the job name is the name of the Abaqus job (default is input deck name) and the material is name assigned as `*Material, Name=materialName` in the input deck. If no file is found, then the subroutine looks for `materialName.props`. The `.props` file must be located in the Abaqus working directory.
+Using a `.props` file is a versatile means of defining material properties. The subroutine looks for a file named as `jobName_materialName` where the job name is the name of the Abaqus job (default is input deck name) and the material is name assigned as `*Material, name=materialName` in the input deck. If no file is found, then the subroutine looks for `materialName.props`. The `.props` file must be located in the Abaqus working directory.
 
 The `.props` should contain one property per line with the format `[NAME] = [VALUE]` where the name is symbolic name for the property and the value is assigned value for the property. Blank lines or commented text (denoted by `//`) is ignored. See the [table of material properties](#table-of-material-properties) for a complete list of material property symbolic names, acceptable values, and recommended test methods for characterizing the properties.
 
@@ -482,7 +485,7 @@ Since `CDM_STATUS` is used for element deletion, always initialize `CDM_STATUS` 
 The initial condition for `CDM_phi0_12` and `CDM_phi0_13` are used to specify the initial fiber misalignment. One of the followings options is used depending on the initial condition specified for `CDM_phi0_12` and `CDM_phi0_13` as follows:
 - *&phi;<sub>0</sub>* = 0 :: The value for *&phi;<sub>0</sub>* is calculated for shear instability. For 3-D kinking, *&phi;<sub>0,12</sub>* = *&phi;<sub>0,13</sub>* is required.
 - *&phi;<sub>0</sub>* &le; 0.5 :: The value provided in the initial condition is used as the initial fiber misalignment.
-- *&phi;<sub>0</sub>* = 1 :: A pseudo random uniform distribution varying spatially in the 1-direction is used. The spatial distribution algorithm relies on an uniform element size and fiber aligned mesh. The random number generator can be set to generate the same realizations or different realizations on multiple nominally identical analyses using the boolean parameter `fkt_random_seed`. When using the random distribution for *&phi;<sub>0</sub>*, the characteristic length must be set to include 6 components: `*Characteristic Length, definition=USER, components=6`. For 3-D kinking, *&phi;<sub>0,12</sub>* = *&phi;<sub>0,13</sub>* is required.
+- *&phi;<sub>0</sub>* = 1 :: A pseudo random uniform distribution varying spatially in the 1-direction is used. The spatial distribution algorithm relies on an uniform element size and fiber aligned mesh. The random number generator can be set to generate the same realizations or different realizations on multiple nominally identical analyses using the Boolean parameter `fkt_random_seed`. When using the random distribution for *&phi;<sub>0</sub>*, the characteristic length must be set to include 6 components: `*Characteristic Length, definition=USER, components=6`. For 3-D kinking, *&phi;<sub>0,12</sub>* = *&phi;<sub>0,13</sub>* is required.
 - *&phi;<sub>0</sub>* = 2 :: Identical to *&phi;<sub>0</sub>* = 1, with the exception that a different realization is calculated for each ply. For 3-D kinking, *&phi;<sub>0,12</sub>* = *&phi;<sub>0,13</sub>* is required.
 - *&phi;<sub>0</sub>* = 3 :: (Intended for use with 3-D FKT only) A pseudo random distribution varying spatially in the 1-direction is used with a 2-parameter lognormal distribution for the polar angle and a normal distribution for the azimuthal angle. The parameters starting with `fkt_init_misalignment` are used to control the polar and azimuthal distributions. Requires *&phi;<sub>0,12</sub>* = *&phi;<sub>0,13</sub>*.
 
@@ -493,8 +496,25 @@ Pre-existing damage can be modeled by creating an element set for the damaged re
               0.d0,  0.d0,     0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
               0.d0,  0.d0,  0.d0,  0.d0
 
-## Using CompDam with Abaqus/Standard
-The repository includes a developmental capability to run the CompDam VUMAT in an Abaqus/Standard analysis using a wrapper, `for/vumatWrapper.for`, that translates between the UMAT and VUMAT user subroutine interfaces. The intended usage is for Abaqus/Standard runs with little or no damage.
+
+## Fatigue analyses
+The cohesive fatigue constitutive model in CompDam can predict the initiation and the propagation of matrix cracks and delaminations as a function of fatigue cycles. The analyses are conducted such that the applied load (or displacement) corresponds to the maximum load of a fatigue cycle. The intended use is that the maximum load (or displacement) is held constant while fatigue damage develops with increasing step time. The constitutive model uses a specified load ratio *R*<sub>min</sub>/*R*<sub>max</sub>, the solution increment, and an automatically-calculated cycles-per-increment ratio to accumulate the damage due to fatigue loading. The cohesive fatigue model response is based on engineering approximations of the endurance limit as well as the Goodman diagram. No additional material inputs must be defined or state variables requested beyond those required for a quasi-static analysis step. This approach can predict the stress-life diagrams for crack initiation, the Paris law regime, as well as the transient effects of crack initiation and stable tearing.
+
+A detailed description of the cohesive fatigue implemented herein is available in a [2018 NASA technical paper by Carlos Dávila](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf).
+
+### Usage
+The fatigue capability of CompDam is disabled by default. To run a fatigue analysis, one of the analysis steps must be identified as a fatigue step. A step is identified as a fatigue step by setting the `fatigue_step` parameter to the target step number, e.g., `fatigue_step = 2` for the second analysis step to be a fatigue step. The first analysis step cannot be a fatigue step, as the model is assumed to be unloaded at that point.
+
+The load ratio *R*<sub>min</sub>/*R*<sub>max</sub> has a default value of 0.1, and can be changed using the parameter `fatigue_R_ratio`.
+
+An example of a double cantilever beam subjected to fatigue under displacement-control is included in the `examples/` directory. The geometry and conditions of this example problem correspond to the results presented in Figure 20 of [Dávila 2018](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf).
+
+### Interpreting the results of a fatigue analysis
+Within a fatigue step, each solution increment represents either a number of fatigue cycles or a fractional part of a single fatigue cycle. During the solution, the number of fatigue cycles per solution increment changes based on the maximum amount of energy dissipation in any single element. If the rate of energy dissipation is too high (as defined by the parameter `fatigue_damage_max_threshold`), the increments-to-cycles ratio is decreased. If the rate of energy dissipation is too low (as defined by the parameter `fatigue_damage_min_threshold`), the increments-to-cycles ratio is increased. The parameter `cycles_per_increment` defines the initial ratio of fatigue cycles per solution increment. Any changes to `cycles_per_increment` are logged in an additional output file ending in `_inc2cycles.log`, with columns for the fatigue step solution increment, the updated `cycles_per_increment` parameter, and the accumulated fatigue cycles.
+
+
+## Implicit solver compatibility
+The repository includes a developmental capability to run the CompDam VUMAT in an Abaqus/Standard analysis using a wrapper, `for/vumatWrapper.for`, which translates between the UMAT and VUMAT user subroutine interfaces. The intended usage is for Abaqus/Standard runs with little or no damage.
 
 ### Usage
 To run an analysis with CompDam in Abaqus/Standard, the following input deck template is provided. Note that 9 additional state variables are required.
@@ -566,7 +586,7 @@ To run an analysis with CompDam in Abaqus/Standard, the following input deck tem
     0.d0,  0.d0,  0.d0,  0.d0,  0.d0
     *Initial Conditions, Type=Field, Variable=1
     GLOBAL,  0.d0
-    ** GLOBAL is an nset with all nodes attached to compdam enabled elements
+    ** GLOBAL is an nset with all nodes attached to CompDam-enabled elements
     ** In each step, NLGEOM=YES must be used. This is NOT the default setting.
 
 ### Current limitations
@@ -602,14 +622,14 @@ To stop execution, close the Visual Studio window. Choose stop debugging and do 
 CompDam can be compiled into a [Python extension module](https://docs.python.org/2/extending/extending.html), which allows many of the Fortran subroutines and functions in the `for` directory to be called from Python. The Python package [`f90wrap`](https://github.com/jameskermode/f90wrap) is used to automatically generate the Python extension modules that interface with the Fortran code. This Python extension module functionality is useful for development and debugging.
 
 ### Dependencies and setup
-The python extension module requires some additional dependencies. First, the procedure only works on Linux using the bash shell. Windows users can use the [windows subsystem for linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about). In addition, `gfortran` 4.6+ is required. Type `gfortran --version` to check if you have this available. The remaining dependencies are python packages and can be installed as follows. The python extension module works with python 2 and 3; python 2.7 is used for consistency with Abaqus in the following description.
+The python extension module requires some additional dependencies. First, the procedure only works on Linux using the bash shell. Windows users can use the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about). In addition, `gfortran` 4.6+ is required. Type `gfortran --version` to check if you have this available. The remaining dependencies are python packages and can be installed as follows. The Python extension module works with Python 2 and 3; Python 2.7 is used for consistency with Abaqus in the following description.
 
 Using [Conda](https://conda.io/docs/user-guide/getting-started.html) significantly simplifies the setup process, so it is assumed that you have a recent version of Conda available (see the [Conda installation guide](https://conda.io/docs/user-guide/install/index.html)). Further, the bash scripts described below include calls to Conda, so they will not work correctly without installing and configuring Conda as follows. Add the Conda-Forge channel by typing:
 ```
 $ conda config --add channels conda-forge
 ```
 
-Conda stores python packages in containers called environments. Create a new environment:
+Conda stores Python packages in containers called environments. Create a new environment:
 ```
 $ conda create --name compdam python=2.7
 ```
@@ -623,10 +643,10 @@ which will add `(compdam)` to the prompt. Install `numpy`, `matplotlib`, and `f9
 ```
 After typing 'y' in response to the prompt asking if you would like to proceed, Conda will install `f90wrap` and all of its dependencies. This completes the setup process. These steps only need to be executed once.
 
-Note, you can exit the Conda environment by typing `source deactivate`. When you open a new session, you will need to activate the conda environment by typing `source activate compdam`.
+Note, you can exit the Conda environment by typing `source deactivate`. When you open a new session, you will need to activate the Conda environment by typing `source activate compdam`.
 
 ### Example usage
-This section describes how to compile CompDam into a python extension module and run a simple example.
+This section describes how to compile CompDam into a Python extension module and run a simple example.
 
 The relevant files are in the `pyextmod` directory, so set `pyextmod` as your current working directory.
 
@@ -646,11 +666,11 @@ It is necessary to recompile the CompDam after making changes to the Fortran cod
 Note that portions of CompDam that are specific to Abaqus are hidden from `f90wrap` using the preprocessor directive `#ifndef PYEXT`.
 
 ### Associated scripts
-In the `tests` directory the shell scripts `pyextmod_compile.sh` and `pyextmod_run.sh` are available to help streamline execution of the python extension module. These two scripts assume that conda environment called `compdam` is available with `abaverify` and `f90wrap`. Both must be executed with the `-i` option. The script `pyextmod_run.sh` loads a debug file and executes the specified DGD routine. The DGD routine and the debug file are specified as arguments as follows:
+In the `tests` directory the shell scripts `pyextmod_compile.sh` and `pyextmod_run.sh` are available to help streamline execution of the python extension module. These two scripts assume that Conda environment called `compdam` is available with `abaverify` and `f90wrap`. Both must be executed with the `-i` option. The script `pyextmod_run.sh` loads a debug file and executes the specified DGD routine. The DGD routine and the debug file are specified as arguments as follows:
 ```
 $ bash -i pyextmod_run.sh dgdevolve <job-name>
 ```
-The `<job-name>` is the abaqus job name where it is assumed that the debug file resides in the testOutput folder with the name `job-name-1-debug-0.py`
+The `<job-name>` is the Abaqus job name where it is assumed that the debug file resides in the testOutput folder with the name `job-name-1-debug-0.py`
 
 In the `pyextmod` directory, the `helpers.py` file includes logic to load debug.py files.
 
@@ -659,11 +679,15 @@ In the `pyextmod` directory, the `helpers.py` file includes logic to load debug.
 This section includes a brief summary of each test implemented in the `tests` folder. The input deck file names briefly describe the test. All of the input decks start with `test_<elementType>_` and end with a few words describing the test. A more detailed description for each is given below:
 - *elastic_fiberTension*: Demonstrates the elastic response in the 1-direction under prescribed extension. The 1-direction stress-strain curve has the modulus E1.
 - *elastic_matrixTension*: Demonstrates the elastic response in the 2-direction under prescribed extension. The 2-direction stress-strain curve has the modulus E2.
+- *elastic_simpeShear12*: Demonstrates the elastic response in the 1-2 plane. The 1-2 plane stress-strain curve has the module G12.
 - *elementSize*: Verifies that the characteristic element lengths Lc1, Lc2, and Lc3 are being properly calculated.
+- *error*: Verifies that analyses can cleanly terminate upon encountering an error within the user subroutine.
 - *failureEnvelope_sig11sig22*: A parametric model in which *&sigma;<sub>11</sub>* is swept from *-X<sub>C</sub>* to *X<sub>T</sub>* and *&sigma;<sub>22</sub>* is swept from *-Y<sub>C</sub>* to *Y<sub>T</sub>* in order to re-create the corresponding failure envelope.
 - *failureEnvelope_sig12sig22*: A parametric model in which *&tau;<sub>12</sub>* is swept from *0* to *S<sub>L</sub>* and *&sigma;<sub>22</sub>* is swept from *-Y<sub>C</sub>* to *Y<sub>T</sub>* in order to re-create the corresponding failure envelope.
 - *failureEnvelope_sig12sig23*: A parametric model in which *&tau;<sub>12</sub>* is swept from *0* to *S<sub>L</sub>* and *&tau;<sub>23</sub>* is swept from *0* to *S<sub>T</sub>* in order to re-create the corresponding failure envelope.
-- *fiberCompression_CDM*: Demonstrates the constitutive response in the 1-direction under prescribed shortening. The 1-direction stress-strain curve is trilinear. A conventional CDM approach to material degradation is used.
+- *fatigue_normal*: Demonstrates the traction-displacement curve of a cohesive law subjected to mode I fatigue loading.
+- *fatigue_shear13*: Demonstrates the traction-displacement curve of a cohesive law subjected to shear fatigue loading in the 1-3 plane.
+- *fiberCompression_BL*: Demonstrates the constitutive response in the 1-direction under prescribed shortening. The 1-direction stress-strain curve has a bilinear softening law. A conventional CDM approach to material degradation is used.
 - *fiberCompression_FKT*: Demonstrates the constitutive response in the 1-direction under prescribed shortening. The fiber kink band model is used. `FF` indicates that the fiber failure criterion is enabled. `FN` indicates that fiber nonlinearity is enabled.
 - *fiberLoadReversal*: Demonstrates the constitutive response in the 1-direction under prescribed extension and shortening reversals. The 1-direction stress-strain curve shows the intended behavior under load reversal.
 - *fiberTension*: Demonstrates the constitutive response in the 1-direction under prescribed extension. The 1-direction stress-strain curve is trilinear.
