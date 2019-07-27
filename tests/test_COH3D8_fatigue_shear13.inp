@@ -98,7 +98,7 @@
 2
 8, 1, 1.0, 7, 1, -1.0
 **
-*Filter, name=haltOnFailure, operator=MAX, limit=1.0, halt=ANALYSIS
+*Filter, name=haltOnFailure, operator=MAX, limit=1.0, halt
 ********************************************************************************
 *Step, name=Load, nlgeom=YES
 *Dynamic, Explicit
