@@ -266,7 +266,7 @@ Contains
     Logical :: iFound
     Double Precision, parameter :: one=1.d0, two=2.d0
     ! -------------------------------------------------------------------- !
-    Do i = 0,49; RTable(i) = -1.50d0 + 0.05d0*i; End Do
+    Do i = 1,50; RTable(i) = -1.50d0 + 0.05d0*(i-1); End Do
 
     BetTable(1)=	11.916971
     BetTable(2)=	12.058467
