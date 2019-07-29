@@ -17,22 +17,29 @@ logLevel = 2 // Default value: 2
 // logger format (1=log file, 2=csv)
 logFormat = 1
 
-// penalty stiffness multiplier, K/(E/thickness) = penStiffMult, Double precision
-penStiffMult = 1.d4 // Default value: 1.d+4
 
+// fatigue analysis step number, Integer
+fatigue_step = 1000000
 
 // fatigue loading R ratio, Double Precision
-fatigue_R_ratio = 0.1d0
+fatigue_R_ratio = 0.1d0 // Default value: 0.1d0
 
-// fatigue scale factor for fatigue cycles per solution increment, Double Precision
-cycles_per_increment = 1.d-4
+// fatigue cycles per solution increment (initial), Double Precision
+cycles_per_increment_init = 1.d-4 // Default value: 1.d-4
+// fatigue cycles per solution increment (maximum), Double Precision
+cycles_per_increment_max = 1.d5 // Default value: 1.d5
+// fatigue cycles per solution increment (minimum), Double Precision
+cycles_per_increment_min = 1.d-5 // Default value: 1.d-5
+// Percent change to fatigue cycles per solution increment when rate of energy dissipation is out-of-range, Double Precision
+cycles_per_increment_mod = 0.1d0 // Default value: 0.1d0
 
-// thresholds for fatigue damage progression, Double precision
-fatigue_damage_min_threshold = 5.d-7
-fatigue_damage_max_threshold = 1.d-4
+// thresholds for fatigue damage progression per solution increment in terms of percent fracture toughness, Double precision
+fatigue_damage_min_threshold = 5.d-7 // Default value: 5.d-7
+fatigue_damage_max_threshold = 1.d-4 // Default value: 1.d-4
 
-// first analysis step to model fatigue, Integer
-fatigue_step = 1000000
+
+// penalty stiffness multiplier, K/(E/thickness) = penStiffMult, Double precision
+penStiffMult = 1.d4 // Default value: 1.d+4
 
 
 // increment for which the matrix failure criterion is evaluated [degrees], Integer
@@ -45,7 +52,6 @@ cutbacks_max = 4 // Default value: 4
 cutback_amount = 0.5d0 // Default value: 0.5d0
 // DGD equilibrium convergence tolerance factor: tol_DGD_f = tol_{DGD}/YT, Double precision
 tol_DGD_f = 1.d-4 // Default value: 1.d-4
-
 
 // minimum amount of fracture energy dissipated per MD increment, Double precision
 dGdGc_min = 1.d-12 // Default value: 1.d-12

@@ -109,6 +109,7 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   Integer :: n
   Integer :: values(8)
   Type(parameters) :: p
+  Double Precision, Parameter :: zero=0.d0, one=1.d0
 
   Dimension INTV(1), REALV(1)    ! For Abaqus warning messages
   Character(len=8) CHARV(1)      ! For Abaqus warning messages
@@ -117,11 +118,11 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   Integer :: fatigue_parameters(2), increment_old
   Double Precision :: cycles_per_increment(1), cycles_per_increment_old
   Double Precision :: cycles, cycles_old
-  ! fatigue_parameters(1) is an integer flag for whether fatigue damage is considered in the curret step (1 = .TRUE.)
-  ! fatigue_parameters(2) is an integer flag for whether fatigue damage has propagated above a threshold value (1 = .TRUE.)
+  ! fatigue_parameters(1) is an integer flag for whether the current analysis step is a fatigue step (1 = .TRUE.)
+  ! fatigue_parameters(2) describes the current rate of fatigue damage propagation (0 = slow, 1 = in-range, 2 = fast)
   Pointer(ptr_fatigue_int, fatigue_parameters)  ! pointer for fatigue parameters integer array
   Pointer(ptr_fatigue_dbl, cycles_per_increment)  ! pointer for fatigue parameters real array
-  Logical :: update_inc2cycles_log
+  Logical :: update_inc2cycles_log  ! flag to update the inc2cycles log
 
   ! MPI
   Integer :: ABA_COMM_WORLD  ! communicator that Abaqus defines for its worker processes
@@ -196,7 +197,7 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
 
     ! Global integer array for fatigue parameters
     ptr_fatigue_int = SMAIntArrayCreate(1, 2, 0)  ! create the pointer for fatigue parameters array
-    ptr_fatigue_dbl = SMARealArrayCreateDP(2, 1, p%cycles_per_increment)  ! create the pointer for fatigue parameters array
+    ptr_fatigue_dbl = SMARealArrayCreateDP(2, 1, p%cycles_per_increment_init)  ! create the pointer for fatigue parameters array
 
     ! Initialize random numbers for fiber misalignment here
     If (p%fkt_random_seed) Then
@@ -223,9 +224,9 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
     ! Check to see if this is a fatigue step
     FatigueStepSetup: If (kStep == p%fatigue_step) Then  ! This is a fatigue step
 
-      fatigue_parameters(1) = 1  ! Set fatigue_parameter(1) (fatigue step indicator for within the VUMAT) to 1
+      fatigue_parameters(1) = 1
 
-      ! Create a log file for the ratio of solution increments to fatigue cycles
+      ! Create a log file for the fatigue cycles per solution increment
       Call VGETRANK(process_rank)
       If (process_rank == 0) Then
         ptr_fatigue_dbl = SMARealArrayAccess(2)
@@ -234,13 +235,13 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
         inc2cycles_filename = trim(outputDir) // '/' // trim(jobName) // '_inc2cycles.log'
         open(inc2cycles_file_unit, file=inc2cycles_filename, status='replace', action='write')
         write(inc2cycles_file_unit,"(A9, A22, A22)") 'increment', 'cycles_per_increment', 'cycles'
-        write(inc2cycles_file_unit,"(I9, ES22.12E2, ES22.12E2)") 0, cycles_per_increment(1), 0.0
+        write(inc2cycles_file_unit,"(I9, ES22.12E2, ES22.12E2)") 0, cycles_per_increment(1), zero
         close(inc2cycles_file_unit)
       End If
 
     Else FatigueStepSetup  ! This is not a fatigue step
 
-      fatigue_parameters(1) = 0  ! Set fatigue_parameter(1) (fatigue step indicator for within the VUMAT) to 0
+      fatigue_parameters(1) = 0
 
     End If FatigueStepSetup
 
@@ -250,7 +251,7 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
     ! If analysis_status has been changed, cleanly terminate the analysis
     If (analysis_status == 0) i_Array(i_int_iStatus) = j_int_TerminateAnalysis
 
-    ptr_fatigue_int = SMAIntArrayAccess(1)  ! Access the pointer for fatigue parameters
+    ptr_fatigue_int = SMAIntArrayAccess(1)  ! Access the pointer for fatigue_parameters
 
     ! Check the rate of fatigue damage progression and adjust solution parameters if necessary
     FatigueIncrement: If (fatigue_parameters(1) == 1) Then
@@ -266,14 +267,17 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
       FatigueParameterUpdate: If (fatigue_parameters(2) == 1) Then
         Continue
       Else FatigueParameterUpdate
+        p = loadParameters()  ! Load the CompDam solution parameters
         update_inc2cycles_log = .FALSE.
-        ! If fatigue damage has not progressed...
-        If (fatigue_parameters(2) == 0 .AND. cycles_per_increment(1) < 1.d5) Then
-          cycles_per_increment(1) = cycles_per_increment(1)*1.1d0  ! ...increase the number of cycles represented by a solution increment.
+        ! If fatigue damage is progressing too slowly...
+        If (fatigue_parameters(2) == 0 .AND. cycles_per_increment(1) < p%cycles_per_increment_max) Then
+            ! ...increase the number of cycles represented by a solution increment.
+          cycles_per_increment(1) = MIN(cycles_per_increment(1)*(one + p%cycles_per_increment_mod), p%cycles_per_increment_max)
           update_inc2cycles_log = .TRUE.
         ! If fatigue damage is progressing too quickly...
-        Else If (fatigue_parameters(2) == 2 .AND. cycles_per_increment(1) > 1.d-5) Then
-          cycles_per_increment(1) = cycles_per_increment(1)/1.1d0  ! ...decrease the number of cycles represented by a solution increment.
+        Else If (fatigue_parameters(2) == 2 .AND. cycles_per_increment(1) > p%cycles_per_increment_min) Then
+          ! ...decrease the number of cycles represented by a solution increment.
+          cycles_per_increment(1) = MAX(cycles_per_increment(1)/(one + p%cycles_per_increment_mod), p%cycles_per_increment_min)
           update_inc2cycles_log = .TRUE.
         End If
 

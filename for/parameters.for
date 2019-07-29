@@ -34,10 +34,13 @@ Module parameters_Mod
     Double Precision :: fkt_init_misalignment_polar_shape         ! Initial fiber misalignment polar shape parameter [degrees]
     Double Precision :: fkt_init_misalignment_polar_scale         ! Initial fiber misalignment polar standard deviation [degrees]
     Double Precision :: fatigue_R_ratio                           ! R ratio for cohesive fatigue model, sigma_min / sigma_max
-    Double Precision :: cycles_per_increment                      ! Exponent for converting solution increments to fatigue cycles [cycles/increment]
+    Double Precision :: cycles_per_increment_init                 ! Fatigue cycles per solution increment
+    Double Precision :: cycles_per_increment_max                  ! Maximum fatigue cycles per solution increment
+    Double Precision :: cycles_per_increment_min                  ! Minimum fatigue cycles per solution increment
+    Double Precision :: cycles_per_increment_mod                  ! Percent change in cycles_per_increment when out of range
     Double Precision :: fatigue_damage_min_threshold              ! Minimum required incremental fatigue damage to count as progression
     Double Precision :: fatigue_damage_max_threshold              ! Maximum allowable incremental fatigue damage per solution increment
-    Integer :: fatigue_step                                       ! Step number to start fatigue analysis
+    Integer :: fatigue_step                                       ! Step number for fatigue analysis
 
     ! min and max values for acceptable range
     Integer, private :: logLevel_min, logLevel_max
@@ -63,7 +66,10 @@ Module parameters_Mod
     Double Precision, private :: fkt_init_misalignment_polar_shape_min, fkt_init_misalignment_polar_shape_max
     Double Precision, private :: fkt_init_misalignment_polar_scale_min, fkt_init_misalignment_polar_scale_max
     Double Precision, private :: fatigue_R_ratio_min, fatigue_R_ratio_max
-    Double Precision, private :: cycles_per_increment_min, cycles_per_increment_max
+    Double Precision, private :: cycles_per_increment_init_min, cycles_per_increment_init_max
+    Double Precision, private :: cycles_per_increment_max_min, cycles_per_increment_max_max
+    Double Precision, private :: cycles_per_increment_min_min, cycles_per_increment_min_max
+    Double Precision, private :: cycles_per_increment_mod_min, cycles_per_increment_mod_max
     Double Precision, private :: fatigue_damage_min_threshold_min, fatigue_damage_min_threshold_max
     Double Precision, private :: fatigue_damage_max_threshold_min, fatigue_damage_max_threshold_max
     Integer, private :: fatigue_step_min, fatigue_step_max
@@ -264,8 +270,17 @@ Contains
           Case ('fatigue_R_ratio')
             Call verifyAndSaveProperty_dbl(trim(key), value, p%fatigue_R_ratio_min, p%fatigue_R_ratio_max, p%fatigue_R_ratio)
 
-          Case ('cycles_per_increment')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_min, p%cycles_per_increment_max, p%cycles_per_increment)
+          Case ('cycles_per_increment_init')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_init_min, p%cycles_per_increment_init_max, p%cycles_per_increment_init)
+
+          Case ('cycles_per_increment_mod')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_mod_min, p%cycles_per_increment_mod_max, p%cycles_per_increment_mod)
+
+          Case ('cycles_per_increment_max')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_max_min, p%cycles_per_increment_max_max, p%cycles_per_increment_max)
+
+          Case ('cycles_per_increment_min')
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_min_min, p%cycles_per_increment_min_max, p%cycles_per_increment_min)
 
           Case ('fatigue_damage_min_threshold')
             Call verifyAndSaveProperty_dbl(trim(key), value, p%fatigue_damage_min_threshold_min, p%fatigue_damage_min_threshold_max, p%fatigue_damage_min_threshold)
@@ -321,9 +336,12 @@ Contains
     p%fkt_init_misalignment_polar_shape = 0.676d0
     p%fkt_init_misalignment_polar_scale = 2.25d0
     p%fatigue_R_ratio = 0.1d0
-    p%cycles_per_increment = 1.d-4  ! 1 solution increment equals 1.d-4 fatigue cycle
-    p%fatigue_damage_min_threshold = 5.d-7  ! 2 million solution increments to fail an element at this rate
-    p%fatigue_damage_max_threshold = 1.d-4
+    p%cycles_per_increment_init = 1.d-4  ! 10,000 solution increments per fatigue cycle
+    p%cycles_per_increment_mod = 0.1d0  ! changes cycles_per_increment by 10% when out of range
+    p%cycles_per_increment_max = 1.d5
+    p%cycles_per_increment_min = 1.d-5
+    p%fatigue_damage_min_threshold = 5.d-7  ! 2,000,000 solution increments to fail an element at this rate
+    p%fatigue_damage_max_threshold = 1.d-4  ! 10,000 solution increments to fail an element at this rate
     p%fatigue_step = Huge(0)
 
     ! Maximum and minimum values for parameters to be read from CompDam.parameters file
@@ -396,8 +414,17 @@ Contains
     p%fatigue_R_ratio_min = -one
     p%fatigue_R_ratio_max = one
 
-    p%cycles_per_increment_min = 1.d-6
-    p%cycles_per_increment_max = 1.d+6
+    p%cycles_per_increment_init_min = 1.d-6
+    p%cycles_per_increment_init_max = 1.d+6
+
+    p%cycles_per_increment_mod_min = Tiny(zero)
+    p%cycles_per_increment_mod_max = 9.d0  ! corresponds to changing cycles_per_increment by a factor of 10
+
+    p%cycles_per_increment_max_min = one
+    p%cycles_per_increment_max_max = Huge(zero)
+
+    p%cycles_per_increment_min_min = Tiny(zero)
+    p%cycles_per_increment_min_max = one
 
     p%fatigue_damage_min_threshold_min = Tiny(zero)
     p%fatigue_damage_min_threshold_max = one
