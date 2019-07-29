@@ -340,7 +340,7 @@ Contains
     p%cycles_per_increment_mod = 0.1d0  ! changes cycles_per_increment by 10% when out of range
     p%cycles_per_increment_max = 1.d5
     p%cycles_per_increment_min = 1.d-5
-    p%fatigue_damage_min_threshold = 5.d-7  ! 2,000,000 solution increments to fail an element at this rate
+    p%fatigue_damage_min_threshold = 5.d-6  ! 200,000 solution increments to fail an element at this rate
     p%fatigue_damage_max_threshold = 1.d-4  ! 10,000 solution increments to fail an element at this rate
     p%fatigue_step = Huge(0)
 

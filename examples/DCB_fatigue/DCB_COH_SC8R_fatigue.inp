@@ -385,7 +385,7 @@ OPEN_TOP_A, OPEN_TOP_B, MIDDLE_TOP, END_TOP,
 0.0, 0.0, <time_1>, <AppliedDisplacement>
 ********************************************************************************
 ** Filter to halt analysis when damage grows into the coarse region
-*Filter, name=haltOnFailure, operator=MAX, limit=0.1, halt=ANALYSIS
+*Filter, name=haltOnFailure, operator=MAX, limit=1e-20, halt
 ********************************************************************************
 *Step, name=Load, nlgeom=YES
 *Dynamic, explicit
