@@ -1647,17 +1647,17 @@ Contains
     Character(len=32), parameter :: nameValueFmt = "(A,E22.15E2,A)"
     ! -------------------------------------------------------------------- !
 
-    write(101, "(A)") trim(label) // ' = ['
-    write(101, nameValueFmt) '    ', array(1,1), ','
-    write(101, nameValueFmt) '    ', array(2,2), ','
-    write(101, nameValueFmt) '    ', array(3,3), ','
-    write(101, nameValueFmt) '    ', array(1,2), ','
-    write(101, nameValueFmt) '    ', array(2,3), ','
-    write(101, nameValueFmt) '    ', array(3,1), ','
-    write(101, nameValueFmt) '    ', array(2,1), ','
-    write(101, nameValueFmt) '    ', array(3,2), ','
-    write(101, nameValueFmt) '    ', array(1,3)
-    write(101, "(A)") ']'
+    write(fileUnit, "(A)") trim(label) // ' = ['
+    write(fileUnit, nameValueFmt) '    ', array(1,1), ','
+    write(fileUnit, nameValueFmt) '    ', array(2,2), ','
+    write(fileUnit, nameValueFmt) '    ', array(3,3), ','
+    write(fileUnit, nameValueFmt) '    ', array(1,2), ','
+    write(fileUnit, nameValueFmt) '    ', array(2,3), ','
+    write(fileUnit, nameValueFmt) '    ', array(3,1), ','
+    write(fileUnit, nameValueFmt) '    ', array(2,1), ','
+    write(fileUnit, nameValueFmt) '    ', array(3,2), ','
+    write(fileUnit, nameValueFmt) '    ', array(1,3)
+    write(fileUnit, "(A)") ']'
 
   End Subroutine write3x3ToFile
 

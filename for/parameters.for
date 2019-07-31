@@ -567,15 +567,15 @@ Contains
     write(fileUnit, nameValueFmt) '    "schaefer_nr_tolerance": ', p%schaefer_nr_tolerance, ', '
     write(fileUnit, "(A,I9,A)")   '    "schaefer_nr_counter_limit": ', p%schaefer_nr_counter_limit, ', '
     If (p%terminate_on_no_convergence) Then
-      write(101,"(A)") '    "terminate_on_no_convergence": True,'
+      write(fileUnit,"(A)") '    "terminate_on_no_convergence": True,'
     Else
-      write(101,"(A)") '    "terminate_on_no_convergence": False,'
+      write(fileUnit,"(A)") '    "terminate_on_no_convergence": False,'
     End If
     write(fileUnit, nameValueFmt) '    "debug_kill_at_total_time": ', p%debug_kill_at_total_time, ', '
     If (p%fkt_random_seed) Then
-      write(101,"(A)") '    "fkt_random_seed": True,'
+      write(fileUnit,"(A)") '    "fkt_random_seed": True,'
     Else
-      write(101,"(A)") '    "fkt_random_seed": False,'
+      write(fileUnit,"(A)") '    "fkt_random_seed": False,'
     End If
     write(fileUnit, nameValueFmt) '    "fkt_init_misalignment_azi_mu": ', p%fkt_init_misalignment_azi_mu, ', '
     write(fileUnit, nameValueFmt) '    "fkt_init_misalignment_azi_sigma": ', p%fkt_init_misalignment_azi_sigma, ', '

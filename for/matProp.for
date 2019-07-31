@@ -1280,96 +1280,96 @@ Contains
     nameValueFmt = "(A,E21.15E2,A)"
 
     ! Write the feature flags
-    write(101,"(A)") 'featureFlags = {'
-    write(101, "(A,A,A)") '    "integer": "', m%featureFlags, '",'
+    write(fileUnit,"(A)") 'featureFlags = {'
+    write(fileUnit, "(A,A,A)") '    "integer": "', m%featureFlags, '",'
     If (m%matrixDam) Then
-      write(101,"(A)") '    "matrixDam": True,'
+      write(fileUnit,"(A)") '    "matrixDam": True,'
     Else
-      write(101,"(A)") '    "matrixDam": False,'
+      write(fileUnit,"(A)") '    "matrixDam": False,'
     End If
     If (m%shearNonlinearity12) Then
-      write(101,"(A)") '    "shearNonlinearity12": True,'
+      write(fileUnit,"(A)") '    "shearNonlinearity12": True,'
     Else
-      write(101,"(A)") '    "shearNonlinearity12": False,'
+      write(fileUnit,"(A)") '    "shearNonlinearity12": False,'
     End If
     If (m%shearNonlinearity13) Then
-      write(101,"(A)") '    "shearNonlinearity13": True,'
+      write(fileUnit,"(A)") '    "shearNonlinearity13": True,'
     Else
-      write(101,"(A)") '    "shearNonlinearity13": False,'
+      write(fileUnit,"(A)") '    "shearNonlinearity13": False,'
     End If
     If (m%schapery) Then
-      write(101,"(A)") '    "schapery": True,'
+      write(fileUnit,"(A)") '    "schapery": True,'
     Else
-      write(101,"(A)") '    "schapery": False,'
+      write(fileUnit,"(A)") '    "schapery": False,'
     End If
     If (m%schaefer) Then
-      write(101,"(A)") '    "schaefer": True,'
+      write(fileUnit,"(A)") '    "schaefer": True,'
     Else
-      write(101,"(A)") '    "schaefer": False,'
+      write(fileUnit,"(A)") '    "schaefer": False,'
     End If
 
     If (m%fiberTenDam) Then
-      write(101,"(A)") '    "fiberTenDam": True,'
+      write(fileUnit,"(A)") '    "fiberTenDam": True,'
     Else
-      write(101,"(A)") '    "fiberTenDam": False,'
+      write(fileUnit,"(A)") '    "fiberTenDam": False,'
     End If
     If (m%fiberCompDamBL) Then
-      write(101,"(A)") '    "fiberCompDamBL": True,'
+      write(fileUnit,"(A)") '    "fiberCompDamBL": True,'
     Else
-      write(101,"(A)") '    "fiberCompDamBL": False,'
+      write(fileUnit,"(A)") '    "fiberCompDamBL": False,'
     End If
     If (m%fiberCompDamFKT12) Then
-      write(101,"(A)") '    "fiberCompDamFKT12": True,'
+      write(fileUnit,"(A)") '    "fiberCompDamFKT12": True,'
     Else
-      write(101,"(A)") '    "fiberCompDamFKT12": False,'
+      write(fileUnit,"(A)") '    "fiberCompDamFKT12": False,'
     End If
     If (m%fiberCompDamFKT13) Then
-      write(101,"(A)") '    "fiberCompDamFKT13": True,'
+      write(fileUnit,"(A)") '    "fiberCompDamFKT13": True,'
     Else
-      write(101,"(A)") '    "fiberCompDamFKT13": False,'
+      write(fileUnit,"(A)") '    "fiberCompDamFKT13": False,'
     End If
     If (m%friction) Then
-      write(101,"(A)") '    "friction": True'
+      write(fileUnit,"(A)") '    "friction": True'
     Else
-      write(101,"(A)") '    "friction": False'
+      write(fileUnit,"(A)") '    "friction": False'
     End If
-    write(101, "(A)") '}'
+    write(fileUnit, "(A)") '}'
 
     ! Write the material properties
-    write(101, "(A)") 'm = ['
-    write(101, nameValueFmt) '    ', m%E1, ',  # 9: E1'
-    write(101, nameValueFmt) '    ', m%E2, ',  # 10: E2'
-    write(101, nameValueFmt) '    ', m%G12, ',  # 11: G12'
-    write(101, nameValueFmt) '    ', m%v12, ',  # 12: v12'
-    write(101, nameValueFmt) '    ', m%v23, ',  # 13: v23'
-    write(101, nameValueFmt) '    ', m%YT, ',  # 14: YT'
-    write(101, nameValueFmt) '    ', m%SL, ',  # 15: SL'
-    write(101, nameValueFmt) '    ', m%GYT, ',  # 16: GYT'
-    write(101, nameValueFmt) '    ', m%GSL, ',  # 17: GSL'
-    write(101, nameValueFmt) '    ', m%eta_BK, ',  # 18: eta_BK'
-    write(101, nameValueFmt) '    ', m%YC, ',  # 19: YC'
-    write(101, nameValueFmt) '    ', m%alpha0, ',  # 20: alpha0'
-    write(101, nameValueFmt) '    ', m%E3, ',  # 21: E3'
-    write(101, nameValueFmt) '    ', m%G13, ',  # 22: G13'
-    write(101, nameValueFmt) '    ', m%G23, ',  # 23: G23'
-    write(101, nameValueFmt) '    ', m%v13, ',  # 24: v13'
-    write(101, nameValueFmt) '    ', m%cte(1), ',  # 25: cte11'
-    write(101, nameValueFmt) '    ', m%cte(2), ',  # 26: cte22'
-    write(101, nameValueFmt) '    ', m%aPL, ',  # 27: aPL'
-    write(101, nameValueFmt) '    ', m%nPL, ',  # 28: nPL'
-    write(101, nameValueFmt) '    ', m%XT, ',  # 29: XT'
-    write(101, nameValueFmt) '    ', m%fXT, ',  # 30: fXT'
-    write(101, nameValueFmt) '    ', m%GXT, ',  # 31: GXT'
-    write(101, nameValueFmt) '    ', m%fGXT, ',  # 32: fGXT'
-    write(101, nameValueFmt) '    ', m%XC, ',  # 33: XC'
-    write(101, nameValueFmt) '    ', m%fXC, ',  # 34: fXC'
-    write(101, nameValueFmt) '    ', m%GXC, ',  # 35: GXC'
-    write(101, nameValueFmt) '    ', m%fGXC, ',  # 36: fGXC'
-    write(101, nameValueFmt) '    ', m%cl, ',  # 37: cl'
-    write(101, nameValueFmt) '    ', m%w_kb, ',  # 38: w_kb'
-    write(101, nameValueFmt) '    ', zero, ',  # 39: none'
-    write(101, nameValueFmt) '    ', m%mu, ',  # 40: mu'
-    write(101, "(A)") ']'
+    write(fileUnit, "(A)") 'm = ['
+    write(fileUnit, nameValueFmt) '    ', m%E1, ',  # 9: E1'
+    write(fileUnit, nameValueFmt) '    ', m%E2, ',  # 10: E2'
+    write(fileUnit, nameValueFmt) '    ', m%G12, ',  # 11: G12'
+    write(fileUnit, nameValueFmt) '    ', m%v12, ',  # 12: v12'
+    write(fileUnit, nameValueFmt) '    ', m%v23, ',  # 13: v23'
+    write(fileUnit, nameValueFmt) '    ', m%YT, ',  # 14: YT'
+    write(fileUnit, nameValueFmt) '    ', m%SL, ',  # 15: SL'
+    write(fileUnit, nameValueFmt) '    ', m%GYT, ',  # 16: GYT'
+    write(fileUnit, nameValueFmt) '    ', m%GSL, ',  # 17: GSL'
+    write(fileUnit, nameValueFmt) '    ', m%eta_BK, ',  # 18: eta_BK'
+    write(fileUnit, nameValueFmt) '    ', m%YC, ',  # 19: YC'
+    write(fileUnit, nameValueFmt) '    ', m%alpha0, ',  # 20: alpha0'
+    write(fileUnit, nameValueFmt) '    ', m%E3, ',  # 21: E3'
+    write(fileUnit, nameValueFmt) '    ', m%G13, ',  # 22: G13'
+    write(fileUnit, nameValueFmt) '    ', m%G23, ',  # 23: G23'
+    write(fileUnit, nameValueFmt) '    ', m%v13, ',  # 24: v13'
+    write(fileUnit, nameValueFmt) '    ', m%cte(1), ',  # 25: cte11'
+    write(fileUnit, nameValueFmt) '    ', m%cte(2), ',  # 26: cte22'
+    write(fileUnit, nameValueFmt) '    ', m%aPL, ',  # 27: aPL'
+    write(fileUnit, nameValueFmt) '    ', m%nPL, ',  # 28: nPL'
+    write(fileUnit, nameValueFmt) '    ', m%XT, ',  # 29: XT'
+    write(fileUnit, nameValueFmt) '    ', m%fXT, ',  # 30: fXT'
+    write(fileUnit, nameValueFmt) '    ', m%GXT, ',  # 31: GXT'
+    write(fileUnit, nameValueFmt) '    ', m%fGXT, ',  # 32: fGXT'
+    write(fileUnit, nameValueFmt) '    ', m%XC, ',  # 33: XC'
+    write(fileUnit, nameValueFmt) '    ', m%fXC, ',  # 34: fXC'
+    write(fileUnit, nameValueFmt) '    ', m%GXC, ',  # 35: GXC'
+    write(fileUnit, nameValueFmt) '    ', m%fGXC, ',  # 36: fGXC'
+    write(fileUnit, nameValueFmt) '    ', m%cl, ',  # 37: cl'
+    write(fileUnit, nameValueFmt) '    ', m%w_kb, ',  # 38: w_kb'
+    write(fileUnit, nameValueFmt) '    ', zero, ',  # 39: none'
+    write(fileUnit, nameValueFmt) '    ', m%mu, ',  # 40: mu'
+    write(fileUnit, "(A)") ']'
 
   End Subroutine writeMaterialPropertiesToFile
 

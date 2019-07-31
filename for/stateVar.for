@@ -352,157 +352,157 @@ Contains
     nameValueFmt = "(A,E21.15E2,A)"
 
     ! Write the current state variables
-    write(101, "(A)") 'sv = ['
-    write(101, nameValueFmt) '    ', sv%d2, ',  # d2'
-    write(101, nameValueFmt) '    ', sv%Fb1, ',  # Fb1'
-    write(101, nameValueFmt) '    ', sv%Fb2, ',  # Fb2'
-    write(101, nameValueFmt) '    ', sv%Fb3, ',  # Fb3'
-    write(101, nameValueFmt) '    ', sv%B, ',  # B'
-    write(101, nameValueFmt) '    ', sv%Lc(1), ',  # Lc1'
-    write(101, nameValueFmt) '    ', sv%Lc(2), ',  # Lc2'
-    write(101, nameValueFmt) '    ', sv%Lc(3), ',  # Lc3'
-    write(101, nameValueFmt) '    ', sv%FIm, ',  # FIm'
-    write(101, "(A,I5,A)")   '    ', sv%alpha, ',  # alpha'
-    write(101, "(A,I1,A)")   '    ', sv%STATUS, ',  # STATUS'
+    write(fileUnit, "(A)") 'sv = ['
+    write(fileUnit, nameValueFmt) '    ', sv%d2, ',  # d2'
+    write(fileUnit, nameValueFmt) '    ', sv%Fb1, ',  # Fb1'
+    write(fileUnit, nameValueFmt) '    ', sv%Fb2, ',  # Fb2'
+    write(fileUnit, nameValueFmt) '    ', sv%Fb3, ',  # Fb3'
+    write(fileUnit, nameValueFmt) '    ', sv%B, ',  # B'
+    write(fileUnit, nameValueFmt) '    ', sv%Lc(1), ',  # Lc1'
+    write(fileUnit, nameValueFmt) '    ', sv%Lc(2), ',  # Lc2'
+    write(fileUnit, nameValueFmt) '    ', sv%Lc(3), ',  # Lc3'
+    write(fileUnit, nameValueFmt) '    ', sv%FIm, ',  # FIm'
+    write(fileUnit, "(A,I5,A)")   '    ', sv%alpha, ',  # alpha'
+    write(fileUnit, "(A,I1,A)")   '    ', sv%STATUS, ',  # STATUS'
     If (m%shearNonlinearity12) Then
-      write(101, nameValueFmt) '    ', sv%Plas12, ',  # Plas12'
-      write(101, nameValueFmt) '    ', sv%Inel12, ',  # Inel12'
+      write(fileUnit, nameValueFmt) '    ', sv%Plas12, ',  # Plas12'
+      write(fileUnit, nameValueFmt) '    ', sv%Inel12, ',  # Inel12'
     Else If (m%schapery) Then
-      write(101, nameValueFmt) '    ', sv%Sr, ',  # Sr'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV13'
+      write(fileUnit, nameValueFmt) '    ', sv%Sr, ',  # Sr'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV13'
     Else
-      write(101, nameValueFmt) '    ', zero, ',  # SDV12'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV13'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV12'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV13'
     End If
-    write(101, nameValueFmt) '    ', sv%rfT, ',  # rfT'
-    write(101, nameValueFmt) '    ', sv%slide(1), ',  # slide1'
-    write(101, nameValueFmt) '    ', sv%slide(2), ',  # slide2'
-    write(101, nameValueFmt) '    ', sv%rfC, ',  # rfC'
-    write(101, nameValueFmt) '    ', sv%d1T, ',  # d1T'
+    write(fileUnit, nameValueFmt) '    ', sv%rfT, ',  # rfT'
+    write(fileUnit, nameValueFmt) '    ', sv%slide(1), ',  # slide1'
+    write(fileUnit, nameValueFmt) '    ', sv%slide(2), ',  # slide2'
+    write(fileUnit, nameValueFmt) '    ', sv%rfC, ',  # rfC'
+    write(fileUnit, nameValueFmt) '    ', sv%d1T, ',  # d1T'
     If (m%fiberCompDamBL .OR. m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) Then
-      write(101, nameValueFmt) '    ', sv%d1C, ',  # d1C'
+      write(fileUnit, nameValueFmt) '    ', sv%d1C, ',  # d1C'
     Else If (sv%nstatev >= 19) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV19'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV19'
     End If
     If (m%shearNonlinearity13) Then
-      write(101, nameValueFmt) '    ', sv%Plas13, ',  # Plas13'
-      write(101, nameValueFmt) '    ', sv%Inel13, ',  # Inel13'
+      write(fileUnit, nameValueFmt) '    ', sv%Plas13, ',  # Plas13'
+      write(fileUnit, nameValueFmt) '    ', sv%Inel13, ',  # Inel13'
     Else If (sv%nstatev >= 21) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV20'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV21'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV20'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV21'
     End If
     If (m%fiberCompDamFKT12) Then
-      write(101, nameValueFmt) '    ', sv%phi0_12, ',  # phi0_12'
-      write(101, nameValueFmt) '    ', sv%gamma_12, ',  # gamma_12'
+      write(fileUnit, nameValueFmt) '    ', sv%phi0_12, ',  # phi0_12'
+      write(fileUnit, nameValueFmt) '    ', sv%gamma_12, ',  # gamma_12'
     Else If (sv%nstatev >= 23) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV22'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV23'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV22'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV23'
     End If
     If (m%fiberCompDamFKT13) Then
-      write(101, nameValueFmt) '    ', sv%phi0_12, ',  # phi0_13'
-      write(101, nameValueFmt) '    ', sv%gamma_12, ',  # gamma_13'
+      write(fileUnit, nameValueFmt) '    ', sv%phi0_12, ',  # phi0_13'
+      write(fileUnit, nameValueFmt) '    ', sv%gamma_12, ',  # gamma_13'
     Else If (sv%nstatev >= 25) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV24'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV25'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV24'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV25'
     End If
     If (sv%nstatev >= 26) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV26'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV26'
     End If
     If (m%schaefer) Then
-      write(101, nameValueFmt) '    ', sv%Ep_schaefer(1), ',  # Ep1'
-      write(101, nameValueFmt) '    ', sv%Ep_schaefer(2), ',  # Ep2'
-      write(101, nameValueFmt) '    ', sv%Ep_schaefer(3), ',  # Ep3'
-      write(101, nameValueFmt) '    ', sv%Ep_schaefer(4), ',  # Ep4'
-      write(101, nameValueFmt) '    ', sv%Ep_schaefer(5), ',  # Ep5'
-      write(101, nameValueFmt) '    ', sv%Ep_schaefer(6), ',  # Ep6'
-      write(101, nameValueFmt) '    ', sv%fp, '  # fp1'
+      write(fileUnit, nameValueFmt) '    ', sv%Ep_schaefer(1), ',  # Ep1'
+      write(fileUnit, nameValueFmt) '    ', sv%Ep_schaefer(2), ',  # Ep2'
+      write(fileUnit, nameValueFmt) '    ', sv%Ep_schaefer(3), ',  # Ep3'
+      write(fileUnit, nameValueFmt) '    ', sv%Ep_schaefer(4), ',  # Ep4'
+      write(fileUnit, nameValueFmt) '    ', sv%Ep_schaefer(5), ',  # Ep5'
+      write(fileUnit, nameValueFmt) '    ', sv%Ep_schaefer(6), ',  # Ep6'
+      write(fileUnit, nameValueFmt) '    ', sv%fp, '  # fp1'
     Else If (sv%nstatev >= 33) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV27'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV28'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV29'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV30'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV31'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV32'
-      write(101, nameValueFmt) '    ', zero, '  #SDV33'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV27'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV28'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV29'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV30'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV31'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV32'
+      write(fileUnit, nameValueFmt) '    ', zero, '  #SDV33'
     End If
-    write(101, "(A)") ']'
+    write(fileUnit, "(A)") ']'
 
     ! Write old state variables too
 #ifndef PYEXT
-    write(101, "(A)") 'sv_old = ['
-    write(101, nameValueFmt) '    ', sv%old(1), ',  # d2'
-    write(101, nameValueFmt) '    ', sv%old(2), ',  # Fb1'
-    write(101, nameValueFmt) '    ', sv%old(3), ',  # Fb2'
-    write(101, nameValueFmt) '    ', sv%old(4), ',  # Fb3'
-    write(101, nameValueFmt) '    ', sv%old(5), ',  # B'
-    write(101, nameValueFmt) '    ', sv%old(6), ',  # Lc1'
-    write(101, nameValueFmt) '    ', sv%old(7), ',  # Lc2'
-    write(101, nameValueFmt) '    ', sv%old(8), ',  # Lc3'
-    write(101, nameValueFmt) '    ', sv%old(9), ',  # FIm'
-    write(101, "(A,I5,A)")   '    ', INT(sv%old(10)), ',  # alpha'
-    write(101, "(A,I2,A)")   '    ', INT(sv%old(11)), ',  # STATUS'
+    write(fileUnit, "(A)") 'sv_old = ['
+    write(fileUnit, nameValueFmt) '    ', sv%old(1), ',  # d2'
+    write(fileUnit, nameValueFmt) '    ', sv%old(2), ',  # Fb1'
+    write(fileUnit, nameValueFmt) '    ', sv%old(3), ',  # Fb2'
+    write(fileUnit, nameValueFmt) '    ', sv%old(4), ',  # Fb3'
+    write(fileUnit, nameValueFmt) '    ', sv%old(5), ',  # B'
+    write(fileUnit, nameValueFmt) '    ', sv%old(6), ',  # Lc1'
+    write(fileUnit, nameValueFmt) '    ', sv%old(7), ',  # Lc2'
+    write(fileUnit, nameValueFmt) '    ', sv%old(8), ',  # Lc3'
+    write(fileUnit, nameValueFmt) '    ', sv%old(9), ',  # FIm'
+    write(fileUnit, "(A,I5,A)")   '    ', INT(sv%old(10)), ',  # alpha'
+    write(fileUnit, "(A,I2,A)")   '    ', INT(sv%old(11)), ',  # STATUS'
     If (m%shearNonlinearity12) Then
-      write(101, nameValueFmt) '    ', sv%old(12), ',  # Plas12'
-      write(101, nameValueFmt) '    ', sv%old(13), ',  # Inel12'
+      write(fileUnit, nameValueFmt) '    ', sv%old(12), ',  # Plas12'
+      write(fileUnit, nameValueFmt) '    ', sv%old(13), ',  # Inel12'
     Else If (m%schapery) Then
-      write(101, nameValueFmt) '    ', sv%old(12), ',  # Sr'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV13'
+      write(fileUnit, nameValueFmt) '    ', sv%old(12), ',  # Sr'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV13'
     Else
-      write(101, nameValueFmt) '    ', zero, ',  # SDV12'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV13'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV12'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV13'
     End If
-    write(101, nameValueFmt) '    ', sv%old(14), ',  # rfT'
-    write(101, nameValueFmt) '    ', sv%old(15), ',  # slide1'
-    write(101, nameValueFmt) '    ', sv%old(16), ',  # slide2'
-    write(101, nameValueFmt) '    ', sv%old(17), ',  # rfC'
-    write(101, nameValueFmt) '    ', sv%old(18), ',  # d1T'
+    write(fileUnit, nameValueFmt) '    ', sv%old(14), ',  # rfT'
+    write(fileUnit, nameValueFmt) '    ', sv%old(15), ',  # slide1'
+    write(fileUnit, nameValueFmt) '    ', sv%old(16), ',  # slide2'
+    write(fileUnit, nameValueFmt) '    ', sv%old(17), ',  # rfC'
+    write(fileUnit, nameValueFmt) '    ', sv%old(18), ',  # d1T'
     If (m%fiberCompDamBL .OR. m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) Then
-      write(101, nameValueFmt) '    ', sv%old(19), ',  # d1C'
+      write(fileUnit, nameValueFmt) '    ', sv%old(19), ',  # d1C'
     Else If (sv%nstatev >= 19) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV19'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV19'
     End If
     If (m%shearNonlinearity13) Then
-      write(101, nameValueFmt) '    ', sv%old(20), ',  # Plas13'
-      write(101, nameValueFmt) '    ', sv%old(21), ',  # Inel13'
+      write(fileUnit, nameValueFmt) '    ', sv%old(20), ',  # Plas13'
+      write(fileUnit, nameValueFmt) '    ', sv%old(21), ',  # Inel13'
     Else If (sv%nstatev >= 21) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV20'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV21'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV20'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV21'
     End If
     If (m%fiberCompDamFKT12) Then
-      write(101, nameValueFmt) '    ', sv%old(22), ',  # phi0_12'
-      write(101, nameValueFmt) '    ', sv%old(23), ',  # gamma_12'
+      write(fileUnit, nameValueFmt) '    ', sv%old(22), ',  # phi0_12'
+      write(fileUnit, nameValueFmt) '    ', sv%old(23), ',  # gamma_12'
     Else If (sv%nstatev >= 23) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV22'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV23'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV22'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV23'
     End If
     If (m%fiberCompDamFKT13) Then
-      write(101, nameValueFmt) '    ', sv%old(22), ',  # phi0_13'
-      write(101, nameValueFmt) '    ', sv%old(23), ',  # gamma_13'
+      write(fileUnit, nameValueFmt) '    ', sv%old(22), ',  # phi0_13'
+      write(fileUnit, nameValueFmt) '    ', sv%old(23), ',  # gamma_13'
     Else If (sv%nstatev >= 25) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV24'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV25'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV24'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV25'
     End If
     If (sv%nstatev >= 26) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV26'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV26'
     End If
     If (m%schaefer) Then
-      write(101, nameValueFmt) '    ', sv%old(27), ',  # Ep1'
-      write(101, nameValueFmt) '    ', sv%old(28), ',  # Ep2'
-      write(101, nameValueFmt) '    ', sv%old(29), ',  # Ep3'
-      write(101, nameValueFmt) '    ', sv%old(30), ',  # Ep4'
-      write(101, nameValueFmt) '    ', sv%old(31), ',  # Ep5'
-      write(101, nameValueFmt) '    ', sv%old(32), ',  # Ep6'
-      write(101, nameValueFmt) '    ', sv%old(33), '  # fp1'
+      write(fileUnit, nameValueFmt) '    ', sv%old(27), ',  # Ep1'
+      write(fileUnit, nameValueFmt) '    ', sv%old(28), ',  # Ep2'
+      write(fileUnit, nameValueFmt) '    ', sv%old(29), ',  # Ep3'
+      write(fileUnit, nameValueFmt) '    ', sv%old(30), ',  # Ep4'
+      write(fileUnit, nameValueFmt) '    ', sv%old(31), ',  # Ep5'
+      write(fileUnit, nameValueFmt) '    ', sv%old(32), ',  # Ep6'
+      write(fileUnit, nameValueFmt) '    ', sv%old(33), '  # fp1'
     Else If (sv%nstatev >= 33) Then
-      write(101, nameValueFmt) '    ', zero, ',  # SDV27'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV28'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV29'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV30'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV31'
-      write(101, nameValueFmt) '    ', zero, ',  # SDV32'
-      write(101, nameValueFmt) '    ', zero, '  # SDV33'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV27'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV28'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV29'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV30'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV31'
+      write(fileUnit, nameValueFmt) '    ', zero, ',  # SDV32'
+      write(fileUnit, nameValueFmt) '    ', zero, '  # SDV33'
     End If
-    write(101, "(A)") ']'
+    write(fileUnit, "(A)") ']'
 #endif
 
     Return
