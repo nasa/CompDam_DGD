@@ -49,7 +49,7 @@ def copyAdditionalFiles(files):
         shutil.copyfile(f, os.path.join(os.getcwd(), 'testOutput', f))
 
 
-def modifyParametersFile(**kwargs):
+def modifyParametersFile(jobName='CompDam', **kwargs):
     '''
     For modifying the parameters file
     Input dictionary should have key, value pairs that correspond to entries in CompDam.parameters
@@ -63,7 +63,7 @@ def modifyParametersFile(**kwargs):
         data = re.sub(key + r' ?= ?[-0-9\.d]*', key + ' = ' + value, data)
 
     # Write to testOutput directory
-    with open(os.path.join(os.getcwd(), 'testOutput', 'CompDam.parameters'), 'w') as f:
+    with open(os.path.join(os.getcwd(), 'testOutput', jobName + '.parameters'), 'w') as f:
         f.write(data)
 
 
@@ -138,6 +138,69 @@ def plotFailureEnvelope(baseName, abscissaIdentifier, ordinateIdentifier, abciss
         print "INFO: matplotlib package not found. Install matplotlib to generate plots of the failure envelope automatically."
 
 
+def plotStressLife(baseName, stressRatios, R_ratio=0.1):
+    """
+    Create a stress-life plot from a series of fatigue analyses.
+    """
+
+    import math
+    # Try to import matplotlib
+    try:
+        import matplotlib as mpl
+    # If import fails, the above code is skipped
+    except ImportError:
+        print "INFO: matplotlib package not found. Install matplotlib to generate stress-life plots automatically."
+        raise
+    # if os.environ.get('DISPLAY', '') == '':
+    #    mpl.use('Agg')
+    mpl.use('Agg')
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import FuncFormatter
+
+    fatigue_life = list()
+
+    for sr in stressRatios:
+        # Read the fatigue cycle data from the inc2cycles log files. Assume the last line represents failure.
+        with open(os.path.join(os.getcwd(), 'testOutput', baseName + '_stress_ratio_' + str(sr).replace('.', '') + '_inc2cycles.log'), 'r') as f:
+            lines = f.read().splitlines()
+            fatigue_life.append(float(lines[-1].split()[-1]))
+
+    # Create the stress-life plot
+    fig, ax = plt.subplots()
+
+    abscissaIdentifier = 'Life'
+    ordinateIdentifier = 'Fatigue Strength'
+
+    # Analysis data
+    data = dict()
+    data[abscissaIdentifier] = fatigue_life
+    data[ordinateIdentifier] = stressRatios
+
+    plt.plot(data[abscissaIdentifier], data[ordinateIdentifier], 'x', markeredgecolor='black')
+
+    with open(os.path.join(os.getcwd(), 'testOutput', baseName + '_R-ratio_' + str(R_ratio).replace('.', '') + '.txt'), 'w') as f:
+        f.write("{},{}\n".format(ordinateIdentifier, abscissaIdentifier))
+        for i in range(len(data[ordinateIdentifier])):
+            f.write("{},{}\n".format(data[ordinateIdentifier][i], data[abscissaIdentifier][i]))
+
+    # Formatting
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+    ax.set_xlim(xmin=1e0, xmax=1e8)
+    ax.set_ylim(ymin=0.5, ymax=1.0)
+    formatter = FuncFormatter(lambda y, _: '{:.1g}'.format(y))
+    ax.yaxis.set_major_formatter(formatter)
+    ax.yaxis.set_minor_formatter(formatter)
+
+    plt.xlabel(abscissaIdentifier + ', cycles')
+    plt.ylabel(ordinateIdentifier + ', ' + r'$\sigma^{max}/\sigma_{c}$')
+    plt.grid(b=True, which='major', color='xkcd:silver', linestyle='--')
+
+    fig.savefig(os.path.join(os.getcwd(), 'testOutput', baseName + '_R-ratio_' + str(R_ratio).replace('.', '') + '.png'), dpi=300)
+
+
 class ParametricMixedModeMatrix(av.TestCase):
     """
     Parametric mixed mode tests.
@@ -176,10 +239,6 @@ class ParametricElementSize(av.TestCase):
     # A misalignment angle of zero will result in an Abaqus pre error due to an *NMAP rotation command being used in the input deck
     parameters = {'misalignment_angle': [-45, -30, -15, 1, 15, 30, 45]}
 
-    # elementSize1 = 0.3
-    # elementSize2 = 0.2
-    # elementSize3 = 0.1
-
     # Closed-form equations for the characteristic element lengths, valid for misalignment angles between -45 and +45 degrees
     Lc2_eq = lambda m: 0.2*(0.3/0.2*math.sin(abs(math.radians(m))) + math.cos(math.radians(m)))
 
@@ -191,6 +250,39 @@ class ParametricElementSize(av.TestCase):
     def setUpClass(cls):
         copyMatProps()
         copyParametersFile()
+
+
+class ParametricStressLife(av.TestCase):
+    """
+    Generate data for a stress life plot with a series of fatigue analyses
+    """
+
+    # Specify meta class
+    __metaclass__ = av.ParametricMetaClass
+
+    # Refers to the template input file name
+    baseName = "test_COH3D8_fatigue_normal"
+
+    parameters = {'stress_ratio': [0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99]}
+
+    expectedpy_parameters = {'stress_ratio': parameters['stress_ratio']}
+
+    fatigue_R_ratio = 0.1
+
+    # Class-wide methods
+    @classmethod
+    def setUpClass(cls):
+        modifyParametersFile(
+                             fatigue_step = '2',
+                             fatigue_R_ratio = str(cls.fatigue_R_ratio),
+                             fatigue_damage_min_threshold = '5.d-7',
+                             fatigue_damage_max_threshold = '1.d-4',
+                             cycles_per_increment_mod = '0.1d0'
+                             )
+
+    @classmethod
+    def tearDownClass(cls):
+        plotStressLife(baseName=cls.baseName, stressRatios=cls.parameters['stress_ratio'], R_ratio=cls.fatigue_R_ratio)
 
 
 class ParametricFailureEnvelope_sig12sig22(av.TestCase):
