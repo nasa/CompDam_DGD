@@ -61,7 +61,10 @@ U = np.array([
 
 Cauchy = np.zeros((3,3), order='F')
 
-CompDam_DGD.dgd_mod.dgdevolve(u=U, f=F, f_old=F_old, m=m, p=p, sv=sv, ndir=3, nshr=3, dt=0, cauchy=Cauchy)
+enerintern = 0
+enerinelas = 0
+
+CompDam_DGD.dgd_mod.dgdevolve(u=U, f=F, f_old=F_old, m=m, p=p, sv=sv, ndir=3, nshr=3, dt=0, density_abq=1, cauchy=Cauchy, enerintern=enerintern, enerinelas=enerinelas)
 # print Cauchy
 
 CompDam_DGD.dgd_mod.log_close()

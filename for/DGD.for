@@ -608,11 +608,11 @@ Contains
             ! ...and if the matrix damage is already fully developed, delete the element.
             If (sv%d2 >= damage_max) Then
               If (sv%alpha == -999) Then
-                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDEvolve')
+                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDEvolve')
                 Call log%terminate('Invalid alpha. Check value for alpha in the initial conditions.')
               End If
               If (p%terminate_on_no_convergence) Then
-                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDEvolve')
+                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDEvolve')
                 Call log%terminate('DGDEvolve nonconvergence, terminating analysis.')
               Else
                 Call log%warn('DGDEvolve nonconvergence, deleting failed element.')
@@ -621,7 +621,7 @@ Contains
               Exit MatrixDamage
             End If
             ! ...raise an error and halt the subroutine.
-            Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDEvolve')
+            Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDEvolve')
             Call log%terminate('No starting points produced a valid solution (DGDEvolve).')
             Exit MatrixDamage
           End If
@@ -1058,7 +1058,7 @@ Contains
   End Subroutine DGDEvolve
 
 
-  Subroutine DGDKinkband(U, F, F_old, m, p, sv, ndir, nshr, DT, Cauchy, enerIntern, enerInelas)
+  Subroutine DGDKinkband(U, F, F_old, m, p, sv, ndir, nshr, DT, density_abq, Cauchy, enerIntern, enerInelas)
 
     Use forlog_Mod
     Use matrixAlgUtil_Mod
@@ -1077,6 +1077,7 @@ Contains
     Double Precision, Intent(IN) :: F(3,3), U(3,3), F_old(3,3)               ! Deformation gradient, stretch tensor
     Double Precision, Intent(IN) :: DT                                       ! Delta temperature
     Integer, intent(IN) :: ndir, nshr
+    Double Precision, intent(IN) :: density_abq
     Double Precision, Intent(OUT) :: Cauchy(ndir,ndir)
     Double Precision, intent(INOUT) :: enerIntern                            ! Internal energy per mass
     Double Precision, intent(INOUT) :: enerInelas                            ! Inelastic energy per mass
@@ -1300,7 +1301,7 @@ Contains
 
       ! Check for any inside-out deformation or an overly compressed bulk material
       If (err < tol_DGD .AND. MDet(Fkb) < p%compLimit) Then
-        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDKinkband')
+        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDKinkband')
         If (p%terminate_on_no_convergence) Then
           Call log%terminate('Highly distorted element (DGDKinkband).')
         Else
@@ -1332,7 +1333,7 @@ Contains
           Call log%info('Restarting with modified jacobian.')
           Cycle Equilibrium
         Else
-          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDKinkband')
+          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDKinkband')
           If (p%terminate_on_no_convergence) Then
             Call log%terminate('Equilibrium loop reached maximum number of iterations (DGDKinkband).')
           Else
@@ -1357,7 +1358,7 @@ Contains
           Restart = .True.  ! One restart is allowed; modified jacobian is used
           Call log%info('Restarting with modified jacobian.')
         Else
-          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,log%arg,'DGDKinkband')
+          Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDKinkband')
           If (p%terminate_on_no_convergence) Then
             Call log%terminate('Reached max cutback limit (DGDKinkband).')
           Else
@@ -1570,7 +1571,7 @@ Contains
   End Function alpha0_DGD
 
 
-  Subroutine writeDGDArgsToFile(m, p, sv, U, F, F_old, ndir, nshr, DT, args, called_from)
+  Subroutine writeDGDArgsToFile(m, p, sv, U, F, F_old, ndir, nshr, DT, density_abq, args, called_from)
     ! Print DGDEvolve args at error
 
     Use matProp_Mod
@@ -1584,6 +1585,7 @@ Contains
     Type(stateVars), intent(IN) :: sv
     Double Precision, Intent(IN) :: F(3,3), U(3,3), F_old(3,3)               ! Deformation gradient, stretch tensor
     Double Precision, Intent(IN) :: DT                                       ! Delta temperature
+    Double Precision, intent(IN) :: density_abq
     Type(vumatArg) :: args
     Character(*), intent(IN) :: called_from
     Integer, intent(IN) :: ndir, nshr
@@ -1624,6 +1626,7 @@ Contains
     write(file_unit, "(A,E22.15E2)") 'temp_change = ', DT
     write(file_unit, "(A,I1,A)") 'ndir = ', ndir
     write(file_unit, "(A,I1,A)") 'nshr = ', nshr
+    write(file_unit, "(A,E22.15E2)") 'density_abq = ', density_abq
     write(file_unit, "(A,I10,A)") 'element = ', args%nElement
     write(file_unit, "(A,E22.15E2)") 'total_time = ', args%totalTime
     write(file_unit, "(A,A,A)") 'called_from = "', called_from, '"'

@@ -92,6 +92,7 @@ Contains
     Pointer(ptr_fatigue_int, fatigue_parameters)
     Pointer(ptr_fatigue_dbl, cycles_per_increment)
 
+#ifndef PYEXT
     Interface
 
       Function SMAIntArrayAccess(ID)
@@ -107,6 +108,7 @@ Contains
       End Function SMARealArrayAccess
 
     End Interface
+#endif
     ! -------------------------------------------------------------------- !
 
     damage_max = one  ! Maximum value for damage variables
@@ -189,6 +191,7 @@ Contains
       damage = MIN(damage, damage_max)  ! Cap damage variable
       damage = MAX(damage_old, damage)  ! Ensure no healing
 
+#ifndef PYEXT
       ptr_fatigue_int = SMAIntArrayAccess(1)
 
       ! If this is a fatigue step, and static damage progression has not occurred, and the damage is not already fully developed...
@@ -219,6 +222,7 @@ Contains
         damage = MAX(damage_old, damage, damage_static)  ! Ensure no healing and use the greater of the static and fatigue damage
 
       End If FatigueStep
+#endif
 
       ! If there is damage progression, calculate the normalized energy dissipation.
       If (damage > damage_old) dGdGc = damage/(df/d0*(one - damage) + damage) - damage_old/(df/d0*(one - damage_old) + damage_old)

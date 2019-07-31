@@ -421,7 +421,7 @@ Subroutine CompDam(  &
     ! Fiber compression damage evolution (FKT decomposition)
     Else If ((m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) .AND. sv%d1C > zero) Then
 
-      Call DGDKinkband(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),Cauchy,enerInternNew(km),enerInelasNew(km))
+      Call DGDKinkband(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),density_abq(km),Cauchy,enerInternNew(km),enerInelasNew(km))
 
     End If
 
@@ -440,19 +440,19 @@ Subroutine CompDam(  &
     ! -------------------------------------------------------------------- !
     If (m%shearNonlinearity12) Then
       If (sv%Inel12 < stateOld(km,13)) Then
-        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),log%arg,'CompDam_DGD')
+        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),density_abq(km),log%arg,'CompDam_DGD')
         Call log%terminate('Decrease in inelastic strain 12.')
       End If
     End If
     If (m%shearNonlinearity13) Then
       If (sv%Inel13 < stateOld(km,21)) Then
-        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),log%arg,'CompDam_DGD')
+        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),density_abq(km),log%arg,'CompDam_DGD')
         Call log%terminate('Decrease in inelastic strain 13.')
       End If
     End If
     If (m%shearNonlinearity12 .OR. m%shearNonlinearity13) Then
       If (sv%Inel12 > 1.d0 .OR. sv%Inel13 > 1.d0) Then
-        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),log%arg,'CompDam_DGD')
+        Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),density_abq(km),log%arg,'CompDam_DGD')
         Call log%terminate('Excessive inelastic shear strain.')
       End If
     End If
@@ -469,7 +469,7 @@ Subroutine CompDam(  &
   ! -------------------------------------------------------------------- !
   If (p%logLevel > 2 .AND. p%debug_kill_at_total_time > zero) Then
     If (log%arg%totalTime >= p%debug_kill_at_total_time) Then
-      Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),log%arg,'CompDam_DGD')
+      Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,tempNew(km),density_abq(km),log%arg,'CompDam_DGD')
       Call log%error('debug_kill_at_total_time condition satisfied; terminating job.')
     End If
   End If

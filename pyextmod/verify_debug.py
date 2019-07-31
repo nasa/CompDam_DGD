@@ -37,8 +37,10 @@ def _main_entry(args):
         # Run CompDam
         sv_calculated  = sv_old
         Cauchy = np.zeros((3,3), order='F')
+        enerintern = 0
+        enerinelas = 0
         func = getattr(CompDam_DGD.dgd_mod, args.subroutine)
-        func(u=U, f=F, f_old=F_old, m=m, p=p, sv=sv_calculated, ndir=3, nshr=3, dt=0, cauchy=Cauchy)
+        func(u=U, f=F, f_old=F_old, m=m, p=p, sv=sv_calculated, ndir=3, nshr=3, dt=0, density_abq=debugpy.density_abq, cauchy=Cauchy, enerintern=enerintern, enerinelas=enerinelas)
 
         # Move the pyextmod log file to the testoutput directory
         CompDam_DGD.dgd_mod.log_close()
