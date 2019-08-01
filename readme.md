@@ -8,19 +8,19 @@ This software may be used, reproduced, and provided to others only as permitted 
 Copyright 2016 United States Government as represented by the Administrator of the National Aeronautics and Space Administration. No copyright is claimed in the United States under Title 17, U.S. Code. All Other Rights Reserved.
 
 Publications that describe the theories used in this code:
-- Andrew C. Bergan, ["A Three-Dimensional Mesoscale Model for In-Plane and Out-of-Plane Fiber Kinking"](https://arc.aiaa.org/doi/abs/10.2514/6.2019-1548) *AIAA SciTech Forum*, San Diego, California, 7-11 January 2019.
+- Andrew C. Bergan, ["A Three-Dimensional Mesoscale Model for In-Plane and Out-of-Plane Fiber Kinking"](https://doi.org/10.2514/6.2019-1548) *AIAA SciTech Forum*, San Diego, California, 7-11 January 2019.
 - Carlos Dávila, ["From S-N to the Paris Law with a New Mixed-Mode Cohesive Fatigue Model"](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf) NASA/TP-2018-219838, June 2018.
-- Andrew C. Bergan, et al., ["Development of a Mesoscale Finite Element Constitutive Model for Fiber Kinking"](https://arc.aiaa.org/doi/10.2514/6.2018-1221) *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
-- Frank A. Leone Jr. ["Deformation gradient tensor decomposition for representing matrix cracks in fiber-reinforced materials"](http://dx.doi.org/10.1016/j.compositesa.2015.06.014) *Composites Part A* (2015) **76**:334-341.
-- Frank A. Leone Jr. ["Representing matrix cracks through decomposition of the deformation gradient tensor in continuum damage mechanics methods"](http://iccm20.org/fullpapers/file?f=Abk7n4gkWV) *Proceedings of the 20th International Conference on Composite Materials*, Copenhagen, Denmark, 19-24 July 2015.
+- Andrew C. Bergan, et al., ["Development of a Mesoscale Finite Element Constitutive Model for Fiber Kinking"](https://doi.org/10.2514/6.2018-1221) *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
+- Frank A. Leone Jr. ["Deformation gradient tensor decomposition for representing matrix cracks in fiber-reinforced materials"](https://dx.doi.org/10.1016/j.compositesa.2015.06.014) *Composites Part A* (2015) **76**:334-341.
+- Frank A. Leone Jr. ["Representing matrix cracks through decomposition of the deformation gradient tensor in continuum damage mechanics methods"](https://iccm20.org/fullpapers/file?f=Abk7n4gkWV) *Proceedings of the 20th International Conference on Composite Materials*, Copenhagen, Denmark, 19-24 July 2015.
 - Cheryl A. Rose, et al. ["Analysis Methods for Progressive Damage of Composite Structures"](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20140001002.pdf) NASA/TM-2013-218024, July 2013.
 
 Examples of this code being applied can be found in the following publications:
-- Andrew C. Bergan and Wade C. Jackson, ["Validation of a Mesoscale Fiber Kinking Model through Test and Analysis of Double Edge Notch Compression Specimens"](http://dpi-proceedings.com/index.php/asc33/article/view/26003) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
-- Imran Hyder, et al., ["Implementation of a Matrix Crack Spacing Parameter in a Continuum Damage Mechanics Finite Element Model"](http://dpi-proceedings.com/index.php/asc33/article/view/26052) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
-- Frank Leone, et al., ["Benchmarking Mixed Mode Matrix Failure in Progressive Damage and Failure Analysis Methods"](http://dpi-proceedings.com/index.php/asc33/article/view/26030) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
-- Brian Justusson, et al., et al., ["Quantification of Error Associated with Using Misaligned Meshes in Continuum Damage Mechanics Material Models for Matrix Crack Growth Predictions in Composites"](http://www.dpi-proceedings.com/index.php/asc33/article/view/26097) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
-- Kyongchan Song, et al. ["Continuum Damage Mechanics Models for the Analysis of Progressive Damage in Cross-Ply and Quasi-Isotropic Panels Subjected to Static Indentation"](https://arc.aiaa.org/doi/10.2514/6.2018-1466) *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
+- Andrew C. Bergan and Wade C. Jackson, ["Validation of a Mesoscale Fiber Kinking Model through Test and Analysis of Double Edge Notch Compression Specimens"](https://doi.org/10.12783/asc33/26003) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
+- Imran Hyder, et al., ["Implementation of a Matrix Crack Spacing Parameter in a Continuum Damage Mechanics Finite Element Model"](https://doi.org/10.12783/asc33/26052) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
+- Frank Leone, et al., ["Benchmarking Mixed Mode Matrix Failure in Progressive Damage and Failure Analysis Methods"](https://doi.org/10.12783/asc33/26030) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
+- Brian Justusson, et al., et al., ["Quantification of Error Associated with Using Misaligned Meshes in Continuum Damage Mechanics Material Models for Matrix Crack Growth Predictions in Composites"](https://doi.org/10.12783/asc33/26097) *33rd American Society for Composites (ASC) Annual Technical Conference*, Seattle, Washington, 24-27 September 2018.
+- Kyongchan Song, et al. ["Continuum Damage Mechanics Models for the Analysis of Progressive Damage in Cross-Ply and Quasi-Isotropic Panels Subjected to Static Indentation"](https://doi.org/10.2514/6.2018-1466) *AIAA SciTech Forum*, Kissimmee, Florida, 8-12 January 2018.
 - Imran Hyder, et al. ["Assessment of Intralaminar Progressive Damage and Failure Analysis Using an Efficient Evaluation Framework"](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20170010326.pdf) *32nd American Society for Composites (ASC) Annual Technical Conference*, West Lafayette, Indiana, 22-25 October 2017.
 - Frank A. Leone, et al. ["Fracture-Based Mesh Size Requirements for Matrix Cracks in Continuum Damage Mechanics Models"](https://doi.org/10.2514/6.2017-0198) *AIAA SciTech Forum*, Grapevine, Texas, 9-13 January 2017.
 - Mark McElroy, et al. ["Simulation of delamination-migration and core crushing in a CFRP sandwich structure"](https://doi.org/10.1016/j.compositesa.2015.08.026) *Composites Part A* (2015) **79**:192-202.
@@ -39,7 +39,6 @@ For any questions, please contact the developers:
 - [State variables](#state-variables)
 - [Implicit solver compatibility](#implicit-solver-compatibility)
 - [Fatigue analyses](#fatigue-analyses)
-- [Example problems](#example-problems)
 - [Advanced debugging](#advanced-debugging)
 - [Python extension module](#python-extension-module)
 - [Summary of tests classes](#summary-of-tests-classes)
@@ -66,7 +65,7 @@ The main purpose of the setup.py script is to 1) set the `for/version.for` file 
 In the event that you do not have access to python, rename `for/version.for.nogit` to `for/version.for` manually. The additional configuration done by `setup.py` is not strictly required.
 
 ### Abaqus environment file settings
-The `abaqus_v6.env` file must have [`/fpp`](https://software.intel.com/en-us/node/678201), [`/Qmkl:sequential`](https://software.intel.com/en-us/node/678038), and [`/free`](https://software.intel.com/en-us/node/678227) in the `ifort` command where the format for Windows is used. The corresponding Linux format is: `-fpp`, `-free`, and `-mkl=sequential`. The `/fpp` option enables the Fortran preprocessor, which is required for the code to compile correctly. The `/free` option sets the compiler to free-formatting for the source code files. The `/Qmkl:sequential` enables the [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/intel-mkl), which provides optimized and verified functions for many mathematical operations. The MKL is used in this code for calculating eigenvalues and eigenvectors.
+The `abaqus_v6.env` file must have [`/fpp`](https://software.intel.com/en-us/fortran-compiler-developer-guide-and-reference-fpp), [`/Qmkl:sequential`](https://software.intel.com/en-us/fortran-compiler-developer-guide-and-reference-mkl-qmkl), and [`/free`](https://software.intel.com/en-us/fortran-compiler-developer-guide-and-reference-free) in the `ifort` command where the format for Windows is used. The corresponding Linux format is: `-fpp`, `-free`, and `-mkl=sequential`. The `/fpp` option enables the Fortran preprocessor, which is required for the code to compile correctly. The `/free` option sets the compiler to free-formatting for the source code files. The `/Qmkl:sequential` enables the [Intel Math Kernel Library (MKL)](https://software.intel.com/en-us/mkl), which provides optimized and verified functions for many mathematical operations. The MKL is used in this code for calculating eigenvalues and eigenvectors.
 
 A sample environment file is provided in the `tests` directory for Windows and Linux systems.
 
@@ -201,10 +200,10 @@ When using a pre-compiled shared library, it is only necessary to specify the lo
 The CompDam_DGD material model implements a variety of features that can be enabled or disabled by the user. An overview of these features is provided in this section. The material properties required for each feature are listed. References are provided to more detailed discussions of the theoretical framework for each feature.
 
 ### Fully orthotropic elasticity
-The composite materials modeled with CompDam_DGD can be defined assuming either [transverse isotropy](http://www.efunda.com/formulae/solid_mechanics/mat_mechanics/hooke_iso_transverse.cfm) or [orthotropy](http://www.efunda.com/formulae/solid_mechanics/mat_mechanics/hooke_orthotropic.cfm). For a transversely isotropic material definition, the following properties must be defined: E1, E2, G12, v12, and v23. For an orthotropic material definition, the following additional properties must be defined: E2, G13, G23, and nu13.
+The composite materials modeled with CompDam_DGD can be defined assuming either [transverse isotropy](https://www.efunda.com/formulae/solid_mechanics/mat_mechanics/hooke_iso_transverse.cfm) or [orthotropy](https://www.efunda.com/formulae/solid_mechanics/mat_mechanics/hooke_orthotropic.cfm). For a transversely isotropic material definition, the following properties must be defined: E1, E2, G12, v12, and v23. For an orthotropic material definition, the following additional properties must be defined: E2, G13, G23, and nu13.
 
 ### Matrix damage
-Tensile and compressive matrix damage is modeled by embedding cohesive laws to represent cracks in the material according to the deformation gradient decomposition method of [Leone (2015)](http://doi.org/10.1016/j.compositesa.2015.06.014). The matrix crack normals can have any orientation in the 2-3 plane, defined by the angle `CDM_alpha`. The mixed-mode behavior of matrix damage initiation and evolution is defined according to the Benzeggagh-Kenane law. The initiation of compressive matrix cracks accounts for friction on the potential crack surface according to the LaRC04 failure criteria. In the notation of the [paper](http://doi.org/10.1016/j.compositesa.2015.06.014), `Q` defines the material direction that is severed by the crack. In this implementation `Q=2` except when `CDM_alpha = 90`.
+Tensile and compressive matrix damage is modeled by embedding cohesive laws to represent cracks in the material according to the deformation gradient decomposition method of [Leone (2015)](https://doi.org/10.1016/j.compositesa.2015.06.014). The matrix crack normals can have any orientation in the 2-3 plane, defined by the angle `CDM_alpha`. The mixed-mode behavior of matrix damage initiation and evolution is defined according to the Benzeggagh-Kenane law. The initiation of compressive matrix cracks accounts for friction on the potential crack surface according to the LaRC04 failure criteria. In the notation of the [paper](https://doi.org/10.1016/j.compositesa.2015.06.014), `Q` defines the material direction that is severed by the crack. In this implementation `Q=2` except when `CDM_alpha = 90`.
 
 The following material properties are required for the prediction of matrix damage: YT, SL, GYT, GSL, eta_BK, YC, and alpha0. The state variables related to matrix damage are `CDM_d2`, `CDM_FIm`, `CDM_B`, `CDM_alpha`, `CDM_Fb1`, `CDM_Fb2`, and `CDM_Fb3`.
 
@@ -229,7 +228,7 @@ where *&gamma;*<sub>12</sub> is the shear strain and *&tau;*<sub>12</sub> is the
 
 Prior to the initiation of matrix damage (i.e., `CDM_d2 = 0`), the nonlinear shear response due to the above equation is plastic, and the unloading/reloading slope is unchanged. No pre-peak nonlinearity is applied to the matrix tensile or compressive responses (i.e., *&sigma;<sub>22</sub>*).
 
-The required material inputs are the two parameters in the above equation: *&alpha;*<sub>PL</sub> and *n*<sub>PL</sub>. Note that the same constants are used for the 1-2 and 1-3 planes under the assumption of transverse isotropy (see [Seon et al. (2017)](http://dpi-proceedings.com/index.php/asc32/article/view/15267)). For the 1-2 plane, the state variables `CDM_Plas12` and `CDM_Inel12` are used to track the current plastic shear strain and the total amount of inelastic plastic shear strain that has occurred through the local deformation history, respectively. For cases of monotonic loading, `CDM_Plas12` and `CDM_Inel12` should have the same magnitude. Likewise, the state variables `CDM_Plas13` and `CDM_Inel13` are utilized for the 1-3 plane. The [feature flags](#controlling-which-features-are-enabled) can be used to enable this Ramberg-Osgood model in the 1-2 plane, 1-3 plane, or both planes.
+The required material inputs are the two parameters in the above equation: *&alpha;*<sub>PL</sub> and *n*<sub>PL</sub>. Note that the same constants are used for the 1-2 and 1-3 planes under the assumption of transverse isotropy (see [Seon et al. (2017)](https://doi.org/10.12783/asc2017/15267)). For the 1-2 plane, the state variables `CDM_Plas12` and `CDM_Inel12` are used to track the current plastic shear strain and the total amount of inelastic plastic shear strain that has occurred through the local deformation history, respectively. For cases of monotonic loading, `CDM_Plas12` and `CDM_Inel12` should have the same magnitude. Likewise, the state variables `CDM_Plas13` and `CDM_Inel13` are utilized for the 1-3 plane. The [feature flags](#controlling-which-features-are-enabled) can be used to enable this Ramberg-Osgood model in the 1-2 plane, 1-3 plane, or both planes.
 
 #### Schapery micro-damage
 Matrix nonlinearity in the 1-2 plane can also be modeled using Schapery theory, in which all pre-peak matrix nonlinearity is attributed to the initiation and development of micro-scale matrix damage. With this approach, the local stress/strain curves will unload to the origin, and not develop plastic strain. A simplified version of the approach of [Pineda and Waas](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20120000914.pdf) is here applied. The micro-damage functions *e<sub>s</sub>* and *g<sub>s</sub>* are limited to third degree polynomials for ease of implementation. As such, four fitting parameters are required for each of *e<sub>s</sub>* and *g<sub>s</sub>* to define the softening of the matrix normal and shear responses to micro-damage development.
@@ -258,19 +257,19 @@ The above two equations are used in concert to determine plastic strain through 
 *f* (i.e., schaefer_f) and the tensorial plastic strain determined by the nonlinearity model are stored as state variables (27 through 32 for plastic strain and 33 for *f*)
 
 ### Fiber tensile damage
-A continuum damage mechanics model similar to the work of [Maimí et al. (2007)](http://doi.org/10.1016/j.mechmat.2007.03.005) is used to model tensile fiber damage evolution. The model utilizes a non-interacting maximum strain failure criterion, and bilinear softening after the initiation of failure. The area under the stress-strain curve is equal to the fracture toughness divided by the element length normal to fracture, i.e., `CDM_Lc1`. The required material properties are: XT, fXT, GXT, and fGXT, where fXT and fGXT are ratios of strength and fracture toughness for bilinear softening, defined as the *n* and *m* terms in equations (25) and (26) of [Dávila et al. (2009)](http://doi.org/10.1007/s10704-009-9366-z). To model a linear softening response, both fXT and fGXT should be set equal to 0.5.
+A continuum damage mechanics model similar to the work of [Maimí et al. (2007)](https://doi.org/10.1016/j.mechmat.2007.03.005) is used to model tensile fiber damage evolution. The model utilizes a non-interacting maximum strain failure criterion, and bilinear softening after the initiation of failure. The area under the stress-strain curve is equal to the fracture toughness divided by the element length normal to fracture, i.e., `CDM_Lc1`. The required material properties are: XT, fXT, GXT, and fGXT, where fXT and fGXT are ratios of strength and fracture toughness for bilinear softening, defined as the *n* and *m* terms in equations (25) and (26) of [Dávila et al. (2009)](https://doi.org/10.1007/s10704-009-9366-z). To model a linear softening response, both fXT and fGXT should be set equal to 0.5.
 
 ### Fiber compression damage
 
 #### Model 1: Max strain, bilinear softening (BL)
 Same model as in tension, but for compression. Assumes maximum strain failure criterion and bilinear softening. The required material properties are: XC, fXC, GXC, and fGXC.
 
-Load reversal assumptions from [Maimí et al. (2007)](http://doi.org/10.1016/j.mechmat.2007.03.006).
+Load reversal assumptions from [Maimí et al. (2007)](https://doi.org/10.1016/j.mechmat.2007.03.006).
 
 #### Model 2: Placeholder
 
 #### Model 3, 4, 5: Fiber kinking theory (FKT)
-A model based on Budiansky's fiber kinking theory from [Budiansky (1983)](https://doi.org/10.1016/0045-7949(83)90141-4), [Budiansky and Fleck (1993)](https://doi.org/10.1016/0022-5096(93)90068-Q), and [Budiansky et al. (1998)](https://doi.org/10.1016/S0022-5096(97)00042-2) implemented using the DGD framework to model in-plane (1-2) and/or out-of-plane (1-3) fiber kinking. The model is described in detail in [Bergan et al. (2018)](https://arc.aiaa.org/doi/10.2514/6.2018-1221), [Bergan and Jackson (2018)](http://dpi-proceedings.com/index.php/asc33/article/view/26003), and [Bergan (2019)](https://arc.aiaa.org/doi/abs/10.2514/6.2019-1548). The model accounts for fiber kinking due to shear instability by considering an initial fiber misalignment, nonlinear shear stress-strain behavior via Ramberg-Osgood, and geometric nonlinearity. Fiber failure can be introduced by specifying a critical fiber rotation angle.
+A model based on Budiansky's fiber kinking theory from [Budiansky (1983)](https://doi.org/10.1016/0045-7949(83)90141-4), [Budiansky and Fleck (1993)](https://doi.org/10.1016/0022-5096(93)90068-Q), and [Budiansky et al. (1998)](https://doi.org/10.1016/S0022-5096(97)00042-2) implemented using the DGD framework to model in-plane (1-2) and/or out-of-plane (1-3) fiber kinking. The model is described in detail in [Bergan et al. (2018)](https://doi.org/10.2514/6.2018-1221), [Bergan and Jackson (2018)](https://doi.org/10.12783/asc33/26003), and [Bergan (2019)](https://doi.org/10.2514/6.2019-1548). The model accounts for fiber kinking due to shear instability by considering an initial fiber misalignment, nonlinear shear stress-strain behavior via Ramberg-Osgood, and geometric nonlinearity. Fiber failure can be introduced by specifying a critical fiber rotation angle.
 
 The required material properties are: XC, YC, wkb, alpha0, alpha_PL, and n_PL. The [feature flag](#controlling-which-features-are-enabled) for fiber compression should be set to '3', '4', or '5' to activate this model feature. Model '3' enables in-plane (1-2 plane) fiber kinking. Model '4' enables out-of-plane (1-3 plane) fiber kinking. Model '5' enables fiber kinking in both planes (uncoupled). This feature requires 25 state variables to be defined and initialized. The relevant state variables are:
 - `CDM_phi0_12`: initial fiber misalignment (radians) in the 1-2 plane.
@@ -283,7 +282,7 @@ The current fiber misalignment is `CDM_phi0_1i + CDM_gamma_1i` where `i=2 or 3`.
 
 The initial conditions for the state variable `CDM_phi0_12` and `CDM_phi0_13` determine the initial fiber misalignments as described in [initial conditions](#initial-conditions).
 
-A fiber failure criterion described in [Bergan and Jackson (2018)](http://dpi-proceedings.com/index.php/asc33/article/view/26003) is implemented to represent the material behavior in confined conditions under large strains (post failure). The fiber failure criterion is satisfied when
+A fiber failure criterion described in [Bergan and Jackson (2018)](https://doi.org/10.12783/asc33/26003) is implemented to represent the material behavior in confined conditions under large strains (post failure). The fiber failure criterion is satisfied when
 
 *&phi;* &ge; *&phi;*<sub>ff,c</sub>
 
@@ -299,7 +298,7 @@ The fiber kinking theory model implemented here is preliminary and has some know
 Relevant single element tests are named starting with `test_C3D8R_fiberCompression_FKT`.
 
 ### Friction
-Friction is modeled on the damaged fraction of the cross-sectional area of DGD cracks using the approach of [Alfano and Sacco (2006)](http://doi.org/10.1002/nme.1728). The coefficient of friction *&mu;* must be defined to account for friction on the failed crack surface.
+Friction is modeled on the damaged fraction of the cross-sectional area of DGD cracks using the approach of [Alfano and Sacco (2006)](https://doi.org/10.1002/nme.1728). The coefficient of friction *&mu;* must be defined to account for friction on the failed crack surface.
 
 The amount of sliding which has taken place in the longitudinal and transverse directions are stored in state variables `CDM_slide1` and `CDM_slide2`, respectively.
 
@@ -311,7 +310,7 @@ The strain is calculated using the deformation gradient tensor provided by the A
 Hooke's law is applied using the Green-Lagrange strain to calculate the 2<sup>nd</sup> Piola-Kirchhoff stress *S*.
 
 ### Fiber nonlinearity
-Nonlinear elastic behavior in the fiber direction can be introduced with the material property c<sub>*l*</sub>. The expression used follows [Kowalski (1988)](https://www.astm.org/DIGITAL_LIBRARY/STP/PAGES/STP26136S.htm):
+Nonlinear elastic behavior in the fiber direction can be introduced with the material property c<sub>*l*</sub>. The expression used follows [Kowalski (1988)](https://doi.org/10.1520/STP26136S):
 
 *E<sub>1</sub>* = *E<sub>1</sub>*(1 + c<sub>*l*</sub>*&epsilon;*<sub>11</sub>)
 
@@ -507,7 +506,7 @@ The fatigue capability of CompDam is disabled by default. To run a fatigue analy
 
 The load ratio *R*<sub>min</sub>/*R*<sub>max</sub> has a default value of 0.1, and can be changed using the parameter `fatigue_R_ratio`.
 
-An example of a double cantilever beam subjected to fatigue under displacement-control is included in the `examples/` directory. The geometry and conditions of this example problem correspond to the results presented in Figure 20 of [Dávila 2018](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf).
+An example of a double cantilever beam subjected to fatigue under displacement-control is included in the `examples/` directory. The geometry and conditions of this example problem correspond to the results presented in Figure 20 of [Dávila (2018)](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf).
 
 ### Interpreting the results of a fatigue analysis
 Within a fatigue step, each solution increment represents either a number of fatigue cycles or a fractional part of a single fatigue cycle. During the solution, the number of fatigue cycles per solution increment changes based on the maximum amount of energy dissipation in any single element. If the rate of energy dissipation is too high (as defined by the parameter `fatigue_damage_max_threshold`), the increments-to-cycles ratio is decreased. If the rate of energy dissipation is too low (as defined by the parameter `fatigue_damage_min_threshold`), the increments-to-cycles ratio is increased. The parameter `cycles_per_increment_init` defines the initial ratio of fatigue cycles per solution increment. Any changes to increments-to-cycles ratio are logged in an additional output file ending in `_inc2cycles.log`, with columns for the fatigue step solution increment, the updated increments-to-cycles ratio, and the accumulated fatigue cycles.
@@ -596,10 +595,6 @@ As the `vumatWrapper` is a developmental capability, several important limitatio
 3. Testing has been conducted on the C3D8R element type only.
 
 
-## Example problems
-Older versions of CompDam include the directory `examples/` with a single example problem. The `examples/` directory has been removed in this release. It is expected to be reintroduced in a future release with additional example problems.
-
-
 ## Advanced debugging
 Using an interactive debugger helps to identify issues in the Fortran code. Abaqus knowledge base article QA00000007986 describes the details involved. The following is a quick-start guide for direct application to CompDam.
 
@@ -624,7 +619,7 @@ CompDam can be compiled into a [Python extension module](https://docs.python.org
 ### Dependencies and setup
 The python extension module requires some additional dependencies. First, the procedure only works on Linux using the bash shell. Windows users can use the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about). In addition, `gfortran` 4.6+ is required. Type `gfortran --version` to check if you have this available. The remaining dependencies are python packages and can be installed as follows. The Python extension module works with Python 2 and 3; Python 2.7 is used for consistency with Abaqus in the following description.
 
-Using [Conda](https://conda.io/docs/user-guide/getting-started.html) significantly simplifies the setup process, so it is assumed that you have a recent version of Conda available (see the [Conda installation guide](https://conda.io/docs/user-guide/install/index.html)). Further, the bash scripts described below include calls to Conda, so they will not work correctly without installing and configuring Conda as follows. Add the Conda-Forge channel by typing:
+Using [Conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) significantly simplifies the setup process, so it is assumed that you have a recent version of Conda available (see the [Conda installation guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)). Further, the bash scripts described below include calls to Conda, so they will not work correctly without installing and configuring Conda as follows. Add the Conda-Forge channel by typing:
 ```
 $ conda config --add channels conda-forge
 ```
@@ -709,7 +704,7 @@ We invite your contributions to CompDam_DGD! Please submit contributions (includ
 If you use CompDam, please cite using the following BibTex entry:
 
     @misc{CompDam,
-    title={CompDam - Deformation Gradient Decomposition (DGD), v2.4.0},
+    title={CompDam - Deformation Gradient Decomposition (DGD), v2.5.0},
     author={Leone, F. A., Bergan, A. C., D\'avila, C. G. },
     note={https://github.com/nasa/CompDam_DGD},
     year={2019}
