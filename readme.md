@@ -53,7 +53,7 @@ For any questions, please contact the developers:
 The user subroutine source code is located in the `for` directory. The main entry point is `CompDam_DGD.for`.
 
 ### Prerequisites
-[Intel Fortran Compiler](https://software.intel.com/en-us/fortran-compilers) version 11.1 or newer is required to compile the code ([more information about compiler versions](usersubroutine-prerequisites.md)). It is recommended that Abaqus 2016 or newer is used with this code. Current developments and testing are conducted with Abaqus 2019. Python supporting files require Python 2.7.
+[Intel Fortran Compiler](https://software.intel.com/en-us/fortran-compilers) version 11.1 or newer is required to compile the code ([more information about compiler versions](usersubroutine-prerequisites.md)). MPI must be installed and configured properly so that the MPI libraries can be linked by CompDam. It is recommended that Abaqus 2016 or newer is used with this code. Current developments and testing are conducted with Abaqus 2019. Python supporting files require Python 2.7.
 
 ### Initial setup
 After cloning the CompDam_DGD git repository, it is necessary to run the setup script file `setup.py` located in the repository root directory:
