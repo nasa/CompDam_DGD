@@ -322,7 +322,7 @@ Contains
     p%compLimit      = 0.25d0
     p%penStiffMult   = 1.d4
     p%cutback_amount = 0.5d0
-    p%tol_divergence = 0.1d0
+    p%tol_divergence = 1.d-6
     p%gamma_max      = 4.d0
     p%kb_decompose_thres = 0.99d0
     p%fkt_fiber_failure_angle = -1.d0
@@ -342,7 +342,7 @@ Contains
     p%cycles_per_increment_min = 1.d-5
     p%fatigue_damage_min_threshold = 5.d-6  ! 200,000 solution increments to fail an element at this rate
     p%fatigue_damage_max_threshold = 1.d-4  ! 10,000 solution increments to fail an element at this rate
-    p%fatigue_step = Huge(0)
+    p%fatigue_step = 1000000
 
     ! Maximum and minimum values for parameters to be read from CompDam.parameters file
     p%logLevel_min = 0
@@ -448,7 +448,7 @@ Contains
     !Arguments
     Character(len=*), intent(IN) :: key, value
     Double Precision, intent(IN) :: min, max
-    Double Precision, intent(OUT) :: saveTo
+    Double Precision, intent(INOUT) :: saveTo
 
     ! Locals
     Double Precision :: valueDbl
@@ -466,6 +466,11 @@ Contains
 
     End If
 
+    ! Check for non-default
+    If (valueDbl .NE. saveTo) Then
+      Call log%warn("Non-default parameter: " // trim(key) // " = " // trim(str(valueDbl)) // ", default = " // trim(str(saveTo)))
+    End If
+
     ! Save the value and set the flag
     saveTo = valueDbl
 
@@ -481,7 +486,7 @@ Contains
     !Arguments
     Character(len=*), intent(IN) :: key, value
     Integer, intent(IN) :: min, max
-    Integer, intent(OUT) :: saveTo
+    Integer, intent(INOUT) :: saveTo
 
     ! Locals
     Integer :: valueInt
@@ -499,6 +504,11 @@ Contains
 
     End If
 
+    ! Check for non-default
+    If (valueInt .NE. saveTo) Then
+      Call log%warn("Non-default parameter: " // trim(key) // " = " // trim(str(valueInt)) // ", default = " // trim(str(saveTo)))
+    End If
+
     ! Save the value and set the flag
     saveTo = valueInt
 
@@ -513,7 +523,7 @@ Contains
 
     !Arguments
     Character(len=*), intent(IN) :: key, value
-    Logical, intent(OUT) :: saveTo
+    Logical, intent(INOUT) :: saveTo
 
     ! Locals
     Logical :: valueLogical
@@ -526,6 +536,11 @@ Contains
 
     ! Convert to logical
     Read(value,*) valueLogical
+
+    ! Check for non-default
+    If (valueLogical .NE. saveTo) Then
+      Call log%warn("Non-default parameter: " // trim(key) // " = " // trim(str(valueLogical)))
+    End If
 
     ! Save the value and set the flag
     saveTo = valueLogical

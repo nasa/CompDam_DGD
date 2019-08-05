@@ -67,7 +67,7 @@ compLimit = 0.25d0 // Default value: 0.25d0
 
 
 // Tolerance for divergence of internal Newton Raphson loop. Triggers divergence logic if (err - err_old)/err_old > tol_divergence
-tol_divergence = 1.d-6 // Default value: 0.1d0
+tol_divergence = 1.d-6 // Default value: 1.d-6
 
 // maximum value for shear strain. If this value is exceeded, the element is deleted. Set to zero to disable.
 gamma_max = 4.d0 // Default value: 4.d0
