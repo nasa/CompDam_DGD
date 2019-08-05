@@ -1,32 +1,31 @@
 *Heading
 DCB parametric fatigue
 **
+** This model is designed to reproduce the results presented in Figure 14 of
+** NASA/TP-2018-219838 by Carlos Dávila.
+**
 *Parameter
 ********************************************************************************
-**Geometry parameters
+** Geometry parameters
 ********************************************************************************
-CL = 50.8        # Length of Crack
-XL = 7.5         # Refined mesh for extension
-TW = 1.00        # Total width of DCB Specimen
+crackLength = 50.8  # Length of Crack
+XL = 7.5         # Length of refined mesh for crack extension
+width = 1.0      # Width of DCB specimen
 TBL = 2.25       # Thickness of bottom arm
 TTL = 2.25       # Thickness of top arm
-TL = CL + 3.0*TBL + XL  # Total length
-BL = 0.93*CL     # Coarse length of precracked area
-HL = XL + CL     # Maximum crack length at end of analysis
-********************************************************************************
-**Material parameters
-********************************************************************************
-YT = 80.0
-SL = 99.0
-K1 = 1.E5
-GIc = 0.214
-GIIc = 0.59
 **
-YTb = 0.8
-SLb = 1.0
-K1b = 1.E3
-GIcb = 0.140
-GIIcb = 0.193
+TL = crackLength + 3.0*TBL + XL  # Total length
+BL = 0.93*crackLength     # Coarse length of precracked area
+HL = XL + crackLength     # Maximum crack length at end of analysis
+********************************************************************************
+** Cohesive material parameters
+********************************************************************************
+** Cohesive law
+YT = 80.1  # Mode I strength
+SL = 97.6  # Mode II strength
+K1 = 2.E5  # Cohesive penalty stiffness (mode I)
+GIc = 0.240  # Mode I fracture toughness
+GIIc = 0.739  # mode II fracture toughness
 **
 YC = 199.8  # compressive matrix strength
 BK_eta = 2.1  # Benzeggagh-Kenane mode mixity exponent
@@ -36,7 +35,7 @@ density = 1.57e-09  # Density for carbon/epoxy materials
 ********************************************************************************
 ** Loading parameters
 ********************************************************************************
-AppliedDisplacement = 1.92
+disp = 1.92  # Applied displacement
 **
 time_inc = 1.e-07  # target delta-time for mass scaling
 **
@@ -45,12 +44,12 @@ time_2 = 0.15  # time duration for step 2 (fatigue)
 ********************************************************************************
 ** Meshing Parameters
 ********************************************************************************
-NEW=  6    # Number of element in width direction (y-dir)
-NET=  3    # Number of element in sublamina
-NEA= 24    # Number of element in length direction before Crack, coarse(x-dir)
-NEB= 20    # Number of element in length direction before Crack, fine  (x-dir)
-NEC=200    # Number of element in length direction after Crack (x-dir)
-NED= 20    # Number of element in length direction after cracking (x-dir)
+NEW=  6    # Number of elements in width direction (y-dir)
+NET=  3    # Number of elements in sublamina (z-dir)
+NEA= 24    # Number of elements in length direction before Crack, coarse (x-dir)
+NEB= 20    # Number of elements in length direction before Crack, fine (x-dir)
+NEC=200    # Number of elements in length direction after Crack (x-dir)
+NED= 20    # Number of elements in length direction after cracking (x-dir)
 **
 top_arm_element_thickness = TTL/NET
 bot_arm_element_thickness = TBL/NET
@@ -82,31 +81,8 @@ bot_arm_element_thickness = TBL/NET
 , , , , , , , ,
 , , , , , , , 0.0
 **
-*Material, name=bridge
-*Density
-<density>,
-*Depvar
-19,
-1, COH_dmg
-2, COH_delta_s1
-3, COH_delta_n
-4, COH_delta_s2
-5, COH_B
-9, COH_FI
-11, COH_STATUS
-*User Material, constants=40
-200000, , 0., , , , , ,
-, , , , , <YTb>, <SLb>, <GIcb>,
-<GIIcb>, <BK_eta>, <YC>, <alpha0>, <K1b>, , , ,
-, , , , , , , ,
-, , , , , , , 0.0
-********************************************************************************
 *Initial Conditions, type=SOLUTION
 COH, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-0.0, 0.0, 0, 1, 0.0, 0.0, 0.0, 0.0,
-0.0, 0.0, 0.0, 0.0
-*Initial Conditions, type=SOLUTION
-COHB, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 0.0, 0.0, 0, 1, 0.0, 0.0, 0.0, 0.0,
 0.0, 0.0, 0.0, 0.0
 ********************************************************************************
@@ -115,7 +91,7 @@ COHB, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 *Parameter
 NEL=NEA+NEB+NEC+NED    # Element increment low by low
 NNL=NEL+1              # Node increment low by low
-HTW=TW/2               # Half width
+HTW=width/2               # Half width
 **
 NTNL=50000*NET
 NETS=(NET+1)*50000
@@ -239,15 +215,15 @@ CN8=N4
 *Node
 <A>,  0.0, 0.0, 0.0
 <B>, <BL>, 0.0, 0.0
-<C>, <CL>, 0.0, 0.0
+<C>, <crackLength>, 0.0, 0.0
 <D>, <HL>, 0.0, 0.0
 <E>, <TL>, 0.0, 0.0
 **
-<F>,  0.0, <TW>, 0.0
-<G>, <BL>, <TW>, 0.0
-<H>, <CL>, <TW>, 0.0
-<I>, <HL>, <TW>, 0.0
-<J>, <TL>, <TW>, 0.0
+<F>,  0.0, <width>, 0.0
+<G>, <BL>, <width>, 0.0
+<H>, <crackLength>, <width>, 0.0
+<I>, <HL>, <width>, 0.0
+<J>, <TL>, <width>, 0.0
 **
 *Ngen, nset=TIP_LINE_AB
 <A>, <F>, <E>
@@ -345,9 +321,8 @@ OPEN_TOP_A, OPEN_TOP_B, MIDDLE_TOP, END_TOP,
  <COH_B>, <NED>, 1 , 1 , <NEW>, <NNL>, <NEL>, 1, 50000, 50000
 *Elset, elset=COH
  FRONT_COH, BACK_COH
-*Elcopy, element shift=1000000, oldset=COH, new set=COHB, shift nodes=0
 ********************************************************************************
-** Section definition
+** Section definitions
 ********************************************************************************
 *Orientation, name=OID_0
  1., 0., 0., 0, 1., 0
@@ -359,8 +334,6 @@ OPEN_TOP_A, OPEN_TOP_B, MIDDLE_TOP, END_TOP,
 <top_arm_element_thickness>, 5
 **
 *Cohesive section, elset=COH, response=TRACTION SEPARATION, material=cohesive, thickness=SPECIFIED
-1.0
-*Cohesive section, elset=COHB, response=TRACTION SEPARATION, material=bridge, thickness=SPECIFIED
 1.0
 ********************************************************************************
 ** Boundary conditions and constraints
@@ -382,7 +355,7 @@ OPEN_TOP_A, OPEN_TOP_B, MIDDLE_TOP, END_TOP,
 ** Amplitude functions
 ********************************************************************************
 *Amplitude, name=Amp-Load, definition=SMOOTH STEP
-0.0, 0.0, <time_1>, <AppliedDisplacement>
+0.0, 0.0, <time_1>, <disp>
 ********************************************************************************
 ** Filter to halt analysis when damage grows into the coarse region
 *Filter, name=haltOnFailure, operator=MAX, limit=1e-20, halt
@@ -409,8 +382,6 @@ U,
 S, EMSF
 *Element Output, elset=COH
 SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
-*Element Output, elset=COHB
-SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
 **
 *End Step
 ********************************************************************************
@@ -436,8 +407,6 @@ U,
 *Element Output
 S,
 *Element Output, elset=COH
-SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
-*Element Output, elset=COHB
 SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
 **
 *End Step

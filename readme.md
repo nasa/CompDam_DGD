@@ -37,8 +37,9 @@ For any questions, please contact the developers:
 - [Elements](#elements)
 - [Material properties](#material-properties)
 - [State variables](#state-variables)
-- [Implicit solver compatibility](#implicit-solver-compatibility)
 - [Fatigue analyses](#fatigue-analyses)
+- [Implicit solver compatibility](#implicit-solver-compatibility)
+- [Example problems](#example-problems)
 - [Advanced debugging](#advanced-debugging)
 - [Python extension module](#python-extension-module)
 - [Summary of tests classes](#summary-of-tests-classes)
@@ -593,6 +594,10 @@ As the `vumatWrapper` is a developmental capability, several important limitatio
 1. The material Jacobian tensor is hard-coded in `for/vumatWrapper.for` for IM7/8552 elastic stiffnesses. A more general Jacobian is needed.
 2. The material response can become inaccurate for large increments in rotations. If large rotations occur, small increments must be used. A cut-back scheme based on rotation increment size is needed.
 3. Testing has been conducted on the C3D8R element type only.
+
+
+## Example problems
+The directory `examples/` includes example models that use CompDam along with corresponding files that defined the expected results (for use with Abaverify, following the same pattern as the test models in the `tests/` directory. The file `example_runner.py` can be used to automate submission of several models and/or for automatically post-processing the model results to verify that they match the expected results.
 
 
 ## Advanced debugging
