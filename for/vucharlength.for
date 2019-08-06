@@ -19,11 +19,20 @@ Subroutine vucharlength(  &
   Double Precision :: center(ndim), edges(ndim, ndim), edges_n(ndim, ndim), edges_m(ndim, ndim), fiber_band(ndim), matrix_band(ndim)
   Double Precision :: thick_test, fiber_test, da_max_matrix, da_avg_matrix
 
+  Dimension INTV(1), REALV(1)    ! For abaqus warning messages
+  Character(len=8) CHARV(1)      ! For Abaqus warning messages
+
   ! Parameters
   Double Precision, parameter :: zero=0.d0, Pi=ACOS(-1.d0), two=2.d0
 
   ! Evaluate vucharlength() only when element length state variables are undefined.
   runOnce: If ( stateOld(1, 6) == zero ) Then
+
+    ! Check for the appropriate number of components in *Characteristic Length, definition=USER, components=3
+    If ((ncomp .NE. 2) .AND. (ncomp .NE. 3) .AND. (ncomp .NE. 6)) Then
+      INTV(1) = ncomp
+      Call XPLB_ABQERR(-3,"Invalid number of components in *Characteristic Length. Expecting 2, 3, or 6. Found %I",INTV,REALV,CHARV)
+    End If
 
     Master: Do k = 1, nblock
 
