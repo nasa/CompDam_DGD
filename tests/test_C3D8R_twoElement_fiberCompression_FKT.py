@@ -235,6 +235,7 @@ for match in matches:
         ' 25, CDM_Fm2\n' +
         ' 26, CDM_Fm3\n' +
         '*Damping, alpha=1.d+4\n'+
+        '*Characteristic Length, definition=USER, components=3\n'+
         '*Initial Conditions, Type=Solution\n'+
         ' orphanMeshPart-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
         ' 0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
