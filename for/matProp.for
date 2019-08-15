@@ -933,6 +933,8 @@ Contains
     If (m%shearNonlinearity12 .OR. m%shearNonlinearity13) Then
       If (.NOT. m%aPL_def) Call log%error('PROPERTY ERROR: Some shear-nonlinearity properties are missing. Must define a value for alpha_PL.')
       If (.NOT. m%nPL_def) Call log%error('PROPERTY ERROR: Some shear-nonlinearity properties are missing. Must define a value for n_PL.')
+      If (m%aPL .EQ. zero) Call log%error('PROPERTY ERROR: Shear nonlinearity is enabled, but alpha_PL is zero')
+      If (m%nPL .EQ. zero) Call log%error('PROPERTY ERROR: Shear nonlinearity is enabled, but n_PL is zero')
       Call log%info('PROPERTY: Shear-nonlinearity properties have been defined')
     Else
       Call log%info('PROPERTY: Shear-nonlinearity is disabled')
