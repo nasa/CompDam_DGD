@@ -709,8 +709,8 @@ We invite your contributions to CompDam_DGD! Please submit contributions (includ
 If you use CompDam, please cite using the following BibTex entry:
 
     @misc{CompDam,
-    title={CompDam - Deformation Gradient Decomposition (DGD), v2.5.0},
-    author={Leone, F. A., Bergan, A. C., D\'avila, C. G. },
-    note={https://github.com/nasa/CompDam_DGD},
+    title={Comp{D}am - {D}eformation {G}radient {D}ecomposition ({DGD}), v2.5.0},
+    author={Frank A. Leone and Andrew C. Bergan and Carlos G. D\'{a}vila},
+    note={https://github.com/nasa/CompDam\_DGD},
     year={2019}
     }
