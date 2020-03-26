@@ -267,7 +267,7 @@ class ParametricStressLife(av.TestCase):
 
     expectedpy_parameters = {'stress_ratio': parameters['stress_ratio']}
 
-    fatigue_R_ratio = 0.1
+    fatigue_R_ratio = 0.5
 
     # Class-wide methods
     @classmethod
