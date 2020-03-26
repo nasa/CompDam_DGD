@@ -32,14 +32,14 @@ Contains
     Double Precision :: KS                                                   ! Shear penalty stiffness
     Double Precision :: B_old, damage_old
     Double Precision :: mode_mix_limit
-    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0, ten=10.d0
+    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0, seven=7.d0, ten=10.d0
 
     ! Fatigue
     Double Precision :: R_old, R_fatigue, R_fatigue_inc, R_max               ! Damage measures
     Double Precision :: damage_static                                        ! Temporary, used to compare static and fatigue damage
     Double Precision :: lambda_relative                                      ! Normalized fatigue displacement jump
-    Double Precision :: fatigue_beta, fatigue_gamma, brittleness, pF         ! Fatigue damage parameters
-    Double Precision :: endurance_relative_B, endurance_relative             ! relative endurance limit terms
+    Double Precision :: fatigue_beta, fatigue_p_cf20                         ! beta and p parameters from CF20 paper
+    Double Precision :: epsilon_mixed, endurance_relative                    ! relative endurance limit terms
     Integer :: fatigue_parameters(2)
     Double Precision :: cycles_per_increment(1)
     Pointer(ptr_fatigue_int, fatigue_parameters)
@@ -157,28 +157,21 @@ Contains
         R_old = damage_old*d0/((one - damage_old)*df + damage_old*d0)  ! Transform old damage to R form
         R_max = damage_max*d0/((one - damage_max)*df + damage_max*d0)  ! Transform damage_max to R form
 
-        ! Relative endurance at R=-1, corrected for mode mixity B:
-        endurance_relative_B = 0.20d0*(one - B*0.42d0)
-        ! Relative endurance for all R ratios and mode mixities:
-        endurance_relative = two*endurance_relative_B/(endurance_relative_B + one + p%fatigue_R_ratio*(endurance_relative_B - one))
+        ! Relative endurance at R=-1, corrected for mode mixity B, based on:
+        !   Juvinall, R. C., and Marshek, K. M., Fundamentals of Machine Component Design, Wiley, New York, NY, 2000.
+        epsilon_mixed = m%fatigue_epsilon*(one - B*0.42d0)
+        ! Relative endurance for all R ratios and mode mixities
+        endurance_relative = two*epsilon_mixed/(epsilon_mixed + one + p%fatigue_R_ratio*(epsilon_mixed - one))
 
-        ! Relative displacement jump
-        lambda_relative = del/((one - R_old)*d0 + R_old*df)
-        If (lambda_relative < endurance_relative) Then  ! threshold of propagation
-          lambda_relative = zero
-        Else If (lambda_relative > one) Then
-          lambda_relative = one
-        End If
+        ! Coefficient fatigue_beta for incremental fatigue damage calculation
+        fatigue_beta = -seven*m%fatigue_eta/log10(endurance_relative)  ! Equation 23 in CF20 technical paper
+        fatigue_p_cf20 = fatigue_beta + m%fatigue_p_mod
 
-        brittleness = 0.95d0  ! brittleness parameter; TODO: move to either material properties or parameters
+        lambda_relative = min(del/((one - R_old)*d0 + R_old*df), one)  ! Relative displacement jump
+        If (lambda_relative < endurance_relative) lambda_relative = zero  ! threshold of propagation
 
-        ! Coefficients for incremental fatigue damage calculation
-        fatigue_beta = -7.d0*brittleness/log10(endurance_relative)  ! Equation 23
-        fatigue_gamma = 1.d7  ! number of cycles to endurance
-        pF = fatigue_beta  ! TODO: move to either material properties or parameters
-
-        R_fatigue_inc = (one - R_old)**(fatigue_beta - pF) * (lambda_relative/endurance_relative)**fatigue_beta * &
-                          cycles_per_increment(1)/(pF + one)/fatigue_gamma  ! CF20 Incremental fatigue damage
+        R_fatigue_inc = (one - R_old)**(fatigue_beta - fatigue_p_cf20) * (lambda_relative/endurance_relative)**fatigue_beta * &
+                          cycles_per_increment(1)/(fatigue_p_cf20 + one)/m%fatigue_gamma  ! CF20 incremental fatigue damage
 
         R_fatigue_inc = MIN(R_fatigue_inc, R_max - R_old)
         R_fatigue = R_old + R_fatigue_inc  ! Updated fatigue damage variable

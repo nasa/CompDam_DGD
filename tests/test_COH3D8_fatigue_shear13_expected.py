@@ -1,7 +1,7 @@
 stress_ratio = 0.5
-strength = 92.3
-toughness = 0.788
-penalty = 1.e6 * 0.277 * strength * strength / (toughness * 62.3 * 62.3)
+strength = 97.6
+toughness = 0.739
+penalty = 2.e5 * 0.240 * strength * strength / (toughness * 80.1 * 80.1)
 
 delta_i = strength / penalty
 delta_f = 2.0 * toughness / strength
@@ -51,7 +51,7 @@ parameters = {
             "window": [delta_f * 0.80, delta_f * 1.20],
             "zeroTol": strength * 0.001,  # Defines how close to zero the y value needs to be
             "referenceValue": delta_f,
-            "tolerance": delta_f * 0.05
+            "tolerance": delta_f * 0.10
         },
         {
             "type": "xy_infl_pt_bilinear",
@@ -73,7 +73,7 @@ parameters = {
 				delta_inflection_fatigue + (delta_f - delta_inflection_fatigue) * 0.80
 				],
             "referenceValue": [delta_inflection_fatigue, strength * stress_ratio],
-            "tolerance": [delta_inflection_fatigue * 0.01, strength * stress_ratio * 0.01],
+            "tolerance": [delta_inflection_fatigue * 0.02, strength * stress_ratio * 0.02],
         },
         {
             "type": "max",
@@ -97,7 +97,7 @@ parameters = {
                     "position": "Element 1 Int Point 1"
                 },
             "referenceValue": 0.0,
-            "tolerance": strength * 0.1
+            "tolerance": strength * 0.15
         }
 	]
 }

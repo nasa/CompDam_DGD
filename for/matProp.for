@@ -28,6 +28,8 @@ Module matProp_Mod
     Double Precision :: schaefer_b2
     Double Precision :: schaefer_n
     Double Precision :: schaefer_A                                       ! Specified parameters for schaefer theory
+    Double Precision :: fatigue_gamma, epsilon, brittleness, fatigue_p   ! Opt. CF20 fatigue properties
+    Double Precision :: fatigue_gamma, fatigue_epsilon, fatigue_eta, fatigue_p_mod  ! Opt. CF20 fatigue properties
 
     ! min and max values for acceptable range
     Double Precision, private :: modulus_min, modulus_max
@@ -43,6 +45,10 @@ Module matProp_Mod
     Double Precision, private :: mu_min, mu_max
     Double Precision, private :: schapery_min, schapery_max
     Double Precision, private :: schaefer_min, schaefer_max
+    Double Precision, private :: fatigue_gamma_min, fatigue_gamma_max
+    Double Precision, private :: fatigue_epsilon_min, fatigue_epsilon_max
+    Double Precision, private :: fatigue_eta_min, fatigue_eta_max
+    Double Precision, private :: fatigue_p_mod_min, fatigue_p_mod_max
 
     ! Flags that indicate if values have been set
     Logical, private :: E1_def, E2_def, G12_def, v12_def, v23_def
@@ -60,6 +66,7 @@ Module matProp_Mod
     Logical, private :: schaefer_b2_def
     Logical, private :: schaefer_n_def
     Logical, private :: schaefer_A_def
+    Logical, private :: fatigue_gamma_def, fatigue_epsilon_def, fatigue_eta_def, fatigue_p_mod_def
 
     ! Calculated properties
     Double Precision :: v21, v31, v32
@@ -174,8 +181,8 @@ Contains
     ! Feature flags
     If (.NOT. m%friction) m%mu = zero
 
-    ! ! Checks that a consistent set of properties has been defined
-    ! Call consistencyChecks(issueWarnings)
+    ! Checks that a consistent set of properties has been defined
+    Call consistencyChecks(m, issueWarnings=.FALSE.)
 
     ! Calculated properties
     m%v21 = m%E2*m%v12/m%E1
@@ -564,15 +571,22 @@ Contains
                 Call log%error("loadMatProps: Unknown position found in feature flags")
             End Select
           End Do
-        Case (2)
+        Case (2)  ! Reserved
         Case (3)
           m%thickness = props(i)
-        ! props(4:8) are reserved for use in the future as needed
-        Case (4)
+
+        Case (4)  ! Reserved
         Case (5)
+          Call verifyAndSaveProperty_double('fatigue_gamma', props(i), m%fatigue_gamma_min, m%fatigue_gamma_max, m%fatigue_gamma, m%fatigue_gamma_def)
+
         Case (6)
+          Call verifyAndSaveProperty_double('fatigue_epsilon', props(i), m%fatigue_epsilon_min, m%fatigue_epsilon_max, m%fatigue_epsilon, m%fatigue_epsilon_def)
+
         Case (7)
+          Call verifyAndSaveProperty_double('fatigue_eta', props(i), m%fatigue_eta_min, m%fatigue_eta_max, m%fatigue_eta, m%fatigue_eta_def)
+
         Case (8)
+          Call verifyAndSaveProperty_double('fatigue_p_mod', props(i), m%fatigue_p_mod_min, m%fatigue_p_mod_max, m%fatigue_p_mod, m%fatigue_p_mod_def)
 
         Case (9)
           Call verifyAndSaveProperty_double('E1', props(i), m%modulus_min, m%modulus_max, m%E1, m%E1_def)
@@ -739,6 +753,18 @@ Contains
 
     m%schaefer_min = -Huge(zero)
     m%schaefer_max = Huge(zero)
+
+    m%fatigue_gamma_min = Tiny(zero)
+    m%fatigue_gamma_max = Huge(zero)
+
+    m%fatigue_epsilon_min = Tiny(zero)
+    m%fatigue_epsilon_max = one
+
+    m%fatigue_eta_min = Tiny(zero)
+    m%fatigue_eta_max = one
+
+    m%fatigue_p_mod_min = -Huge(zero)
+    m%fatigue_p_mod_max = Huge(zero)
 
     Return
   End Subroutine initializeMinMaxValues
@@ -1021,6 +1047,17 @@ Contains
     Else
       Call log%info('PROPERTY: fiber nonlinearity has not been defined. Setting cl = 0')
       m%cl = zero
+    End If
+
+    ! check if fatigue properties have been defined
+    If (m%fatigue_gamma_def .AND. m%fatigue_epsilon_def .AND. m%fatigue_eta_def .AND. m%fatigue_p_mod_def) Then
+      Call log%info('PROPERTY: cohesive fatigue properties have been defined')
+    Else
+      Call log%info('PROPERTY: cohesive fatigue properties have not been defined. Using default values.')
+      If (.NOT. m%fatigue_gamma_def) m%fatigue_gamma = 1.d7
+      If (.NOT. m%fatigue_epsilon_def) m%fatigue_epsilon = 0.2d0
+      If (.NOT. m%fatigue_eta_def) m%fatigue_eta = 0.95d0
+      If (.NOT. m%fatigue_p_mod_def) m%fatigue_p_mod = zero
     End If
 
     Return
