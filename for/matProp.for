@@ -21,14 +21,10 @@ Module matProp_Mod
     Double Precision :: XT, fXT, GXT, fGXT                               ! Opt. Longitudinal tensile damage (max strain failure criterion, bilinear softening)
     Double Precision :: XC, fXC, GXC, fGXC                               ! Opt. Longitudinal compressive damage (max strain failure criterion, bilinear softening)
     Double Precision :: w_kb                                             ! Opt. LaRC15 kink band model (Also requires XC, shear nonlinearity).
-    Double Precision :: cl                                           ! Opt. fiber nonlinearity (defaults to zero, which is no fiber nonlinearity)
+    Double Precision :: cl                                               ! Opt. fiber nonlinearity (defaults to zero, which is no fiber nonlinearity)
     Double Precision :: mu                                               ! Opt. Friction. Defaults to zero
-    Double Precision :: es(4), gs(4)
-    Double Precision :: schaefer_a6
-    Double Precision :: schaefer_b2
-    Double Precision :: schaefer_n
-    Double Precision :: schaefer_A                                       ! Specified parameters for schaefer theory
-    Double Precision :: fatigue_gamma, epsilon, brittleness, fatigue_p   ! Opt. CF20 fatigue properties
+    Double Precision :: es(4), gs(4)                                     ! Opt. Schapery theory inputs
+    Double Precision :: schaefer_a6, schaefer_b2, schaefer_n, schaefer_A  ! Opt. Schaefer nonlinearity model inputs
     Double Precision :: fatigue_gamma, fatigue_epsilon, fatigue_eta, fatigue_p_mod  ! Opt. CF20 fatigue properties
 
     ! min and max values for acceptable range
@@ -373,6 +369,7 @@ Contains
             Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(3), m%gs_def(3))
           Case ('gs3')
             Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(4), m%gs_def(4))
+
           ! Schaefer Theory
           Case ('schaefer_a6')
             Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_a6, m%schaefer_a6_def)
@@ -382,6 +379,7 @@ Contains
             Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_n, m%schaefer_n_def)
           Case ('schaefer_A')
             Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_A, m%schaefer_A_def)
+
           Case Default
             Call log%error("loadMatProps: Property not recognized: " // trim(key))
         End Select
