@@ -525,6 +525,14 @@ class SingleElementCohesiveTests(av.TestCase):
 
     # -----------------------------------------------------------------------------------------
     # Test methods
+    def test_COH2D4_normal(self):
+        """ Single COH2D4 cohesive element test for normal loading """
+        self.runTest("test_COH2D4_normal")
+
+    def test_COH2D4_shear(self):
+        """ Single COH2D4 cohesive element test for shear loading """
+        self.runTest("test_COH2D4_shear")
+
     def test_COH3D8_normal(self):
         """ Single cohesive element test for mode I response """
         self.runTest("test_COH3D8_normal")
