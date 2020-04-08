@@ -414,17 +414,17 @@ Contains
     p%fatigue_R_ratio_min = -one
     p%fatigue_R_ratio_max = one
 
-    p%cycles_per_increment_init_min = 1.d-6
-    p%cycles_per_increment_init_max = 1.d+6
+    p%cycles_per_increment_init_min = Tiny(zero)
+    p%cycles_per_increment_init_max = Huge(zero)
 
     p%cycles_per_increment_mod_min = Tiny(zero)
-    p%cycles_per_increment_mod_max = 9.d0  ! corresponds to changing cycles_per_increment by a factor of 10
+    p%cycles_per_increment_mod_max = Huge(zero)
 
-    p%cycles_per_increment_max_min = one
+    p%cycles_per_increment_max_min = Tiny(zero)
     p%cycles_per_increment_max_max = Huge(zero)
 
     p%cycles_per_increment_min_min = Tiny(zero)
-    p%cycles_per_increment_min_max = one
+    p%cycles_per_increment_min_max = Huge(zero)
 
     p%fatigue_damage_min_threshold_min = Tiny(zero)
     p%fatigue_damage_min_threshold_max = one
