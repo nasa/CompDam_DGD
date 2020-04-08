@@ -886,22 +886,28 @@ Contains
         m%v13 = m%v12
         m%G23 = m%E2/two/(one + m%v23)
       End If
-    Else
+
+    Else If (m%cohesive) Then  ! Check if cohesive element properties have been specified
       ! Check for cohesive stiffness material properties
       If (.NOT. m%E3_def) Call log%error('PROPERTY ERROR: Cohesive material laws require a definition for E3.')
       ! Check for cohesive strength material properties
       If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YT.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL_def.')
-      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YC.')
-      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for alpha0.')
+      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL.')
+      If (m%YC_def .AND. m%alpha0_def) Then
+        ! Compute these properties for the transverse shear strength
+        m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
+        m%etaT = -one/TAN(two*m%alpha0)
+        m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
+      Else
+        Call log%info('PROPERTY: YC and/or alpha0 not defined. Assuming that S_T = S_L.')
+        m%etaL = zero
+        m%etaT = zero
+        m%ST   = m%SL
+      End If
       ! Check for cohesive fracture toughness material properties
       If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GYT.')
       If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GSL.')
       If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for eta_BK.')
-      ! Compute these properties for the transverse shear strength
-      m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
-      m%etaT = -one/TAN(two*m%alpha0)
-      m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
 
       Call log%info('PROPERTY: All required cohesive element peroperties are defined.')
     End IF
@@ -909,30 +915,12 @@ Contains
     ! Check if matrix damage properties have been specified
     If (m%matrixDam) Then
       If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for YT.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for SL_def.')
+      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for SL.')
       If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for GYT.')
       If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for GSL.')
       If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for eta_BK.')
       If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for YC.')
       If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for alpha0.')
-      m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
-      m%etaT = -one/TAN(two*m%alpha0)
-      m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
-
-      Call log%info('PROPERTY: Matrix damage is enabled')
-    Else
-      Call log%info('PROPERTY: Matrix damage is disabled')
-    End If
-
-    ! Check if cohesive element properties have been specified
-    If (m%cohesive) Then
-      If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YT.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL_def.')
-      If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GYT.')
-      If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GSL.')
-      If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for eta_BK.')
-      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YC.')
-      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for alpha0.')
       m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
       m%etaT = -one/TAN(two*m%alpha0)
       m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
