@@ -161,7 +161,7 @@ Contains
         fatigue_beta = -seven*m%fatigue_eta/log10(endurance_relative)  ! Equation 23 in CF20 technical paper
         fatigue_p_cf20 = fatigue_beta + m%fatigue_p_mod
 
-        lambda_relative = min(del/((one - R_old)*d0 + R_old*df), one)  ! Relative displacement jump
+        lambda_relative = del/((one - R_old)*d0 + R_old*df)  ! Relative displacement jump
         If (lambda_relative < endurance_relative) lambda_relative = zero  ! threshold of propagation
 
         R_fatigue_inc = (one - R_old)**(fatigue_beta - fatigue_p_cf20) * (lambda_relative/endurance_relative)**fatigue_beta * &
