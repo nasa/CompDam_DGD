@@ -152,8 +152,7 @@ Contains
         R_old = damage_old*d0/((one - damage_old)*df + damage_old*d0)  ! Transform old damage to R form
         R_max = damage_max*d0/((one - damage_max)*df + damage_max*d0)  ! Transform damage_max to R form
 
-        ! Relative endurance at R=-1, corrected for mode mixity B, based on:
-        !   Juvinall, R. C., and Marshek, K. M., Fundamentals of Machine Component Design, Wiley, New York, NY, 2000.
+        ! Relative endurance at R=-1, corrected for mode mixity B
         epsilon_mixed = m%fatigue_epsilon*(one - B*0.42d0)
         ! Relative endurance for all R ratios and mode mixities
         endurance_relative = two*epsilon_mixed/(epsilon_mixed + one + p%fatigue_R_ratio*(epsilon_mixed - one))
