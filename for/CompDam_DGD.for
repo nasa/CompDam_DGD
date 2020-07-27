@@ -382,8 +382,8 @@ Subroutine CompDam(  &
           Call log%error("Found Lc2 = 0. Perhaps *Characteristic Length is missing from the input deck?")
         Else If (sv%Lc(3) .EQ. zero) Then
           Call log%error("Found Lc3 = 0. Perhaps *Characteristic Length is missing from the input deck?")
-        Else If (sv%Lc(2) > sv%Lc(1)*10.d0 .OR. sv%Lc(2) < sv%Lc(1)/10.d0) Then
-          Call log%warn("Found Lc = [" // trim(str(sv%Lc(1))) //','// trim(str(sv%Lc(2))) //','// trim(str(sv%Lc(3))) // "]; perhaps *Characteristic Length is missing from the input deck?")
+        ! Else If (sv%Lc(2) > sv%Lc(1)*10.d0 .OR. sv%Lc(2) < sv%Lc(1)/10.d0) Then
+        !   Call log%warn("Found Lc = [" // trim(str(sv%Lc(1))) //','// trim(str(sv%Lc(2))) //','// trim(str(sv%Lc(3))) // "]; perhaps *Characteristic Length is missing from the input deck?")
         End If
       End If
 
