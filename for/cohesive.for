@@ -26,7 +26,6 @@ Contains
     Double Precision :: del0n, del0s                                         ! Initiation displacements for pure Mode I and Mode II
     Double Precision :: delfn, delfs                                         ! Final displacements for pure Mode I and Mode II
     Double Precision :: d0, df                                               ! Initiation and final displacements for current mode-mixity ratio
-    Double Precision :: del0nB, del0sB, delfnB, delfsB                       ! Temporary, used to calculate d0 and df
     Double Precision :: damage_max                                           ! Maximum value for damage variable
     Double Precision :: beta                                                 ! Placeholder (temp.) variables for Mode-mixity
     Double Precision :: KS                                                   ! Shear penalty stiffness
@@ -109,9 +108,7 @@ Contains
       B = zero
       d0 = del0n
     Else
-      del0nB = SQRT(((one - B**m%eta_BK)*del0n*del0n + KS/Pen(2)*B**m%eta_BK*del0s*del0s)*(one - B))
-      del0sB = SQRT(beta/(one - beta))*del0nB
-      d0 = SQRT(del0nB*del0nB + del0sB*del0sB)
+      d0 = SQRT( (del0n**2 + (del0s**2*KS/Pen(2) - del0n**2)*B**m%eta_BK)*(one + B*(Pen(2)/KS - one)) )
     End If
 
     FI = MIN(one, del/d0)
@@ -129,9 +126,7 @@ Contains
       Else If (B <= mode_mix_limit) Then
         df = delfn
       Else
-        delfnB = ((one - B**m%eta_BK)*del0n*delfn + KS/Pen(2)*B**m%eta_BK*del0s*delfs)*(one - B)/del0nB
-        delfsB = SQRT(beta/(one - beta))*delfnB
-        df = SQRT(delfnB*delfnB + delfsB*delfsB)
+        df = (del0n*delfn + (del0s*delfs*KS/Pen(2) - del0n*delfn)*B**m%eta_BK)*(one + B*(Pen(2)/KS - one))/d0
       End If
 
       ! Determine the new damage state
