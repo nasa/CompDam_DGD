@@ -3,14 +3,16 @@
 **
 *Parameter
 ** Input parameters
- length = 0.2
- thickness = 0.0
+ length = 0.1
+ th = 0.0
  time_1 = 0.01
  time_2 = 0.02
  time_inc = 1.e-8
  stress_ratio = 0.5
- YT = 62.3
- SL = 92.3
+ YT = 80.1
+ SL = 97.6
+ GIc = 0.240
+ GIIc = 0.739
 ** Derived parameters
  applied_stress = SL * stress_ratio
  nodal_load = applied_stress * ( length * length ) / 4.
@@ -20,10 +22,10 @@
       2,      <length>,            0.,            0.
       3,      <length>,      <length>,            0.
       4,            0.,      <length>,            0.
-      5,            0.,            0.,   <thickness>
-      6,      <length>,            0.,   <thickness>
-      7,      <length>,      <length>,   <thickness>
-      8,            0.,      <length>,   <thickness>
+      5,            0.,            0.,          <th>
+      6,      <length>,            0.,          <th>
+      7,      <length>,      <length>,          <th>
+      8,            0.,      <length>,          <th>
 *Nset, nset=X+
   2, 3, 6, 7
 *Nset, nset=X-
@@ -52,20 +54,21 @@
 *Density
  1.57e-09,
 *User material, constants=40
-** feature flags, ,   thickness, 4, 5, 6, 7, 8
-          200000, , <thickness>,  ,  ,  ,  ,  ,
-**  9         10        11        12        13        14        15        16
-**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
-      ,         ,          ,          ,         ,     62.3,     92.3,     0.277,
-**  17        18        19        20        21        22        23        24
-**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
-    0.788,    1.634,    199.8,    0.925,    1.d6,        ,         ,          ,
-**  25        26        27        28        29        30        31        32
-**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
-           ,         ,          ,     ,       ,          ,         ,          ,
-**  33        34        35        36        37        38        39        40
-**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
-      ,          ,         ,          ,           ,       ,         ,     0.3
+**  1              2        3          4       5          6        7        8
+**  feature flags,  ,       thickness,  ,      gamma_fat, eps_fat, eta_fat, p_fat,
+    200000,         ,       <th>,       ,      1.d7,      0.2,     0.95,    0.0,
+**  9              10       11         12      13         14       15       16
+**  E1,            E2,      G12,       nu12,   nu23,      YT,      SL,      GYT,
+      ,              ,         ,           ,       ,      <YT>,    <SL>,    <GIc>,
+**  17             18       19         20      21         22       23       24
+**  GSL,           eta_BK,  YC,        alpha0, E3,        G13,     G23,     nu13,
+    <GIIc>,        2.1,     199.8,     0.925,  2.d5,         ,        ,         ,
+**  25             26       27         28      29         30       31       32
+**  alpha11,       alpha22, alpha_PL,  n_PL,   XT,        fXT,     GXT,     fGXT,
+           ,              ,         ,      ,     ,           ,        ,         ,
+**  33             34       35         36      37         38       39       40
+**  XC,            fXC,     GXC,       fGXC,   phi_ff,    w_kb,    phi0,    mu
+      ,               ,        ,           ,         ,        ,        ,    0.0
 *Depvar
   19,
   1, COH_dmg

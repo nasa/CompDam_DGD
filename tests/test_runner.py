@@ -267,7 +267,7 @@ class ParametricStressLife(av.TestCase):
 
     expectedpy_parameters = {'stress_ratio': parameters['stress_ratio']}
 
-    fatigue_R_ratio = 0.1
+    fatigue_R_ratio = 0.5
 
     # Class-wide methods
     @classmethod
@@ -525,6 +525,22 @@ class SingleElementCohesiveTests(av.TestCase):
 
     # -----------------------------------------------------------------------------------------
     # Test methods
+    def test_COH2D4_normal(self):
+        """ Single 2-D cohesive element test for normal loading """
+        self.runTest("test_COH2D4_normal")
+
+    def test_COH2D4_shear(self):
+        """ Single 2-D cohesive element test for shear loading """
+        self.runTest("test_COH2D4_shear")
+
+    def test_COH2D4_shear_compression(self):
+        """ Single 2-D cohesive element test for shear loading with normal compression """
+        self.runTest("test_COH2D4_shear_compression")
+
+    def test_COH2D4_shear_friction(self):
+        """ Single 2-D cohesive element test for shear loading with friction """
+        self.runTest("test_COH2D4_shear_friction")
+
     def test_COH3D8_normal(self):
         """ Single cohesive element test for mode I response """
         self.runTest("test_COH3D8_normal")

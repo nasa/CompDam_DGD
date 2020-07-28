@@ -21,13 +21,11 @@ Module matProp_Mod
     Double Precision :: XT, fXT, GXT, fGXT                               ! Opt. Longitudinal tensile damage (max strain failure criterion, bilinear softening)
     Double Precision :: XC, fXC, GXC, fGXC                               ! Opt. Longitudinal compressive damage (max strain failure criterion, bilinear softening)
     Double Precision :: w_kb                                             ! Opt. LaRC15 kink band model (Also requires XC, shear nonlinearity).
-    Double Precision :: cl                                           ! Opt. fiber nonlinearity (defaults to zero, which is no fiber nonlinearity)
+    Double Precision :: cl                                               ! Opt. fiber nonlinearity (defaults to zero, which is no fiber nonlinearity)
     Double Precision :: mu                                               ! Opt. Friction. Defaults to zero
-    Double Precision :: es(4), gs(4)
-    Double Precision :: schaefer_a6
-    Double Precision :: schaefer_b2
-    Double Precision :: schaefer_n
-    Double Precision :: schaefer_A                                       ! Specified parameters for schaefer theory
+    Double Precision :: es(4), gs(4)                                     ! Opt. Schapery theory inputs
+    Double Precision :: schaefer_a6, schaefer_b2, schaefer_n, schaefer_A  ! Opt. Schaefer nonlinearity model inputs
+    Double Precision :: fatigue_gamma, fatigue_epsilon, fatigue_eta, fatigue_p_mod  ! Opt. CF20 fatigue properties
 
     ! min and max values for acceptable range
     Double Precision, private :: modulus_min, modulus_max
@@ -43,6 +41,10 @@ Module matProp_Mod
     Double Precision, private :: mu_min, mu_max
     Double Precision, private :: schapery_min, schapery_max
     Double Precision, private :: schaefer_min, schaefer_max
+    Double Precision, private :: fatigue_gamma_min, fatigue_gamma_max
+    Double Precision, private :: fatigue_epsilon_min, fatigue_epsilon_max
+    Double Precision, private :: fatigue_eta_min, fatigue_eta_max
+    Double Precision, private :: fatigue_p_mod_min, fatigue_p_mod_max
 
     ! Flags that indicate if values have been set
     Logical, private :: E1_def, E2_def, G12_def, v12_def, v23_def
@@ -60,6 +62,7 @@ Module matProp_Mod
     Logical, private :: schaefer_b2_def
     Logical, private :: schaefer_n_def
     Logical, private :: schaefer_A_def
+    Logical, private :: fatigue_gamma_def, fatigue_epsilon_def, fatigue_eta_def, fatigue_p_mod_def
 
     ! Calculated properties
     Double Precision :: v21, v31, v32
@@ -174,8 +177,8 @@ Contains
     ! Feature flags
     If (.NOT. m%friction) m%mu = zero
 
-    ! ! Checks that a consistent set of properties has been defined
-    ! Call consistencyChecks(issueWarnings)
+    ! Checks that a consistent set of properties has been defined
+    Call consistencyChecks(m, issueWarnings=.FALSE.)
 
     ! Calculated properties
     m%v21 = m%E2*m%v12/m%E1
@@ -366,6 +369,7 @@ Contains
             Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(3), m%gs_def(3))
           Case ('gs3')
             Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(4), m%gs_def(4))
+
           ! Schaefer Theory
           Case ('schaefer_a6')
             Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_a6, m%schaefer_a6_def)
@@ -375,6 +379,7 @@ Contains
             Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_n, m%schaefer_n_def)
           Case ('schaefer_A')
             Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_A, m%schaefer_A_def)
+
           Case Default
             Call log%error("loadMatProps: Property not recognized: " // trim(key))
         End Select
@@ -564,15 +569,22 @@ Contains
                 Call log%error("loadMatProps: Unknown position found in feature flags")
             End Select
           End Do
-        Case (2)
+        Case (2)  ! Reserved
         Case (3)
           m%thickness = props(i)
-        ! props(4:8) are reserved for use in the future as needed
-        Case (4)
+
+        Case (4)  ! Reserved
         Case (5)
+          Call verifyAndSaveProperty_double('fatigue_gamma', props(i), m%fatigue_gamma_min, m%fatigue_gamma_max, m%fatigue_gamma, m%fatigue_gamma_def)
+
         Case (6)
+          Call verifyAndSaveProperty_double('fatigue_epsilon', props(i), m%fatigue_epsilon_min, m%fatigue_epsilon_max, m%fatigue_epsilon, m%fatigue_epsilon_def)
+
         Case (7)
+          Call verifyAndSaveProperty_double('fatigue_eta', props(i), m%fatigue_eta_min, m%fatigue_eta_max, m%fatigue_eta, m%fatigue_eta_def)
+
         Case (8)
+          Call verifyAndSaveProperty_double('fatigue_p_mod', props(i), m%fatigue_p_mod_min, m%fatigue_p_mod_max, m%fatigue_p_mod, m%fatigue_p_mod_def)
 
         Case (9)
           Call verifyAndSaveProperty_double('E1', props(i), m%modulus_min, m%modulus_max, m%E1, m%E1_def)
@@ -740,6 +752,18 @@ Contains
     m%schaefer_min = -Huge(zero)
     m%schaefer_max = Huge(zero)
 
+    m%fatigue_gamma_min = Tiny(zero)
+    m%fatigue_gamma_max = Huge(zero)
+
+    m%fatigue_epsilon_min = Tiny(zero)
+    m%fatigue_epsilon_max = one
+
+    m%fatigue_eta_min = Tiny(zero)
+    m%fatigue_eta_max = one
+
+    m%fatigue_p_mod_min = -Huge(zero)
+    m%fatigue_p_mod_max = Huge(zero)
+
     Return
   End Subroutine initializeMinMaxValues
 
@@ -862,22 +886,28 @@ Contains
         m%v13 = m%v12
         m%G23 = m%E2/two/(one + m%v23)
       End If
-    Else
+
+    Else If (m%cohesive) Then  ! Check if cohesive element properties have been specified
       ! Check for cohesive stiffness material properties
       If (.NOT. m%E3_def) Call log%error('PROPERTY ERROR: Cohesive material laws require a definition for E3.')
       ! Check for cohesive strength material properties
       If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YT.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL_def.')
-      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YC.')
-      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for alpha0.')
+      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL.')
+      If (m%YC_def .AND. m%alpha0_def) Then
+        ! Compute these properties for the transverse shear strength
+        m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
+        m%etaT = -one/TAN(two*m%alpha0)
+        m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
+      Else
+        Call log%info('PROPERTY: YC and/or alpha0 not defined. Assuming that S_T = S_L.')
+        m%etaL = zero
+        m%etaT = zero
+        m%ST   = m%SL
+      End If
       ! Check for cohesive fracture toughness material properties
       If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GYT.')
       If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GSL.')
       If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for eta_BK.')
-      ! Compute these properties for the transverse shear strength
-      m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
-      m%etaT = -one/TAN(two*m%alpha0)
-      m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
 
       Call log%info('PROPERTY: All required cohesive element peroperties are defined.')
     End IF
@@ -885,30 +915,12 @@ Contains
     ! Check if matrix damage properties have been specified
     If (m%matrixDam) Then
       If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for YT.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for SL_def.')
+      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for SL.')
       If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for GYT.')
       If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for GSL.')
       If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for eta_BK.')
       If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for YC.')
       If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for alpha0.')
-      m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
-      m%etaT = -one/TAN(two*m%alpha0)
-      m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
-
-      Call log%info('PROPERTY: Matrix damage is enabled')
-    Else
-      Call log%info('PROPERTY: Matrix damage is disabled')
-    End If
-
-    ! Check if cohesive element properties have been specified
-    If (m%cohesive) Then
-      If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YT.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL_def.')
-      If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GYT.')
-      If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GSL.')
-      If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for eta_BK.')
-      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YC.')
-      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for alpha0.')
       m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
       m%etaT = -one/TAN(two*m%alpha0)
       m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
@@ -1023,6 +1035,17 @@ Contains
     Else
       Call log%info('PROPERTY: fiber nonlinearity has not been defined. Setting cl = 0')
       m%cl = zero
+    End If
+
+    ! check if fatigue properties have been defined
+    If (m%fatigue_gamma_def .AND. m%fatigue_epsilon_def .AND. m%fatigue_eta_def .AND. m%fatigue_p_mod_def) Then
+      Call log%info('PROPERTY: cohesive fatigue properties have been defined')
+    Else
+      Call log%info('PROPERTY: cohesive fatigue properties have not been defined. Using default values.')
+      If (.NOT. m%fatigue_gamma_def) m%fatigue_gamma = 1.d7
+      If (.NOT. m%fatigue_epsilon_def) m%fatigue_epsilon = 0.2d0
+      If (.NOT. m%fatigue_eta_def) m%fatigue_eta = 0.95d0
+      If (.NOT. m%fatigue_p_mod_def) m%fatigue_p_mod = zero
     End If
 
     Return

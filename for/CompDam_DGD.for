@@ -296,14 +296,20 @@ Subroutine CompDam(  &
 
     ! Determine current cohesive displacement-jump
     !  Assumes a constitutive thickness equal to one.
-    delta(1) = sv%Fb1 + two*strainInc(km,3)  ! First shear direction (1--3)
-    delta(2) = sv%Fb2 + strainInc(km,1)      ! Normal direction (3--3)
-    delta(3) = sv%Fb3 + two*strainInc(km,2)  ! Second shear direction (2--3)
+    If (nshr == 2) Then
+      delta(1) = sv%Fb1 + two*strainInc(km,3)  ! Longitudinal shear direction (1--3)
+      delta(2) = sv%Fb2 + strainInc(km,1)      ! Normal direction (3--3)
+      delta(3) = sv%Fb3 + two*strainInc(km,2)  ! Transverse shear direction (2--3)
+    Else
+      delta(1) = sv%Fb1 + two*strainInc(km,2)  ! Shear direction (1--2)
+      delta(2) = sv%Fb2 + strainInc(km,1)      ! Normal normal (2--2)
+      delta(3) = zero
+    End If
 
     ! Store current cohesive displacement-jump
-    sv%Fb1 = delta(1)  ! First shear direction
-    sv%Fb2 = delta(2)  ! Normal direction
-    sv%Fb3 = delta(3)  ! Second shear direction
+    sv%Fb1 = delta(1)  ! Longitudinal shear displacement-jump
+    sv%Fb2 = delta(2)  ! Normal displacement-jump
+    sv%Fb3 = delta(3)  ! Transverse shear displacement-jump
 
     If (totalTime == 0) Then  ! Avoids calculating damage during the packager and the first solution increment
       Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm)
@@ -325,9 +331,13 @@ Subroutine CompDam(  &
     If (sv%d2 >= one) sv%STATUS = 0
 
     ! Update stress values
-    stressNew(km,3) = T_coh(1)  ! First shear direction (1--3)
-    stressNew(km,1) = T_coh(2)  ! Normal direction (3--3)
-    stressNew(km,2) = T_coh(3)  ! Second shear direction (2--3)
+    stressNew(km,1) = T_coh(2)  ! Normal stress
+    If (nshr == 2) Then  ! 3-D
+      stressNew(km,3) = T_coh(1)  ! Longitudinal shear stress (1--3)
+      stressNew(km,2) = T_coh(3)  ! Transverse shear stress (2--3)
+    Else  ! 2-D
+      stressNew(km,2) = T_coh(1)  ! Shear stress
+    End If
 
     ! Update internal and inelastic energy terms
     enerInternNew(km) = DOT_PRODUCT(T_coh, delta)/two
@@ -372,8 +382,8 @@ Subroutine CompDam(  &
           Call log%error("Found Lc2 = 0. Perhaps *Characteristic Length is missing from the input deck?")
         Else If (sv%Lc(3) .EQ. zero) Then
           Call log%error("Found Lc3 = 0. Perhaps *Characteristic Length is missing from the input deck?")
-        Else If (sv%Lc(2) > sv%Lc(1)*10.d0 .OR. sv%Lc(2) < sv%Lc(1)/10.d0) Then
-          Call log%warn("Found Lc = [" // trim(str(sv%Lc(1))) //','// trim(str(sv%Lc(2))) //','// trim(str(sv%Lc(3))) // "]; perhaps *Characteristic Length is missing from the input deck?")
+        ! Else If (sv%Lc(2) > sv%Lc(1)*10.d0 .OR. sv%Lc(2) < sv%Lc(1)/10.d0) Then
+        !   Call log%warn("Found Lc = [" // trim(str(sv%Lc(1))) //','// trim(str(sv%Lc(2))) //','// trim(str(sv%Lc(3))) // "]; perhaps *Characteristic Length is missing from the input deck?")
         End If
       End If
 

@@ -1,5 +1,5 @@
 *Heading
- Single cohesive element with longitudinal shear loading under normal compression
+ Single cohesive element test for mode II response
 **
 *Parameter
  length = 0.2
@@ -9,29 +9,21 @@
  compressive_displacement = -0.00001
 **
 *Node, nset=Nodes
-      1,            0.,            0.,            0.
-      2,      <length>,            0.,            0.
-      3,      <length>,      <length>,            0.
-      4,            0.,      <length>,            0.
-      5,            0.,            0.,   <thickness>
-      6,      <length>,            0.,   <thickness>
-      7,      <length>,      <length>,   <thickness>
-      8,            0.,      <length>,   <thickness>
+      1,            0.,            0.
+      2,      <length>,            0.
+      3,      <length>,      <thickness>
+      4,            0.,      <thickness>
 *Nset, nset=X+
-  2, 3, 6, 7
+  2, 3
 *Nset, nset=X-
-  1, 4, 5, 8
+  1, 4
 *Nset, nset=Y+
-  3, 4, 7, 8
+  3, 4
 *Nset, nset=Y-
-  1, 2, 5, 6
-*Nset, nset=Z+
-  5, 6, 7, 8
-*Nset, nset=Z-
-  1, 2, 3, 4
+  1, 2
 **
-*Element, type=COH3D8, elset=COHESIVE
-  1, 1, 2, 3, 4, 5, 6, 7, 8
+*Element, type=COH2D4, elset=COHESIVE
+  1, 1, 2, 3, 4
 **
 *Cohesive Section, elset=COHESIVE, material=IM7-8552, response=TRACTION SEPARATION, thickness=SPECIFIED
  1.0,
@@ -41,7 +33,7 @@
  1.57e-09,
 *User material, constants=40
 ** feature flags, ,   thickness, 4, 5, 6, 7, 8
-          200000, , <thickness>,  ,  ,  ,  ,  ,
+          200001, , <thickness>,  ,  ,  ,  ,  ,
 **  9         10        11        12        13        14        15        16
 **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
       ,         ,          ,          ,         ,     62.3,     92.3,     0.277,
@@ -64,15 +56,14 @@
   9, COH_FI
  15, COH_slide1
  16, COH_slide2
-** *Characteristic Length, definition=USER, components=3
 **
 *Initial Conditions, Type=Solution
  COHESIVE,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
             0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
             0.d0,  0.d0,  0.d0,  0.d0,  0.d0
 *Boundary
-  Z+, 1, 3, 0
-  Z-, 1, 3, 0
+  Y+, 1, 2, 0
+  Y-, 1, 2, 0
 **
 *Amplitude, name=LoadUp, definition=SMOOTH STEP
  0., 0., <stepDuration>, 1.
@@ -83,7 +74,7 @@
 *Fixed Mass Scaling, factor=5000.
 **
 *Boundary, AMPLITUDE=LoadUp
- Z+, 3, 3, <compressive_displacement>
+ Y+, 2, 2, <compressive_displacement>
 **
 *Output, FIELD
 *Element Output
@@ -93,7 +84,7 @@
 *Output, HISTORY, frequency=1
 *Energy Output
  ALLIE, ALLKE
-*Node Output, NSET=Z+
+*Node Output, NSET=Y+
  U, RF
 *Element Output, ELSET=COHESIVE
  SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV15, SDV16, S
@@ -105,7 +96,7 @@
  , <stepDuration>, ,
 **
 *Boundary, AMPLITUDE=LoadUp
- Z+, 1, 1, <displacement>
+ Y+, 1, 1, <displacement>
 **
 *Output, FIELD
 *Element Output
@@ -115,7 +106,7 @@
 *Output, HISTORY, frequency=1
 *Energy Output
  ALLIE, ALLKE
-*Node Output, NSET=Z+
+*Node Output, NSET=Y+
  U, RF
 *Element Output, ELSET=COHESIVE
  SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV15, SDV16, S

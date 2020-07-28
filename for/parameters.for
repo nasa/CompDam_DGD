@@ -268,28 +268,28 @@ Contains
             Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_polar_scale_min, p%fkt_init_misalignment_polar_scale_max, p%fkt_init_misalignment_polar_scale)
 
           Case ('fatigue_R_ratio')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%fatigue_R_ratio_min, p%fatigue_R_ratio_max, p%fatigue_R_ratio)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fatigue_R_ratio_min, p%fatigue_R_ratio_max, p%fatigue_R_ratio, .FALSE.)
 
           Case ('cycles_per_increment_init')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_init_min, p%cycles_per_increment_init_max, p%cycles_per_increment_init)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_init_min, p%cycles_per_increment_init_max, p%cycles_per_increment_init, .FALSE.)
 
           Case ('cycles_per_increment_mod')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_mod_min, p%cycles_per_increment_mod_max, p%cycles_per_increment_mod)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_mod_min, p%cycles_per_increment_mod_max, p%cycles_per_increment_mod, .FALSE.)
 
           Case ('cycles_per_increment_max')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_max_min, p%cycles_per_increment_max_max, p%cycles_per_increment_max)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_max_min, p%cycles_per_increment_max_max, p%cycles_per_increment_max, .FALSE.)
 
           Case ('cycles_per_increment_min')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_min_min, p%cycles_per_increment_min_max, p%cycles_per_increment_min)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%cycles_per_increment_min_min, p%cycles_per_increment_min_max, p%cycles_per_increment_min, .FALSE.)
 
           Case ('fatigue_damage_min_threshold')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%fatigue_damage_min_threshold_min, p%fatigue_damage_min_threshold_max, p%fatigue_damage_min_threshold)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fatigue_damage_min_threshold_min, p%fatigue_damage_min_threshold_max, p%fatigue_damage_min_threshold, .FALSE.)
 
           Case ('fatigue_damage_max_threshold')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%fatigue_damage_max_threshold_min, p%fatigue_damage_max_threshold_max, p%fatigue_damage_max_threshold)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fatigue_damage_max_threshold_min, p%fatigue_damage_max_threshold_max, p%fatigue_damage_max_threshold, .FALSE.)
 
           Case ('fatigue_step')
-            Call verifyAndSaveProperty_int(trim(key), value, p%fatigue_step_min, p%fatigue_step_max, p%fatigue_step)
+            Call verifyAndSaveProperty_int(trim(key), value, p%fatigue_step_min, p%fatigue_step_max, p%fatigue_step, .FALSE.)
 
           Case Default
             Call log%error("loadParameters: Parameter not recognized: " // trim(key))
@@ -414,17 +414,17 @@ Contains
     p%fatigue_R_ratio_min = -one
     p%fatigue_R_ratio_max = one
 
-    p%cycles_per_increment_init_min = 1.d-6
-    p%cycles_per_increment_init_max = 1.d+6
+    p%cycles_per_increment_init_min = Tiny(zero)
+    p%cycles_per_increment_init_max = Huge(zero)
 
     p%cycles_per_increment_mod_min = Tiny(zero)
-    p%cycles_per_increment_mod_max = 9.d0  ! corresponds to changing cycles_per_increment by a factor of 10
+    p%cycles_per_increment_mod_max = Huge(zero)
 
-    p%cycles_per_increment_max_min = one
+    p%cycles_per_increment_max_min = Tiny(zero)
     p%cycles_per_increment_max_max = Huge(zero)
 
     p%cycles_per_increment_min_min = Tiny(zero)
-    p%cycles_per_increment_min_max = one
+    p%cycles_per_increment_min_max = Huge(zero)
 
     p%fatigue_damage_min_threshold_min = Tiny(zero)
     p%fatigue_damage_min_threshold_max = one
@@ -439,7 +439,7 @@ Contains
   End Subroutine initializeParameters
 
 
-  Subroutine verifyAndSaveProperty_dbl(key, value, min, max, saveTo)
+  Subroutine verifyAndSaveProperty_dbl(key, value, min, max, saveTo, nondefaultWarn_arg)
     ! Checks if the value is within the specified bounds. Prints an error message
     ! which kills the analysis if a value is out of bounds.
 
@@ -449,10 +449,18 @@ Contains
     Character(len=*), intent(IN) :: key, value
     Double Precision, intent(IN) :: min, max
     Double Precision, intent(INOUT) :: saveTo
+    Logical, intent(IN), optional :: nondefaultWarn_arg
 
     ! Locals
     Double Precision :: valueDbl
+    Logical :: nondefaultWarn
     ! -------------------------------------------------------------------- !
+
+    If (Present(nondefaultWarn_arg)) Then
+      nondefaultWarn = nondefaultWarn_arg
+    Else
+      nondefaultWarn = .TRUE.
+    End If
 
     ! Convert to double
     Read(value,*) valueDbl
@@ -467,7 +475,7 @@ Contains
     End If
 
     ! Check for non-default
-    If (valueDbl .NE. saveTo) Then
+    If ((valueDbl .NE. saveTo) .AND. nondefaultWarn) Then
       Call log%warn("Non-default parameter: " // trim(key) // " = " // trim(str(valueDbl)) // ", default = " // trim(str(saveTo)))
     End If
 
@@ -477,7 +485,7 @@ Contains
     Return
   End Subroutine verifyAndSaveProperty_dbl
 
-  Subroutine verifyAndSaveProperty_int(key, value, min, max, saveTo)
+  Subroutine verifyAndSaveProperty_int(key, value, min, max, saveTo, nondefaultWarn_arg)
     ! Checks if the value is within the specified bounds. Prints an error message
     ! which kills the analysis if a value is out of bounds.
 
@@ -487,10 +495,18 @@ Contains
     Character(len=*), intent(IN) :: key, value
     Integer, intent(IN) :: min, max
     Integer, intent(INOUT) :: saveTo
+    Logical, intent(IN), optional :: nondefaultWarn_arg
 
     ! Locals
     Integer :: valueInt
+    Logical :: nondefaultWarn
     ! -------------------------------------------------------------------- !
+
+    If (Present(nondefaultWarn_arg)) Then
+      nondefaultWarn = nondefaultWarn_arg
+    Else
+      nondefaultWarn = .TRUE.
+    End If
 
     ! Convert to integer
     Read(value,*) valueInt
@@ -505,7 +521,7 @@ Contains
     End If
 
     ! Check for non-default
-    If (valueInt .NE. saveTo) Then
+    If ((valueInt .NE. saveTo) .AND. nondefaultWarn) Then
       Call log%warn("Non-default parameter: " // trim(key) // " = " // trim(str(valueInt)) // ", default = " // trim(str(saveTo)))
     End If
 
@@ -515,7 +531,7 @@ Contains
     Return
   End Subroutine verifyAndSaveProperty_int
 
-  Subroutine verifyAndSaveProperty_logical(key, value, saveTo)
+  Subroutine verifyAndSaveProperty_logical(key, value, saveTo, nondefaultWarn_arg)
     ! Checks if the value is true or false. Prints an error message
     ! which kills the analysis if a value is not true or false.
 
@@ -524,10 +540,18 @@ Contains
     !Arguments
     Character(len=*), intent(IN) :: key, value
     Logical, intent(INOUT) :: saveTo
+    Logical, intent(IN), optional :: nondefaultWarn_arg
 
     ! Locals
     Logical :: valueLogical
+    Logical :: nondefaultWarn
     ! -------------------------------------------------------------------- !
+
+    If (Present(nondefaultWarn_arg)) Then
+      nondefaultWarn = nondefaultWarn_arg
+    Else
+      nondefaultWarn = .TRUE.
+    End If
 
     ! Check for T or F
     If ((value /= '.TRUE.') .AND. (value /= '.FALSE.')) Then
@@ -538,7 +562,7 @@ Contains
     Read(value,*) valueLogical
 
     ! Check for non-default
-    If (valueLogical .NE. saveTo) Then
+    If ((valueLogical .NE. saveTo) .AND. nondefaultWarn) Then
       Call log%warn("Non-default parameter: " // trim(key) // " = " // trim(str(valueLogical)))
     End If
 
