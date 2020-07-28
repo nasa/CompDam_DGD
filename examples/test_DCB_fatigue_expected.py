@@ -11,13 +11,13 @@ parameters = {
                 "position": "Node 9999998"
             },
             "referenceValue": staticLoad,
-            "tolerance": staticLoad * 0.005
+            "tolerance": staticLoad * 0.01
         },
         {
             "type": "max",
-            "identifier": "Plastic dissipation: ALLPD for Whole Model",
-            "referenceValue": 1.63141,  # Unrecoverable energy dissipation from fracture * fracture area: GYT * delta_a * width
-            "tolerance": 0.01
+            "identifier": "Plastic dissipation: ALLPD in ELSET COH",
+            "referenceValue": 1.605,  # Unrecoverable energy dissipation from fracture * fracture area: GIc_init * delta_a * width
+            "tolerance": 0.05
         },
     ]
 }
