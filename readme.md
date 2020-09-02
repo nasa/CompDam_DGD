@@ -636,6 +636,8 @@ To stop execution, close the Visual Studio window. Choose stop debugging and do 
 
 [More tips on debugging Fortran programs from Intel](https://software.intel.com/en-us/articles/tips-for-debugging-run-time-failures-in-intel-fortran-applications).
 
+In case you must use remote ssh/scp access to run CompDam, a neat trick is to use the `Commands -> Keep Remote Directory up to Date...` option in [WinScp](https://winscp.net/eng/index.php). This feature can be used during development so that the CompDam files are edited locally and then automatically synced on a remote server for testing. The following mask (`Keep Remote Directory up to Date... -> Transfer Settings... -> File mask:`) can be used for syncing the source code: `*.for; *.py; *.inp; *.props; *.inc; Makefile; kind_map | tests/testOutput/; .git/; .vscode/`.
+
 ## Python extension module
 CompDam can be compiled into a [Python extension module](https://docs.python.org/2/extending/extending.html), which allows many of the Fortran subroutines and functions in the `for` directory to be called from Python. The Python package [`f90wrap`](https://github.com/jameskermode/f90wrap) is used to automatically generate the Python extension modules that interface with the Fortran code. This Python extension module functionality is useful for development and debugging.
 
