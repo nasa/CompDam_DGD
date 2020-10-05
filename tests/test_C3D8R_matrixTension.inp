@@ -43,10 +43,9 @@
 *Material, name=IM7-8552
 *Density
  1.59d-05,
-*User material, constants=39
-** 1              2                  3          4
-** feature flags, , thickness, 4, 5, 6, 7, 8
-          100000, ,  <length>,  ,  ,  ,  ,  ,
+*User material, constants=40
+** feature flags, 2, 3, 4, 5, 6, 7, 8
+          100000,  ,  ,  ,  ,  ,  ,  ,
 **
 **  9         10        11        12        13        14        15        16
 **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT

@@ -88,8 +88,9 @@ Example 1, using an [external material properties file](#defining-the-material-p
     *Material, name=IM7-8552
     *Density
      1.57e-09,
-    *Depvar, delete=11
-    ** the above delete statement is optional
+    *Depvar
+    ** *Depvar, delete=11
+    ** The delete keyword is optional. It uses a state variable as a flag to delete elements.
       19,
       1, CDM_d2
       2, CDM_Fb1
@@ -111,16 +112,14 @@ Example 1, using an [external material properties file](#defining-the-material-p
      18, CDM_d1T
      19, CDM_d1C
     *Characteristic Length, definition=USER, components=3
-    *User material, constants=3
-    ** 1              2  3
-    ** feature flags,  , thickness
-              100001,  ,       0.1
+    *User material, constants=1
+    ** feature flags,
+              100001,
     **
     *Initial Conditions, type=SOLUTION
      elset_name,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
      0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0, 0.d0,
      0.d0,  0.d0,  0.d0,  0.d0
-    ** In each step, NLGEOM=YES must be used. This is the default setting.
 
 Example 2, using an [input deck command](#defining-the-material-properties-in-the-input-deck):
 
@@ -129,8 +128,9 @@ Example 2, using an [input deck command](#defining-the-material-properties-in-th
     *Material, name=IM7-8552
     *Density
      1.57e-09,
-    *Depvar, delete=11
-    ** the above delete statement is optional
+    *Depvar
+    ** *Depvar, delete=11
+    ** The delete keyword is optional. It uses a state variable as a flag to delete elements.
       19,
       1, CDM_d2
       2, CDM_Fb1
@@ -153,9 +153,9 @@ Example 2, using an [input deck command](#defining-the-material-properties-in-th
      19, CDM_d1C
     *Characteristic Length, definition=USER, components=3
     *User material, constants=40
-    ** 1              2  3          4  5  6  7  8
-    ** feature flags,  , thickness, 4, 5, 6, 7, 8
-              100001,  ,       0.1,  ,  ,  ,  ,  ,
+    ** 1              2  3  4  5  6  7  8
+    ** feature flags,  ,  ,  ,  ,  ,  ,  ,
+              100001,  ,  ,  ,  ,  ,  ,  ,
     **
     **  9         10        11        12        13        14        15        16
     **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT,
@@ -398,10 +398,11 @@ Notes:
 - &infin; is calculated with the Fortran intrinsic `Huge` for double precision
 - In the event that both a `.props` file is found and material properties are specified in the input deck (`nprops > 8`), then the material properties from the input deck are used and a warning is used.
 
-### Required inputs for the `*Material` data lines in the input deck
-The feature flags and thickness are defined in the input deck on the material property data lines. These properties must be defined in the input deck whether the other material properties are defined via the .props file or via the input deck. While feature flags and thickness are not material properties per se, they are used in controlling the behavior of the material model.
+### Inputs that can only be defined on the `*Material` data lines in the input deck
 
 #### Controlling which features are enabled
+The feature flags are defined in the input deck on the material property data lines. These properties must be defined in the input deck whether the other material properties are defined via the .props file or via the input deck. While the feature flags are not material properties per se, they are used in controlling the behavior of the material model.
+
 Model features can be enabled or disabled by two methods. The first method is specifying only the material properties required for the features you would like to enable. CompDam_DGD disables any feature for which all of the required material properties have not been assigned. If an incomplete set of material properties are defined for a feature, a warning is issued.
 
 The second method is by specifying the status of each feature directly as a material property in the input deck. Each feature of the subroutine is controlled by a position in an integer, where 0 is disabled and 1 is enabled. In cases where mutually exclusive options are available, numbers greater than 1 are used to specify the particular option to use.
@@ -414,10 +415,10 @@ The positions correspond to the features as follows:
 - Position 5: Energy output contribution (0=all mechanisms, 1=only fracture energy, 2=only plastic energy)
 - Position 6: Friction
 
-For example, `101000` indicates that the model will run with matrix damage and fiber tension damage enabled; `120001` indicates that the model will run with matrix damage, in-plane shear nonlinearity using Schapery theory, and friction; and `200000` indicates that the model is being applied to cohesive elements.
+For example, `101000` indicates that the model will run with matrix damage and fiber tension damage enabled; `120001` indicates that the model will run with matrix damage, in-plane shear nonlinearity using Schapery theory, and friction; and `200000` indicates that the material model is being applied to cohesive elements.
 
 #### Definition of thickness
-Length along the thickness-direction associated with the current integration point.
+Length along the thickness-direction associated with the current integration point. This input is used only for 2-D plane stress elements and does not affect the performance of 3-D hexahedral elements or cohesive elements. The three characteristic element lengths of hexahedral elements are calculated using the VUCHARLENGTH subroutine based on the element nodal coordinates.
 
 ## State variables
 The table below lists all of the state variables in the model. The model requires a minimum of 18 state variables. Additional state variables are defined depending on which (if any) shear nonlinearity and fiber compression features are enabled. For fiber compression model 1: nstatev = 19 and for model 3: nstatev = 25. For shear nonlinearity models 3 or 4: nstatev = 21.

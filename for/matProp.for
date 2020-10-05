@@ -389,8 +389,8 @@ Contains
     ! Close the .props file
     Close(unit)
 
-    ! Require at least the first three material properties to be specified in the inp deck
-    If (nprops < 3) Call log%error("loadMatProps: Must define the first three properties in the inp deck")
+    ! Require at least the first material property to be specified in the inp deck
+    If (nprops < 1) Call log%error("loadMatProps: Must define the 1st property (feature flags) in the inp deck")
 
     ! Load material properties from input deck (at most, first 8)
     If (nprops > 8) Then

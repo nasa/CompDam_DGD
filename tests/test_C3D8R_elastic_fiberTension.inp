@@ -66,10 +66,9 @@
 *Material, name=IM7-8552
 *Density
  1.57e-09,
-*User material, constants=4
-** 1              2                  3          4
-** feature flags, , thickness, 4, 5, 6, 7, 8
-               0, ,       <t>,  ,  ,  ,  ,  ,
+*User material, constants=1
+** feature flags,
+               0,
 *Depvar
   19,
   1, CDM_d2
