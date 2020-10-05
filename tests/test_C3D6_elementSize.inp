@@ -21,26 +21,24 @@
  skew_2 = length2 * (1.0 - cos(Pi * skew_angle / 180.0))
 **
 *Node, nset=AllNodes
-      1,            0.,             0.,             0.
-      2,      <length1>,            0.,             0.
-      3,      <length1>,     <length2>,             0.
-      4,            0.,      <length2>,             0.
-      5,            0.,             0.,      <length3>
-      6,      <length1>,            0.,      <length3>
-      7,      <length1>,     <length2>,      <length3>
-      8,            0.,      <length2>,      <length3>
+      1,            0.,            0.,             0.
+      2,     <length1>,            0.,             0.
+      3,            0.,     <length2>,             0.
+      5,            0.,            0.,      <length3>
+      6,     <length1>,            0.,      <length3>
+      7,            0.,     <length2>,      <length3>
 *NSET, NSET=X+
   2, 3, 6, 7
 *NSET, NSET=X-
-  1, 4, 5, 8
+  1, 5
 *NSET, NSET=Y+
-  3, 4, 7, 8
+  3, 7
 *NSET, NSET=Y-
   1, 2, 5, 6
 *NSET, NSET=Z+
-  5, 6, 7, 8
+  5, 6, 7
 *NSET, NSET=Z-
-  1, 2, 3, 4
+  1, 2, 3
 *NMAP, type=TRANSLATION, nset=Y+
  0., 0., 0., 1., 0., 0.
  <skew_1>
@@ -52,8 +50,8 @@
  1., 0., 0.
  <misalignment_angle>
 **
-*Element, type=C3D8R, elset=SingleElement
-  1, 1, 2, 3, 4, 5, 6, 7, 8
+*Element, type=C3D6, elset=SingleElement
+  1, 1, 2, 3, 5, 6, 7
 **
 *Orientation, name=Ori-1
  1., 0., 0., 0., 1., 0.

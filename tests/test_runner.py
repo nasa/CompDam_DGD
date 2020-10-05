@@ -224,9 +224,9 @@ class ParametricMixedModeMatrix(av.TestCase):
         copyParametersFile()
 
 
-class ParametricElementSize(av.TestCase):
+class ParametricElementSizeQuad(av.TestCase):
     """
-    vucharlength() tests for solid elements not necessarily aligned with fiber material direction.
+    vucharlength() tests for quad and hex elements not aligned with fiber material direction.
     """
 
     # Specify meta class
@@ -235,15 +235,52 @@ class ParametricElementSize(av.TestCase):
     # Refers to the template input file name
     baseName = "test_C3D8R_elementSize"
 
-    # The angle of misaligment is here varied.
+    # The angle of misalignment (psi) and the aspect ratio, i.e., L1/L2, (alpha) of the element edges are here varied.
     # A misalignment angle of zero will result in an Abaqus pre error due to an *NMAP rotation command being used in the input deck
-    parameters = {'misalignment_angle': [-45, -30, -15, 1, 15, 30, 45]}
+    parameters = {'misalignment_angle': [-45, -30, -15, 1, 11.25, 22.5, 45], 'alpha': [1.0, 1.5]}
 
-    # Closed-form equations for the characteristic element lengths, valid for misalignment angles between -45 and +45 degrees
-    Lc2_eq = lambda m: 0.2*(0.3/0.2*math.sin(abs(math.radians(m))) + math.cos(math.radians(m)))
+    # Closed-form equation for the matrix characteristic element length, valid for misalignment angles between -45 and +45 degrees and gamma = 90deg
+    L2 = 0.2  # matrix-direction element edge length
+    Lc_eq = lambda L, alpha, psi: L * (alpha * math.sin(abs(math.radians(psi))) + math.cos(math.radians(psi)))
 
     # Element sizes are dependent on the misalignment and skew angles
-    expectedpy_parameters = {'Lc2': [Lc2_eq(m) for m in parameters['misalignment_angle']]}
+    expectedpy_parameters = {'Lc1': [Lc_eq(L2*alpha, 1.0/alpha, psi) for alpha in parameters['alpha'] for psi in parameters['misalignment_angle']],
+                             'Lc2': [Lc_eq(L2, alpha, psi) for alpha in parameters['alpha'] for psi in parameters['misalignment_angle']]}
+
+    # Class-wide methods
+    @classmethod
+    def setUpClass(cls):
+        copyMatProps()
+        copyParametersFile()
+
+
+class ParametricElementSizeTri(av.TestCase):
+    """
+    vucharlength() tests for tri and wedge elements not aligned with fiber material direction.
+    """
+
+    # Specify meta class
+    __metaclass__ = av.ParametricMetaClass
+
+    # Refers to the template input file name
+    baseName = "test_C3D6_elementSize"
+
+    # The angle of misalignment (psi) and the aspect ratio, i.e., L1/L2, (alpha) of the element edges are here varied.
+    # A misalignment angle of zero will result in an Abaqus pre error due to an *NMAP rotation command being used in the input deck
+    parameters = {'misalignment_angle': [-45, -30, -15, 1, 5, 10, 15], 'alpha': [1.0, 1.5]}
+    # The maximum misalignment_angle value must be less than 0.5*atan(1/alpha) to pass the below test
+
+    # Closed-form equation for the matrix characteristic element length, valid for misalignment angles between -45 and +45 degrees and gamma = 90deg
+    L2 = 0.2  # matrix-direction element edge length
+    # The calculated crack band widths for tri and wedge elements should be twice the corresponding quad and hex element values. In the vucharlength()
+    # subroutine, it is assumed that the mesh is uniform. Therefore, a tri mesh is equivalent to a quad mesh in which every element is bisected and
+    # the 2 quad element edges are parallel to 2 of the 3 tri edges (1 of which is the edge most closely aligned with the propgation direction). These
+    # assumptions double the number of elements, requiring the crack band width to double to dissipate equal energy for the same propagation distance.
+    Lc_eq = lambda L, alpha, psi: L * (alpha * math.sin(abs(math.radians(psi))) + math.cos(math.radians(psi))) * 2
+
+    # Element sizes are dependent on the misalignment and skew angles
+    expectedpy_parameters = {'Lc1': [Lc_eq(L2*alpha, 1.0/alpha, psi) for alpha in parameters['alpha'] for psi in parameters['misalignment_angle']],
+                             'Lc2': [Lc_eq(L2, alpha, psi) for alpha in parameters['alpha'] for psi in parameters['misalignment_angle']]}
 
     # Class-wide methods
     @classmethod
@@ -254,7 +291,7 @@ class ParametricElementSize(av.TestCase):
 
 class ParametricStressLife(av.TestCase):
     """
-    Generate data for a stress life plot with a series of fatigue analyses
+    Generate data for a stress life plot with a series of fatigue analyses.
     """
 
     # Specify meta class

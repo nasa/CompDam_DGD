@@ -15,135 +15,180 @@ Subroutine vucharlength(  &
 
   Character(len=80) :: cmname
 
-  Integer :: fiberEdge, matrixEdge, thickEdge
-  Double Precision :: center(ndim), edges(ndim, ndim), edges_n(ndim, ndim), edges_m(ndim, ndim), fiber_band(ndim), matrix_band(ndim)
-  Double Precision :: thick_test, fiber_test, da_max_matrix, da_avg_matrix
+  Integer :: fiberEdge, matrixEdge, thickEdge, edge_pair_1, edge_pair_2
+  Double Precision :: center(ndim), edges(ndim, ndim), tri_edges(3, ndim), wedge_edges(4, ndim)
+  Double Precision :: thick_test, thick_test_max, da_max_matrix, da_avg_matrix, da_max_fiber, da_avg_fiber
+  Double Precision :: psi, gamma, Lc_meshlines_fiber, Lc_meshlines_matrix
 
-  Dimension INTV(1), REALV(1)    ! For abaqus warning messages
+  Dimension INTV(1), REALV(1)    ! For Abaqus warning messages
   Character(len=8) CHARV(1)      ! For Abaqus warning messages
 
   ! Parameters
-  Double Precision, parameter :: zero=0.d0, Pi=ACOS(-1.d0), two=2.d0
+  Double Precision, parameter :: zero=0.d0, Pi=ACOS(-1.d0), two=2.d0, three=3.d0
 
   ! Evaluate vucharlength() only when element length state variables are undefined.
-  runOnce: If ( stateOld(1, 6) == zero ) Then
+  runOnce: If (stateOld(1,6) == zero) Then
 
     ! Check for the appropriate number of components in *Characteristic Length, definition=USER, components=3
-    If ((ncomp .NE. 2) .AND. (ncomp .NE. 3) .AND. (ncomp .NE. 6)) Then
+    If ((ncomp /= 2) .AND. (ncomp /= 3) .AND. (ncomp /= 6)) Then
       INTV(1) = ncomp
       Call XPLB_ABQERR(-3,"Invalid number of components in *Characteristic Length. Expecting 2, 3, or 6. Found %I",INTV,REALV,CHARV)
     End If
 
-    Master: Do k = 1, nblock
+    Master: Do k = 1,nblock
 
       ! Material point coordinates in the material frame (for random initial fiber misalignments)
       If (ncomp == 6) Then
-        charLength(k, 4) = DOT_PRODUCT(coordMp(k,:), direct(k,:,1))
-        charLength(k, 5) = DOT_PRODUCT(coordMp(k,:), direct(k,:,2))
-        charLength(k, 6) = DOT_PRODUCT(coordMp(k,:), direct(k,:,3))
+        charLength(k,4) = DOT_PRODUCT(coordMp(k,:), direct(k,:,1))
+        charLength(k,5) = DOT_PRODUCT(coordMp(k,:), direct(k,:,2))
+        charLength(k,6) = DOT_PRODUCT(coordMp(k,:), direct(k,:,3))
       End If
 
-      elementShape: If (nnode == 6 .OR. nnode == 3) Then
-        ! Center is the geometric center of the nodes
-        center = zero
-        Do n = 1, nnode
-          center(:) = center(:) + coordNode(k, n, :)
+      ! The following assumes that nodes in coordNode() are numbered according to the Abqus documentation.
+
+      elementShape: If (nnode == 3 .OR. nnode == 6) Then  ! For 3- and 6-node elements,
+
+        ! Define edge vectors for each edge of the triangular face
+        ! For two-dimensional triangular elements:
+        tri_edges(1,:) = coordNode(k,2,:) - coordNode(k,1,:)
+        tri_edges(2,:) = coordNode(k,3,:) - coordNode(k,2,:)
+        tri_edges(3,:) = coordNode(k,1,:) - coordNode(k,3,:)
+        ! For three-dimensional wedge elements:
+        WedgeEdges: If (ndim == 3) Then
+          wedge_edges(1,:) = (tri_edges(1,:) + coordNode(k,5,:) - coordNode(k,4,:)) / two
+          wedge_edges(2,:) = (tri_edges(2,:) + coordNode(k,6,:) - coordNode(k,5,:)) / two
+          wedge_edges(3,:) = (tri_edges(3,:) + coordNode(k,4,:) - coordNode(k,6,:)) / two
+          wedge_edges(4,:) = (coordNode(k,4,:) - coordNode(k,1,:) + coordNode(k,5,:) - coordNode(k,2,:) + coordNode(k,6,:) - coordNode(k,3,:)) / three
+
+        ! Check to ensure wedge element thickness is aligned with the material direction thickness
+          thick_test_max = zero
+          Do i=1,4
+            thick_test = ABS(DOT_PRODUCT(wedge_edges(i,:), direct(k,:,3)))
+            If (thick_test > thick_test_max) Then
+              thick_test_max = thick_test
+              thickEdge = i
+            End If
+          End Do
+          If (thickEdge /= 4) Then
+            Call XPLB_ABQERR(-3,"Wedge elements must have element thickness aligned with material thickness direction.",INTV,REALV,CHARV)
+          Else
+            tri_edges(1,:) = wedge_edges(1,:)
+            tri_edges(2,:) = wedge_edges(2,:)
+            tri_edges(3,:) = wedge_edges(3,:)
+          End If
+        End If WedgeEdges
+
+        ! Determine the fiber-aligned edge vector
+        fiber_test_max = zero
+        Do i=1,3
+          fiber_test = ABS(DOT_PRODUCT(tri_edges(i,:)/Length(tri_edges(i,:)), direct(k,:,1)))
+          If (fiber_test > fiber_test_max) Then
+            fiber_test_max = fiber_test
+            fiberEdge = i
+          End If
         End Do
-        center(:) = center(:) / nnode
-
-        ! The characteristic element lengths are calculated as the averaged length from the geometric center to each node,
-        ! projected onto the material directions (direct)
-        charLength(k, :) = zero
-        Nodes: Do n = 1, nnode
-          Dimensions: Do d = 1, ndim
-            charLength(k, d) = charLength(k, d) + ABS(DOT_PRODUCT(coordNode(k, n, :) - center(:), direct(k, :, d)))
-          End Do Dimensions
-        End Do Nodes
-        charLength(k, :) = charLength(k, :) * two / nnode
-
-      Else
-        ! Determine the average length of the parallel element edges
-        ! The below logic is for either 4-node or 8-node elements, and assumes that coordNode ordering is per element definition.
-        ! TODO: Add capability for other element shapes
-        edges(1, :) = coordNode(k, 2, :) - coordNode(k, 1, :) + coordNode(k, 3, :) - coordNode(k, 4, :)
-        edges(2, :) = coordNode(k, 3, :) - coordNode(k, 2, :) + coordNode(k, 4, :) - coordNode(k, 1, :)
+        edges(1,:) = tri_edges(fiberEdge,:)
+        edges(2,:) = -tri_edges(MOD(fiberEdge+1,3) + 1,:)
+        If (DOT_PRODUCT(tri_edges(fiberEdge,:), direct(k,:,1)) < zero) Then
+          edges(1,:) = -edges(1,:)
+          edges(2,:) = -edges(2,:)
+        End If
         If (ndim == 3) Then
-          edges(1, :) = edges(1, :) - coordNode(k, 5, :) + coordNode(k, 6, :) + coordNode(k, 7, :) - coordNode(k, 8, :)
-          edges(2, :) = edges(2, :) - coordNode(k, 5, :) - coordNode(k, 6, :) + coordNode(k, 7, :) + coordNode(k, 8, :)
-          edges(3, :) = coordNode(k, 5, :) - coordNode(k, 1, :) + coordNode(k, 6, :) - coordNode(k, 2, :) + &
-                        coordNode(k, 7, :) - coordNode(k, 3, :) + coordNode(k, 8, :) - coordNode(k, 4, :)
+          edges(3,:) = wedge_edges(thickEdge,:)
+        End If
+        fiberEdge = 1
+        matrixEdge = 2
+        thickEdge = 3
+
+      Else If (nnode == 4 .OR. nnode == 8) Then elementShape  ! For 4- and 8-node elements,
+      
+        ! Define edge vectors for the oppositely oriented pairs of element edge vectors
+        edges(1,:) = coordNode(k,2,:) - coordNode(k,1,:) + coordNode(k,3,:) - coordNode(k,4,:)
+        edges(2,:) = coordNode(k,3,:) - coordNode(k,2,:) + coordNode(k,4,:) - coordNode(k,1,:)
+        If (ndim == 3) Then
+          edges(1,:) = edges(1,:) - coordNode(k,5,:) + coordNode(k,6,:) + coordNode(k,7,:) - coordNode(k,8,:)
+          edges(2,:) = edges(2,:) - coordNode(k,5,:) - coordNode(k,6,:) + coordNode(k,7,:) + coordNode(k,8,:)
+          edges(3,:) = coordNode(k,5,:) - coordNode(k,1,:) + coordNode(k,6,:) - coordNode(k,2,:) + &
+                       coordNode(k,7,:) - coordNode(k,3,:) + coordNode(k,8,:) - coordNode(k,4,:)
         End If
         edges = 2 * edges / nnode
 
-        ! edges_n is a matrix of normalized edges
-        ! edges_m is a matrix of edge components in the material coordinate system, all positive values
-        Do n = 1, ndim
-          edges_n(n, :) = edges(n, :) / Length(edges(n, :))
-          Do m = 1, ndim
-            edges_m(n, m) = ABS(DOT_PRODUCT(edges(n, :), direct(k, :, m)))
+        ! Determine the thickness-aligned edge vector
+        ThicknessEdgeHex: If (ndim == 3) Then
+          thick_test_max = zero
+          Do i=1,3
+            thick_test = ABS(DOT_PRODUCT(edges(i,:), direct(k,:,3)))
+            If (thick_test > thick_test_max) Then
+              thick_test_max = thick_test
+              thickEdge = i
+            End If
           End Do
-        End Do
+        Else ThicknessEdgeHex
+          thickEdge = 3
+        End If ThicknessEdgeHex
+        ! Determine the fiber-aligned and matrix-aligned edge vectors
+        edge_pair_1 = MOD(thickEdge,3) + 1
+        edge_pair_2 = MOD(edge_pair_1,3) + 1
+        FiberEdgeTest: If (ABS(DOT_PRODUCT(edges(edge_pair_1,:)/Length(edges(edge_pair_1,:)), direct(k,:,1))) >= &
+            ABS(DOT_PRODUCT(edges(edge_pair_2,:)/Length(edges(edge_pair_2,:)), direct(k,:,1)))) Then
+          fiberEdge = edge_pair_1
+          matrixEdge = edge_pair_2
+        Else FiberEdgeTest
+          fiberEdge = edge_pair_2
+          matrixEdge = edge_pair_1
+        End If FiberEdgeTest
 
-        ! Determine which sets of element edges the thickness, fiber, and matrix material directions are most closely aligned
-        !  Determine the thickness-aligned edge
-        thickEdge = 3  ! Initial guess that the thickness material direction is most closely aligned with the element 3 direction
-        If (ndim == 3) Then
-          thick_test = MAX(edges_m(1,3)/Length(edges(1, :)), edges_m(2,3)/Length(edges(2, :)), edges_m(3,3)/Length(edges(3, :)))
-          If (edges_m(1, 3)/Length(edges(1, :)) == thick_test) thickEdge = 1
-          If (edges_m(2, 3)/Length(edges(2, :)) == thick_test) thickEdge = 2
-        End If
-        !  Determine the fiber-aligned edge
-        fiberEdge = MOD(thickEdge, 3) + 1  ! Initial guess for the fiber-aligned edge
-        fiber_test = MAX(edges_m(1,1)/Length(edges(1, :)), edges_m(2,1)/Length(edges(2, :)), edges_m(3,1)/Length(edges(3, :)))
-        If (edges_m(MOD(thickEdge + 1, 3) + 1, 1)/Length(edges(MOD(thickEdge + 1, 3) + 1, :)) == fiber_test) Then
-          fiberEdge = MOD(thickEdge + 1, 3) + 1
-        End If
-        !  Determine the matrix-aligned edge
-        matrixEdge = 6 - fiberEdge - thickEdge
+      Else elementShape  ! Element with unsupported number of nodes
 
-        ! FIBER DIRECTION CHARACTERISTIC ELEMENT LENGTH
-        If (edges_m(fiberEdge, 1) < edges_m(matrixEdge, 1)) Then
-          longEdge = matrixEdge
-          shortEdge = fiberEdge
-        Else
-          longEdge = fiberEdge
-          shortEdge = matrixEdge
-        End If
-        ! da_max_fiber is the maximum distance fiber damage may propagate while passing through the element along the matrix direction
-        da_max_fiber = ACOS(DOT_PRODUCT(edges_n(fiberEdge, :), -edges_n(matrixEdge, :)))
-        da_max_fiber = SIN(da_max_fiber) * Length(edges(shortEdge, :)) / SIN(ACOS(edges_m(longEdge, 2) / Length(edges(longEdge, :))))
-        ! da_avg_fiber is the average distance fiber damage will propagate when passing through the element along the matrix direction
-        da_avg_fiber = da_max_fiber * MAX(edges_m(fiberEdge, 1), edges_m(matrixEdge, 1)) / (edges_m(fiberEdge, 1) + edges_m(matrixEdge, 1))
-
-        ! Define the characteristic element length for the material fiber direction
-        fiber_band = edges(fiberEdge, :) - DOT_PRODUCT(edges(fiberEdge, :), edges_n(matrixEdge, :)) * edges_n(matrixEdge, :)
-        charLength(k, 1) = Length(fiber_band)**2 / ABS(DOT_PRODUCT(fiber_band, direct(k, :, 1)))
-        charLength(k, 1) = charLength(k, 1) * edges_m(matrixEdge, 2) / da_avg_fiber
-
-        ! MATRIX DIRECTION CHARACTERISTIC ELEMENT LENGTH
-        If (edges_m(fiberEdge, 2) < edges_m(matrixEdge, 2)) Then
-          longEdge = matrixEdge
-          shortEdge = fiberEdge
-        Else
-          longEdge = fiberEdge
-          shortEdge = matrixEdge
-        End If
-        ! da_max_matrix is the maximum distance a matrix crack may grow while passing through the element along the fiber direction
-        da_max_matrix = ACOS(DOT_PRODUCT(edges_n(fiberEdge, :), edges_n(matrixEdge, :)))
-        da_max_matrix = SIN(da_max_matrix) * Length(edges(shortEdge, :)) / SIN(ACOS(edges_m(longEdge, 1) / Length(edges(longEdge, :))))
-        ! da_avg_matrix is the average distance a matrix crack will grow when passing through the element along the fiber direction
-        da_avg_matrix = da_max_matrix * MAX(edges_m(fiberEdge, 2), edges_m(matrixEdge, 2)) / (edges_m(fiberEdge, 2) + edges_m(matrixEdge, 2))
-
-        ! Define the characteristic element length for the material matrix direction
-        matrix_band = edges(matrixEdge, :) - DOT_PRODUCT(edges(matrixEdge, :), edges_n(fiberEdge, :)) * edges_n(fiberEdge, :)
-        charLength(k, 2) = Length(matrix_band)**2 / ABS(DOT_PRODUCT(matrix_band, direct(k, :, 2)))
-        charLength(k, 2) = charLength(k, 2) * edges_m(fiberEdge, 1) / da_avg_matrix
-
-        ! THICKNESS DIRECTION CHARACTERISTIC ELEMENT LENGTH
-        If (ndim == 3) charLength(k, 3) = edges_m(thickEdge, 3)
+        INTV(1) = nnode
+        Call XPLB_ABQERR(-3,"Unsupported element shape for VUCHARLENGTH. Expecting 3, 4, 6, or 8 nodes. Found %I",INTV,REALV,CHARV)
 
       End If elementShape
 
+
+      ! Define attributes of the mesh related to its misalignment (psi) and skew (gamma)
+      psi = ACOS(DOT_PRODUCT(edges(fiberEdge,:) / Length(edges(fiberEdge,:)), direct(k, :, 1)))
+      gamma = ACOS(DOT_PRODUCT(edges(fiberEdge,:) / Length(edges(fiberEdge,:)), edges(matrixEdge,:) / Length(edges(matrixEdge,:))))
+
+      ! Fiber-direction characteristic element length
+      ! Lc_meshlines_fiber is the characteristic element length for fiber damage growing along the mesh lines
+      Lc_meshlines_fiber = Length(edges(fiberEdge,:)) * SIN(gamma) / SIN(psi + gamma)
+
+      If (ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,1))) > ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,1)))) Then
+        da_max_fiber = Length(edges(matrixEdge,:)) * SIN(gamma) / COS(psi)
+        da_avg_fiber = da_max_fiber * ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,1)))
+      Else
+        da_max_fiber = Length(edges(fiberEdge,:)) * SIN(gamma) / -COS(psi + gamma)
+        da_avg_fiber = da_max_fiber * ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,1)))
+      End If
+      da_avg_fiber = da_avg_fiber / (ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,1))) + &
+                        ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,1))))
+
+      ! Lc_ML_fiber is the characteristic element length for fiber damage growing along the mesh lines
+      charLength(k,1) = Lc_meshlines_fiber * ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,2))) / da_avg_fiber
+      If (nnode == 3 .OR. nnode == 6) charLength(k,1) = charLength(k,1) * two
+
+      ! Matrix-direction characteristic element length
+      ! Lc_meshlines_matrix is the characteristic element length for matrix damage growing along the mesh lines
+      Lc_meshlines_matrix = Length(edges(matrixEdge,:)) * SIN(gamma) / COS(psi)  ! Equation 16
+
+      ! Equations 17 and 18
+      If (ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,2))) > ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,2)))) Then
+        da_max_matrix = Length(edges(matrixEdge,:)) * SIN(gamma) / SIN(psi)
+        da_avg_matrix = da_max_matrix * ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,2)))
+      Else
+        da_max_matrix = Length(edges(fiberEdge,:)) * SIN(gamma) / SIN(psi + gamma)
+        da_avg_matrix = da_max_matrix * ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,2)))
+      End If
+      da_avg_matrix = da_avg_matrix / (ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,2))) + &
+                        ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,2))))
+
+      charLength(k,2) = Lc_meshlines_matrix * ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,1))) / da_avg_matrix  ! Equation 20
+      If (nnode == 3 .OR. nnode == 6) charLength(k,2) = charLength(k,2) * two
+
+      ! Thickness-direction characteristic element length
+      If (ndim == 3) charLength(k,3) = ABS(DOT_PRODUCT(edges(thickEdge,:), direct(k,:,3)))
+      
     End Do Master
 
   End If runOnce
