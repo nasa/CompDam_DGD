@@ -33,8 +33,8 @@ For any questions, please contact the developers:
 
 ## Table of contents
 - [Getting started](#getting-started)
+- [Element compatibility](#element-compatibility)
 - [Model features](#model-features)
-- [Elements](#elements)
 - [Material properties](#material-properties)
 - [State variables](#state-variables)
 - [Model parameters](#model-parameters)
@@ -74,6 +74,8 @@ A sample environment file is provided in the `tests` directory for Windows and L
 This code is an Abaqus/Explicit VUMAT. Please refer to the Abaqus documentation for the general instructions on how to submit finite element analyses using user subroutines. Please see the [example input file statements](#example-input-file-statements) for details on how to interface with this particular VUMAT subroutine.
 
 Analyses with this code **must** be run in double precision. Some of the code has double precision statements and variables hard-coded, so if Abaqus/Explicit is run in single precision, compile-time errors will arise. When submitting an Abaqus/Explicit job from the command line, double precision is specified by including the command line argument `double=both`.
+
+Geometric nonlinearity must be used in each analysis step. Geometric nonlinearity being turned on is the default in Abaqus/Explicit analysis steps. Geometric nonlinearity can be explicitly stated in the input deck `*Step` command with the keyword option `nlgeom=YES`.
 
 For example, run the test model `test_C3D8R_elastic_fiberTension` in the `tests` directory with the following command:
 ```
@@ -180,7 +182,6 @@ Example 2, using an [input deck command](#defining-the-material-properties-in-th
      elset_name,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
      0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0, 0.d0,
      0.d0,  0.d0,  0.d0,  0.d0
-    ** In each step, NLGEOM=YES must be used. This is the default setting.
 
 ### Running tests
 Test cases are available in the `tests` directory. The tests are useful for demonstrating the capabilities of the VUMAT as well as to verify that the code performs as intended. Try running some of the test cases to see how the code works. The test cases can be submitted as a typical Abaqus job using the Abaqus command line arguments.
@@ -197,10 +198,17 @@ This command will create shared libraries for the operating system it is execute
 
 When using a pre-compiled shared library, it is only necessary to specify the location of the shared library files in the environment file (the compiler options are not required). To run an analysis using a shared library, add `usub_lib_dir = <full path to shared library file>` to the Abaqus environment file in the Abaqus working directory.
 
+
+## Element compatibility
+CompDam_DGD has been developed and tested using the Abaqus three-dimensional (3-D), reduced-integration `C3D8R` hexahedral solid elements. Limited testing has been performed using the `CPS4R` plane stress element and the fully-integrated `C3D8` solid element. Because CompDam_DGD is a material model, it is expected to be compatible with continuum elements generally. However, users are advised to perform tests with any previously untested element types before proceeding to use CompDam_DGD in larger structural models.
+
+CompDam is also compatible with cohesive elements for modeling delaminations, and can be used with the two-dimensional (2-D) `COH2D4` and 3-D `COH3D8` cohesive elements. Development and testing has been performed primarily with the 3-D cohesive elments.
+
+
 ## Model features
 The CompDam_DGD material model implements a variety of features that can be enabled or disabled by the user. An overview of these features is provided in this section. The material properties required for each feature are listed. References are provided to more detailed discussions of the theoretical framework for each feature.
 
-### Fully orthotropic elasticity
+### Elastic response
 The composite materials modeled with CompDam_DGD can be defined assuming either [transverse isotropy](https://www.efunda.com/formulae/solid_mechanics/mat_mechanics/hooke_iso_transverse.cfm) or [orthotropy](https://www.efunda.com/formulae/solid_mechanics/mat_mechanics/hooke_orthotropic.cfm). For a transversely isotropic material definition, the following properties must be defined: E1, E2, G12, v12, and v23. For an orthotropic material definition, the following additional properties must be defined: E2, G13, G23, and nu13.
 
 ### Matrix damage
@@ -253,7 +261,7 @@ where *a*<sub>6</sub>, *b*<sub>2</sub>, *A* and *n* are material constants neede
 
 The above two equations are used in concert to determine plastic strain through the relationship:
 
-*&epsilon;* <sub>plastic</sub> = *n A f* <sup>*n* - 1</sup> &part;*f* / &part;*S*<sub>*i*</sub> &part;*f* / &part;*S*<sub>j</sub>
+*&epsilon;* <sub>plastic</sub> = *n A f* <sup>*n* - 1</sup> (&part;*f*/&part;*S*<sub>*i*</sub>) (&part;*f*/&part;*S*<sub>j</sub>)
 
 *f* (i.e., schaefer_f) and the tensorial plastic strain determined by the nonlinearity model are stored as state variables (27 through 32 for plastic strain and 33 for *f*)
 
@@ -299,7 +307,7 @@ The fiber kinking theory model implemented here is preliminary and has some know
 Relevant single element tests are named starting with `test_C3D8R_fiberCompression_FKT`.
 
 ### Friction
-Friction is modeled on the damaged fraction of the cross-sectional area of DGD cracks using the approach of [Alfano and Sacco (2006)](https://doi.org/10.1002/nme.1728). The coefficient of friction *&mu;* must be defined to account for friction on the failed crack surface.
+Friction is modeled on the damaged fraction of the cross-sectional area of matrix cracks and delaminations using the approach of [Alfano and Sacco (2006)](https://doi.org/10.1002/nme.1728). The coefficient of friction *&mu;* must be defined to account for friction on the failed crack surface.
 
 The amount of sliding which has taken place in the longitudinal and transverse directions are stored in state variables `CDM_slide1` and `CDM_slide2`, respectively.
 
@@ -318,11 +326,12 @@ An example of a double cantilever beam subjected to fatigue under displacement-c
 #### Interpreting the results of a fatigue analysis
 Within a fatigue step, each solution increment represents either a number of fatigue cycles or a fractional part of a single fatigue cycle. During the solution, the number of fatigue cycles per solution increment changes based on the maximum amount of energy dissipation in any single element. If the rate of energy dissipation is too high (as defined by the parameter `fatigue_damage_max_threshold`), the increments-to-cycles ratio is decreased. If the rate of energy dissipation is too low (as defined by the parameter `fatigue_damage_min_threshold`), the increments-to-cycles ratio is increased. The parameter `cycles_per_increment_init` defines the initial ratio of fatigue cycles per solution increment. Any changes to increments-to-cycles ratio are logged in an additional output file ending in `_inc2cycles.log`, with columns for the fatigue step solution increment, the updated increments-to-cycles ratio, and the accumulated fatigue cycles.
 
+### Finite stress and strain definitions
 The strain is calculated using the deformation gradient tensor provided by the Abaqus solver. The default strain definition used is the Green-Lagrange strain:
 
-*E* = (*F*<sup>T</sup>*F* - *I*)/2
+***E*** = (***F***<sup>T</sup>***F*** - ***I***)/2
 
-Hooke's law is applied using the Green-Lagrange strain to calculate the 2<sup>nd</sup> Piola-Kirchhoff stress *S*.
+Hooke's law is applied using the Green-Lagrange strain to calculate the 2<sup>nd</sup> Piola-Kirchhoff stress ***S***.
 
 ### Fiber nonlinearity
 Nonlinear elastic behavior in the fiber direction can be introduced with the material property c<sub>*l*</sub>. The expression used follows [Kowalski (1988)](https://doi.org/10.1520/STP26136S):
@@ -330,12 +339,6 @@ Nonlinear elastic behavior in the fiber direction can be introduced with the mat
 *E<sub>1</sub>* = *E<sub>1</sub>*(1 + c<sub>*l*</sub>*&epsilon;*<sub>11</sub>)
 
 By default, fiber nonlinearity is disabled by setting c<sub>*l*</sub> = 0.
-
-
-## Elements
-CompDam_DGD has been developed and tested using the Abaqus three-dimensional, reduced-integration `C3D8R` solid elements. Limited testing has been performed using the `CPS4R` plane stress element, the `SC8R` continuum shell element, the fully-integrated `C3D8` solid element, and the `COH3D8` cohesive element.
-
-Because CompDam_DGD is a material model, it is expected to be compatible with structural elements generally. However, users are advised to perform tests with any previously untested element types before proceeding to use CompDam_DGD in larger structural models.
 
 
 ## Material properties
