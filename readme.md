@@ -303,7 +303,21 @@ Friction is modeled on the damaged fraction of the cross-sectional area of DGD c
 
 The amount of sliding which has taken place in the longitudinal and transverse directions are stored in state variables `CDM_slide1` and `CDM_slide2`, respectively.
 
-### Strain definition
+### Fatigue analyses
+The cohesive fatigue constitutive model in CompDam can predict the initiation and the propagation of matrix cracks and delaminations as a function of fatigue cycles. The analyses are conducted such that the applied load (or displacement) corresponds to the maximum load of a fatigue cycle. The intended use is that the maximum load (or displacement) is held constant while fatigue damage develops with increasing step time. The constitutive model uses a specified load ratio *R*<sub>min</sub>/*R*<sub>max</sub>, the solution increment, and an automatically-calculated cycles-per-increment ratio to accumulate the damage due to fatigue loading. The cohesive fatigue model response is based on engineering approximations of the endurance limit as well as the Goodman diagram. This approach can predict the stress-life diagrams for crack initiation, the Paris law regime, as well as the transient effects of crack initiation and stable tearing.
+
+A detailed description of the initial development of the novel cohesive fatigue law is available in a [2018 NASA technical paper by Carlos Dávila](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf). An updated fatigue damage accumulation function is derived in the 2020 NASA technical paper ["Evaluation of Fatigue Damage Accumulation Functions for Delamination Initiation and Propagation" by Dávila et al.](https://www.researchgate.net/profile/Carlos_Davila8/publication/340715727_Evaluation_of_Fatigue_Damage_Accumulation_Functions_for_Delamination_Initiation_and_Propagation/links/5e99b744a6fdcca789204fb9/Evaluation-of-Fatigue-Damage-Accumulation-Functions-for-Delamination-Initiation-and-Propagation.pdf), which is the fatigue damage accumulation function that is applied herein.
+
+#### Usage
+The fatigue capability of CompDam is disabled by default. To run a fatigue analysis, one of the analysis steps must be identified as a fatigue step. A step is identified as a fatigue step by setting the `fatigue_step` parameter to the target step number, e.g., `fatigue_step = 2` for the second analysis step to be a fatigue step. The first analysis step cannot be a fatigue step, as the model is assumed to be initially unloaded.
+
+The load ratio *R*<sub>min</sub>/*R*<sub>max</sub> has a default value of 0.1, and can be changed using the parameter `fatigue_R_ratio`.
+
+An example of a double cantilever beam subjected to fatigue under displacement-control is included in the `examples/` directory. The geometry and conditions of this example problem correspond to the results presented in Figure 20 of [Dávila (2018)](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf).
+
+#### Interpreting the results of a fatigue analysis
+Within a fatigue step, each solution increment represents either a number of fatigue cycles or a fractional part of a single fatigue cycle. During the solution, the number of fatigue cycles per solution increment changes based on the maximum amount of energy dissipation in any single element. If the rate of energy dissipation is too high (as defined by the parameter `fatigue_damage_max_threshold`), the increments-to-cycles ratio is decreased. If the rate of energy dissipation is too low (as defined by the parameter `fatigue_damage_min_threshold`), the increments-to-cycles ratio is increased. The parameter `cycles_per_increment_init` defines the initial ratio of fatigue cycles per solution increment. Any changes to increments-to-cycles ratio are logged in an additional output file ending in `_inc2cycles.log`, with columns for the fatigue step solution increment, the updated increments-to-cycles ratio, and the accumulated fatigue cycles.
+
 The strain is calculated using the deformation gradient tensor provided by the Abaqus solver. The default strain definition used is the Green-Lagrange strain:
 
 *E* = (*F*<sup>T</sup>*F* - *I*)/2
@@ -391,10 +405,10 @@ Notes:
   2. *reserved*
   3. [thickness](#definition-of-thickness)
   4. *reserved*
-  5. *reserved*
-  6. *reserved*
-  7. *reserved*
-  8. *reserved*
+  5. [*&gamma;*, number of fatigue cycles to reach endurance](#fatigue-properties)
+  6. [*&epsilon;*, endurance limit](#fatigue-properties)
+  7. [*&eta;*, brittleness](#fatigue-properties)
+  8. [*p*, Paris Law curve-fitting parameter](#fatigue-properties)
 - &infin; is calculated with the Fortran intrinsic `Huge` for double precision
 - In the event that both a `.props` file is found and material properties are specified in the input deck (`nprops > 8`), then the material properties from the input deck are used and a warning is used.
 
@@ -419,6 +433,16 @@ For example, `101000` indicates that the model will run with matrix damage and f
 
 #### Definition of thickness
 Length along the thickness-direction associated with the current integration point. This input is used only for 2-D plane stress elements and does not affect the performance of 3-D hexahedral elements or cohesive elements. The three characteristic element lengths of hexahedral elements are calculated using the VUCHARLENGTH subroutine based on the element nodal coordinates.
+
+#### Fatigue properties
+Material inputs 5 through 8 are related to the cohesive fatigue model. Each of these inputs are optional as they have the default values listed in the below table.
+
+| # | Symbol          | Description                                                           | Default value |
+|---|-----------------|-----------------------------------------------------------------------|---------------|
+| 5 | *&gamma;*       | number of fatigue cycles to reach the endurance limit                 | 10,000,000    |
+| 6 | *&epsilon;*     | endurance limit                                                       | 0.2           |
+| 7 | *&eta;*         | brittleness                                                           | 0.95          |
+| 8 | *p*             | Paris Law curve-fitting parameter                                     | 0.0           |
 
 ## State variables
 The table below lists all of the state variables in the model. The model requires a minimum of 18 state variables. Additional state variables are defined depending on which (if any) shear nonlinearity and fiber compression features are enabled. For fiber compression model 1: nstatev = 19 and for model 3: nstatev = 25. For shear nonlinearity models 3 or 4: nstatev = 21.
