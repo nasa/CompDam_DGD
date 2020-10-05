@@ -37,7 +37,7 @@ For any questions, please contact the developers:
 - [Elements](#elements)
 - [Material properties](#material-properties)
 - [State variables](#state-variables)
-- [Fatigue analyses](#fatigue-analyses)
+- [Model parameters](#model-parameters)
 - [Implicit solver compatibility](#implicit-solver-compatibility)
 - [Example problems](#example-problems)
 - [Advanced debugging](#advanced-debugging)
@@ -498,20 +498,10 @@ Pre-existing damage can be modeled by creating an element set for the damaged re
               0.d0,  0.d0,  0.d0,  0.d0
 
 
-## Fatigue analyses
-The cohesive fatigue constitutive model in CompDam can predict the initiation and the propagation of matrix cracks and delaminations as a function of fatigue cycles. The analyses are conducted such that the applied load (or displacement) corresponds to the maximum load of a fatigue cycle. The intended use is that the maximum load (or displacement) is held constant while fatigue damage develops with increasing step time. The constitutive model uses a specified load ratio *R*<sub>min</sub>/*R*<sub>max</sub>, the solution increment, and an automatically-calculated cycles-per-increment ratio to accumulate the damage due to fatigue loading. The cohesive fatigue model response is based on engineering approximations of the endurance limit as well as the Goodman diagram. No additional material inputs must be defined or state variables requested beyond those required for a quasi-static analysis step. This approach can predict the stress-life diagrams for crack initiation, the Paris law regime, as well as the transient effects of crack initiation and stable tearing.
+## Model parameters
+A number of model parameters are used in the subroutine that are not directly related to material properties. These parameters are mostly related to internal error tolerances, iteration limits, etc. All parameters have default values and in most cases will not need to be modified.
 
-A detailed description of the cohesive fatigue implemented herein is available in a [2018 NASA technical paper by Carlos Dávila](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf).
-
-### Usage
-The fatigue capability of CompDam is disabled by default. To run a fatigue analysis, one of the analysis steps must be identified as a fatigue step. A step is identified as a fatigue step by setting the `fatigue_step` parameter to the target step number, e.g., `fatigue_step = 2` for the second analysis step to be a fatigue step. The first analysis step cannot be a fatigue step, as the model is assumed to be unloaded at that point.
-
-The load ratio *R*<sub>min</sub>/*R*<sub>max</sub> has a default value of 0.1, and can be changed using the parameter `fatigue_R_ratio`.
-
-An example of a double cantilever beam subjected to fatigue under displacement-control is included in the `examples/` directory. The geometry and conditions of this example problem correspond to the results presented in Figure 20 of [Dávila (2018)](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf).
-
-### Interpreting the results of a fatigue analysis
-Within a fatigue step, each solution increment represents either a number of fatigue cycles or a fractional part of a single fatigue cycle. During the solution, the number of fatigue cycles per solution increment changes based on the maximum amount of energy dissipation in any single element. If the rate of energy dissipation is too high (as defined by the parameter `fatigue_damage_max_threshold`), the increments-to-cycles ratio is decreased. If the rate of energy dissipation is too low (as defined by the parameter `fatigue_damage_min_threshold`), the increments-to-cycles ratio is increased. The parameter `cycles_per_increment_init` defines the initial ratio of fatigue cycles per solution increment. Any changes to increments-to-cycles ratio are logged in an additional output file ending in `_inc2cycles.log`, with columns for the fatigue step solution increment, the updated increments-to-cycles ratio, and the accumulated fatigue cycles.
+The model parameters can be changed from their default values by including a file named `CompDam.parameters` in the working directory. An example parameters file is located in the `tests` directory. To create a job-specific parameters file, copy the example parameters file and rename it to `<job-name>.parameters`.
 
 
 ## Implicit solver compatibility
