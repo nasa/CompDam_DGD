@@ -129,7 +129,7 @@ Subroutine CompDam(  &
   Double Precision :: U(3,3)
   Double Precision :: Pen(3)  ! Cohesive penalty stiffness
   Double Precision :: delta(3)  ! Cohesive displacement-jump vector
-  Double Precision :: AdAe
+  Double Precision :: dmg_penalty
   Double Precision :: dGdGc  ! dissipated cohesive energy per fracture toughness
   Double Precision :: density_current         ! Current density calculated from Fbulk (ignores the cohesive crack displacement)
   Logical :: Sliding
@@ -313,16 +313,17 @@ Subroutine CompDam(  &
 
     If (totalTime == 0) Then  ! Avoids calculating damage during the packager and the first solution increment
       Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm)
+      dmg_penalty = zero
     Else
       Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm, sv%d2, dGdGc)
+      dmg_penalty = sv%d2 / ( sv%d2 + m%SL*m%SL/(two * Pen(1) * m%GSL) * (one - sv%d2) )
     End If
 
     If (m%friction .AND. delta(2) <= zero) Then  ! Closed cracks without friction
-      AdAe = sv%d2/(sv%d2 + (one - sv%d2)*two*Pen(1)*m%GSL/(m%SL*m%SL))
       Sliding = crack_is_sliding(delta, Pen, sv%slide, m%mu, m%mu)
-      Call crack_traction_and_slip(delta, Pen, sv%slide, sv%slide, m%mu, m%mu, sv%d2, AdAe, T_coh, Sliding)
+      Call crack_traction_and_slip(delta, Pen, sv%slide, sv%slide, m%mu, m%mu, dmg_penalty, sv%d2, T_coh, Sliding)
     Else  ! Closed cracks without friction and open cracks
-      T_coh = cohesive_traction(delta, Pen, sv%d2)
+      T_coh = cohesive_traction(delta, Pen, dmg_penalty)
       sv%slide(1) = delta(1)
       sv%slide(2) = delta(3)
     End If

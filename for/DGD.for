@@ -425,7 +425,7 @@ Contains
     Double Precision :: delta_coh(ndir,ndir)                                 ! matrix of cohesive displacements
     Double Precision :: damage_max                                           ! Maximum value for damage variable
     Double Precision :: Pen(3)                                               ! Penalty stiffnesses
-    Double Precision :: damage_old, AdAe
+    Double Precision :: dmg_penalty, dmg_area, dmg_old
     Double Precision :: delta_n_init
     Integer :: Q, alphaQ                                                     ! Flag to specify matrix crack or delamination (Q=2 matrix crack, Q=3 delam); angle at which transition occurs (depends on element geometry)
     Integer :: MD, EQk                                                       ! MatrixDamage and equilibrium loop indices
@@ -557,13 +557,15 @@ Contains
     ! -------------------------------------------------------------------- !
     MD = 0 ! Counter for MatrixDamage loop
 
+    ! Initialize matrix damage variables
+    dmg_area = sv%d2
+    dmg_penalty = dmg_area / ( dmg_area + m%SL*m%SL/(two * Pen(1) * m%GSL) * (one - dmg_area) )
+
     MatrixDamage: Do
       MD = MD + 1
-      Call log%debug('MD', MD)
+      Call log%debug("MD " // trim(str(MD)))
       Fb_s1(:) = F_bulk(:,Q) ! Starting point 1
       slide_old(:) = sv%slide(:)
-
-      AdAe = sv%d2/(sv%d2 + (one - sv%d2)*two*Pen(1)*m%GSL/(m%SL*m%SL))
 
       ! -------------------------------------------------------------------- !
       !    Equilibrium Loop and solution controls definition                 !
@@ -583,7 +585,7 @@ Contains
 
       Equilibrium: Do ! Loop to determine the current F_bulk
         EQk = EQk + 1
-        Call log%debug('EQk', EQk)
+        Call log%debug("EQk " // trim(str(EQk)))
 
         ! -------------------------------------------------------------------- !
         If (Restart) Then
@@ -727,21 +729,21 @@ Contains
         ! -------------------------------------------------------------------- !
         If (crack_open) Then  ! Open cracks
 
-          T_coh(:) = cohesive_traction(delta_coh(:,Q), Pen(:), sv%d2)
+          T_coh(:) = cohesive_traction(delta_coh(:,Q), Pen(:), dmg_penalty)
           sv%slide(1) = delta_coh(1,Q)
           sv%slide(2) = delta_coh(3,Q)
 
         Else  ! Closed cracks
 
           If (.NOT. m%friction) Then  ! Closed cracks without friction
-            T_coh(:) = cohesive_traction(delta_coh(:,Q), Pen(:), sv%d2)
+            T_coh(:) = cohesive_traction(delta_coh(:,Q), Pen(:), dmg_penalty)
             sv%slide(1) = delta_coh(1,Q)
             sv%slide(2) = delta_coh(3,Q)
 
           Else  ! Closed cracks with friction
             Sliding = crack_is_sliding(delta_coh(:,Q), Pen, slide_old, m%mu, m%mu)
             If (forced_sticking == 1) Sliding = .False.
-            Call crack_traction_and_slip(delta_coh(:,Q), Pen, slide_old, sv%slide, m%mu, m%mu, sv%d2, AdAe, T_coh, Sliding)
+            Call crack_traction_and_slip(delta_coh(:,Q), Pen, slide_old, sv%slide, m%mu, m%mu, dmg_penalty, dmg_area, T_coh, Sliding)
 
           End If
 
@@ -861,26 +863,26 @@ Contains
           delta_coh_d(:,Q,I) = MATMUL(TRANSPOSE(R_cr_d(:,:,I)), (F(:,Q) - F_bulk(:,Q)))*X(Q,Q) - MATMUL(TRANSPOSE(R_cr), F_bulk_d(:,Q,I))*X(Q,Q)
 
           If (crack_open) Then ! Open cracks
-            T_coh_d(:,I) = Pen(:)*(one - sv%d2)*delta_coh_d(:,Q,I)
+            T_coh_d(:,I) = Pen(:)*(one - dmg_penalty)*delta_coh_d(:,Q,I)
 
           Else If (.NOT. m%friction) Then ! Closed cracks without friction
-            T_coh_d(1,I) = Pen(1)*(one - sv%d2)*delta_coh_d(1,Q,I)
+            T_coh_d(1,I) = Pen(1)*(one - dmg_penalty)*delta_coh_d(1,Q,I)
             T_coh_d(2,I) = Pen(2)*delta_coh_d(2,Q,I)
-            T_coh_d(3,I) = Pen(3)*(one - sv%d2)*delta_coh_d(3,Q,I)
+            T_coh_d(3,I) = Pen(3)*(one - dmg_penalty)*delta_coh_d(3,Q,I)
 
           Else If (Sliding) Then ! Closed cracks with sliding friction
             T_coh_d_den_temp = (Pen(1)*(delta_coh(1,Q) - slide_old(1)))**2 + (Pen(3)*(delta_coh(3,Q) - slide_old(2)))**2
 
-            T_coh_d(1,I) = Pen(1)*(one - sv%d2)*delta_coh_d(1,Q,I)
-            T_coh_d(3,I) = Pen(3)*(one - sv%d2)*delta_coh_d(3,Q,I)
+            T_coh_d(1,I) = Pen(1)*(one - dmg_penalty)*delta_coh_d(1,Q,I)
+            T_coh_d(3,I) = Pen(3)*(one - dmg_penalty)*delta_coh_d(3,Q,I)
 
             If (T_coh_d_den_temp /= zero) Then
-              T_coh_d(1,I) = T_coh_d(1,I) - AdAe*m%mu*Pen(2)*Pen(1)/SQRT(T_coh_d_den_temp)* &
+              T_coh_d(1,I) = T_coh_d(1,I) - dmg_area*m%mu*Pen(2)*Pen(1)/SQRT(T_coh_d_den_temp)* &
                 (delta_coh_d(2,Q,I)*(delta_coh(1,Q) - slide_old(1)) + delta_coh(2,Q)*delta_coh_d(1,Q,I) - delta_coh(2,Q)*(delta_coh(1,Q) - slide_old(1))* &
                 (Pen(1)*Pen(1)*(delta_coh(1,Q) - slide_old(1))*delta_coh_d(1,Q,I) + &
                  Pen(3)*Pen(3)*(delta_coh(3,Q) - slide_old(2))*delta_coh_d(3,Q,I))/T_coh_d_den_temp)
 
-              T_coh_d(3,I) = T_coh_d(3,I) - AdAe*m%mu*Pen(2)*Pen(3)/SQRT(T_coh_d_den_temp)* &
+              T_coh_d(3,I) = T_coh_d(3,I) - dmg_area*m%mu*Pen(2)*Pen(3)/SQRT(T_coh_d_den_temp)* &
                 (delta_coh_d(2,Q,I)*(delta_coh(3,Q) - slide_old(2)) + delta_coh(2,Q)*delta_coh_d(3,Q,I) - delta_coh(2,Q)*(delta_coh(3,Q) - slide_old(2))* &
                 (Pen(1)*Pen(1)*(delta_coh(1,Q) - slide_old(1))*delta_coh_d(1,Q,I) + &
                  Pen(3)*Pen(3)*(delta_coh(3,Q) - slide_old(2))*delta_coh_d(3,Q,I))/T_coh_d_den_temp)
@@ -888,9 +890,9 @@ Contains
             T_coh_d(2,I) = Pen(2)*delta_coh_d(2,Q,I)
 
           Else ! Closed cracks with sticking friction
-            T_coh_d(1,I) = Pen(1)*(one - sv%d2 + AdAe)*delta_coh_d(1,Q,I)
+            T_coh_d(1,I) = Pen(1)*(one - dmg_penalty + dmg_area)*delta_coh_d(1,Q,I)
             T_coh_d(2,I) = Pen(2)*delta_coh_d(2,Q,I)
-            T_coh_d(3,I) = Pen(3)*(one - sv%d2 + AdAe)*delta_coh_d(3,Q,I)
+            T_coh_d(3,I) = Pen(3)*(one - dmg_penalty + dmg_area)*delta_coh_d(3,Q,I)
           End If
 
           eps_d(:,:,I) = (MATMUL(TRANSPOSE(F_bulk_d(:,:,I)), F_bulk) + MATMUL(TRANSPOSE(F_bulk), F_bulk_d(:,:,I)))/two
@@ -990,33 +992,37 @@ Contains
       Call log%debug('Exited Equilibrium loop.')
 
       ! Store the old cohesive damage variable for checking for convergence
-      damage_old = sv%d2
+      dmg_old = sv%d2
 
       If (MD == 1) delta_n_init = MIN(zero, delta_coh(2,Q))
 
-      ! Update the cohesive damage variable
+      ! Update the cohesive damage variables
       Call cohesive_damage(m, p, delta_coh(:,Q), Pen, delta_n_init, sv%B, sv%FIm, sv%d2, dGdGc)
+      dmg_area = sv%d2
+      dmg_penalty = dmg_area / ( dmg_area + m%SL*m%SL/(two * Pen(1) * m%GSL) * (one - dmg_area) )
 
       ! Check for damage advancement
       If (sv%d2 <= damage_old) Then  ! If there is no damage progression,
         Call log%debug('No change in matrix damage variable, d2 ' // trim(str(sv%d2)))
         EXIT MatrixDamage
       Else
-        Call log%debug('Change in matrix damage variable, d2 ' // trim(str(sv%d2)))
+        Call log%debug('Change in matrix damage variable, dGdGc ' // trim(str(dGdGc)))
+        Call log%info('d2: ' // trim(str(sv%d2)))
         enerFracInc = enerFracInc + dGdGc*(m%GYT + (m%GSL - m%GYT)*sv%B**m%eta_BK)
       End If
 
-      ! Check for convergence based on rate of energy dissipation
+      ! Check for convergence based on change in normalized energy dissipation
       If (dGdGc < p%dGdGc_min) Then
-        Call log%info('Solution accepted due to small change in dmg.')
-        Call log%info('MD: ' // trim(str(MD)) // ' AdAe: ' // trim(str(AdAe)))
+        Call log%info('Solution accepted due to small change in damage')
+        Call log%info('MD: ' // trim(str(MD)) // ' dGdGc: ' // trim(str(dGdGc)))
+        Call log%info('d2: ' // trim(str(sv%d2)))
         EXIT MatrixDamage
       End If
 
       ! Limit number of MatrixDamage loop iterations
       If (MD > p%MD_max) Then
         Call log%info('MatrixDamage loop limit exceeded. MD: ' // trim(str(MD)))
-        Call log%info('dGdGc: ' // trim(str(dGdGc)) // ' AdAe: ' // trim(str(AdAe)))
+        Call log%info('d2: ' // trim(str(sv%d2)) // ' dGdGc: ' // trim(str(dGdGc)))
         EXIT MatrixDamage
       End If
 
@@ -1466,6 +1472,12 @@ Contains
 
   Function alpha0_DGD(m)
     ! Determines the orientation of the angle alpha0 when subject to sigma22 = -Yc
+    !
+    ! The material input alpha0 is the orientation of the crack surface normal in the 2--3 plane
+    ! with respect to the material 2 direction for a crack caused by pure matrix compression.
+    ! alpha0 is the orientation of the resulting crack after the material has been unloaded, as it
+    ! would be measured in a tested specimen. This function calculates the orientation of the
+    ! crack normal defined by alpha0 when damage initiates due to pure compressive matrix loading.
 
     Use forlog_Mod
     Use matrixAlgUtil_Mod
@@ -1566,6 +1578,8 @@ Contains
       F = F - MATMUL(MInverse(Jac), Residual)
 
     End Do alphaLoop
+
+    Call log%info('alpha0_DGD: ' // trim(str(alpha0_DGD)))
 
     Return
   End Function alpha0_DGD
