@@ -799,6 +799,11 @@ class SingleElementTests(av.TestCase):
     def test_C3D8R_matrixCompression(self):
         """ Simple compression in the matrix direction """
         self.runTest("test_C3D8R_matrixCompression")
+        
+        
+    def test_C3D8R_matrixCompression_friction(self):
+        """ Simple compression in the matrix direction with friction"""
+        self.runTest("test_C3D8R_matrixCompression_friction")
 
 
     def test_C3D8R_elastic_matrixTension(self):

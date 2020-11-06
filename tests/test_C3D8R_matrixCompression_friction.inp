@@ -1,5 +1,5 @@
 *Heading
- Single element test for matrix compression
+ Single element test for matrix compression with friction
 **
 *Parameter
 l = 0.15
@@ -69,7 +69,7 @@ stepDuration = 0.1
 *Density
 1.57e-09,
 *User material, constants=1
- 100000,
+ 100001,
 *Depvar
   19,
   1, CDM_d2
