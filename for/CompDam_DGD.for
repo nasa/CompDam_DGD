@@ -130,7 +130,7 @@ Subroutine CompDam(  &
   Double Precision :: Pen(3)  ! Cohesive penalty stiffness
   Double Precision :: delta(3)  ! Cohesive displacement-jump vector
   Double Precision :: dmg_penalty
-  Double Precision :: dGdGc  ! dissipated cohesive energy per fracture toughness
+  Double Precision :: dGdGc  ! incremental change in normalized energy dissipation
   Double Precision :: density_current         ! Current density calculated from Fbulk (ignores the cohesive crack displacement)
   Logical :: Sliding
 
@@ -289,11 +289,6 @@ Subroutine CompDam(  &
   ! -------------------------------------------------------------------- !
   ElementType: If (m%cohesive) Then
 
-    ! Define penalty stiffness terms
-    Pen(2) = m%E3  ! Mode I penalty stiffness
-    Pen(1) = Pen(2)*m%GYT*m%SL*m%SL/(m%GSL*m%YT*m%YT)  ! Mode II penalty stiffness, Turon (2010)
-    Pen(3) = Pen(2)*m%GYT*m%ST*m%ST/(m%GSL*m%YT*m%YT)
-
     ! Determine current cohesive displacement-jump
     !  Assumes a constitutive thickness equal to one.
     If (nshr == 2) Then
@@ -306,6 +301,15 @@ Subroutine CompDam(  &
       delta(3) = zero
     End If
 
+    ! Define penalty stiffnesses
+    ! Normal (Mode I) penalty stiffness. This is a user-input numerical constant.
+    Pen(2) = m%E3 
+    ! Longitudinal (Pen(1)) and transverse (Pen(3)) shear penalty stiffnesses
+    !  Defined according the material property relationships defined in Turon (2010). Also includes the
+    !  normal compression load dependence of the shear strengths from LaRC04.
+    Pen(1) = Pen(2)*m%GYT*(m%SL - m%etaL*Pen(2)*MIN(zero, delta(2)))**2/(m%GSL*m%YT**2)
+    Pen(3) = Pen(2)*m%GYT*(m%ST - m%etaT*Pen(2)*MIN(zero, delta(2)))**2/(m%GSL*m%YT**2)
+
     ! Store current cohesive displacement-jump
     sv%Fb1 = delta(1)  ! Longitudinal shear displacement-jump
     sv%Fb2 = delta(2)  ! Normal displacement-jump
@@ -314,12 +318,12 @@ Subroutine CompDam(  &
     If (totalTime == 0) Then  ! Avoids calculating damage during the packager and the first solution increment
       Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm)
       dmg_penalty = zero
+      dGdGc = zero
     Else
-      Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm, sv%d2, dGdGc)
-      dmg_penalty = sv%d2 / ( sv%d2 + m%SL*m%SL/(two * Pen(1) * m%GSL) * (one - sv%d2) )
+      Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm, sv%d2, dmg_penalty, dGdGc)
     End If
 
-    If (m%friction .AND. delta(2) <= zero) Then  ! Closed cracks without friction
+    If (m%friction .AND. delta(2) <= zero) Then  ! Closed cracks with friction
       Sliding = crack_is_sliding(delta, Pen, sv%slide, m%mu, m%mu)
       Call crack_traction_and_slip(delta, Pen, sv%slide, sv%slide, m%mu, m%mu, dmg_penalty, sv%d2, T_coh, Sliding)
     Else  ! Closed cracks without friction and open cracks

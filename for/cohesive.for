@@ -3,7 +3,7 @@ Module cohesive_mod
 
 Contains
 
-  Subroutine cohesive_damage(m, p, delta, Pen, delta_n_init, B, FI, R, dR)
+  Subroutine cohesive_damage(m, p, delta, Pen, delta_n_init, B, FI, R, damage, dR)
     ! All properties are passed in as arguments
 
     Use forlog_Mod
@@ -11,24 +11,27 @@ Contains
     Use parameters_Mod
 
     ! Arguments
-    Type(matProps), intent(IN) :: m
-    Type(parameters), intent(IN) :: p
-    Double Precision, intent(IN) :: delta(3)
-    Double Precision, intent(IN) :: Pen(3), delta_n_init
-    Double Precision, intent(INOUT) :: B
-    Double Precision, intent(OUT) :: FI
+    Type(matProps), intent(IN) :: m                                          ! Material properties
+    Type(parameters), intent(IN) :: p                                        ! Solution parameters
+    Double Precision, intent(IN) :: delta(3)                                 ! Cohesive displacement-jump vector
+    Double Precision, intent(IN) :: Pen(3)                                   ! Penalty stiffnesses
+    Double Precision, intent(IN) :: delta_n_init                             ! Normal cohesive displacement-jump at damage initiation
+    Double Precision, intent(INOUT) :: B                                     ! Mode mixity
+    Double Precision, intent(OUT) :: FI                                      ! Failure index
     Double Precision, optional, intent(INOUT) :: R                           ! Normalized energy dissipation
+    Double Precision, optional, intent(OUT) :: damage                        ! Cohesive damage state variable
     Double Precision, optional, intent(OUT) :: dR                            ! Change in normalized energy dissipation
 
     ! Locals
-    Double Precision :: del                                                  ! Magnitude of current cohesive displacement
+    Double Precision :: del                                                  ! Magnitude of current cohesive displacement-jump
     Double Precision :: del_n, del_s1, del_s2, del_s                         ! Temporary values used to calculate del
     Double Precision :: del0n, del0s                                         ! Initiation displacements for pure Mode I and Mode II
     Double Precision :: delfn, delfs                                         ! Final displacements for pure Mode I and Mode II
-    Double Precision :: d0, df                                               ! Initiation and final displacements for current mode-mixity ratio
+    Double Precision :: d0, df                                               ! Initiation and final displacements for current mode mixity
+    Double Precision :: SL, ST, SC                                           ! Longitudinal, transverse, and combined shear strengths
     Double Precision :: R_max                                                ! Maximum value for the normalized energy dissipation
-    Double Precision :: beta                                                 ! Placeholder (temp.) variables for Mode-mixity
-    Double Precision :: KS                                                   ! Shear penalty stiffness
+    Double Precision :: beta                                                 ! Intermediate variable for mode mixity
+    Double Precision :: Pen_sh                                               ! Combined longitudinal and transverse shear penalty stiffness
     Double Precision :: B_old, R_old
     Double Precision :: mode_mix_limit
     Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0, seven=7.d0, ten=10.d0
@@ -62,30 +65,30 @@ Contains
 #endif
     ! -------------------------------------------------------------------- !
 
-    R_max = one  ! Maximum value for normalized energy dissipation
-    mode_mix_limit = 1.d-6
+    R_max = one  ! Maximum value for normalized energy dissipation damage variable
+    mode_mix_limit = 1.d-6  ! Small variations (within this limit) from pure mode mixities are rounded to the pure cases
 
     ! Cohesive displacement-jumps
-    del_s1 = delta(1)
-    del_s2 = delta(3)
-    del_n  = delta(2)
-    del_s  = SQRT(del_s1*del_s1 + del_s2*del_s2)
-    del    = SQRT(MAX(zero, del_n)*del_n + del_s*del_s)
+    del_s1 = delta(1)  ! Longitudinal shear
+    del_s2 = delta(3)  ! Transverse shear
+    del_n  = delta(2)  ! Normal
+    del_s  = SQRT(del_s1*del_s1 + del_s2*del_s2)  ! Combined longitudinal and transverse shear
+    del    = SQRT(MAX(zero, del_n)*del_n + del_s*del_s)  ! Combined normal and shear
 
     ! Account for LaRC04 and calculate "mixed shear" strengths and stiffnesses
     If (del_s > zero) Then
-      ds1_str = m%SL - m%etaL*Pen(2)*MIN(zero, delta_n_init)  ! LaRC04 longitudinal shear strength
-      ds2_str = m%ST - m%etaT*Pen(2)*MIN(zero, delta_n_init)  ! LaRC04 transverse shear strength
-      KS = SQRT((Pen(1)*del_s1)**2 + (Pen(3)*del_s2)**2)/del_s  ! Combined shear penalty stiffness
-      ds_str = KS*del_s/SQRT((Pen(1)*del_s1/ds1_str)**2 + (Pen(3)*del_s2/ds2_str)**2)
+      SL = m%SL - m%etaL*Pen(2)*MIN(zero, delta_n_init, del_n)  ! LaRC04 longitudinal shear strength
+      ST = m%ST - m%etaT*Pen(2)*MIN(zero, delta_n_init, del_n)  ! LaRC04 transverse shear strength
+      Pen_sh = SQRT((Pen(1)*del_s1)**2 + (Pen(3)*del_s2)**2)/del_s  ! Combined shear penalty stiffness
+      SC = Pen_sh*del_s/SQRT((Pen(1)*del_s1/SL)**2 + (Pen(3)*del_s2/ST)**2)  ! Combined shear strength
     Else
-      ds_str = m%SL
-      KS = Pen(1)
+      SC = m%SL
+      Pen_sh = Pen(1)
     End If
 
     ! Cohesive displacements for initiation for pure mode I and mode II
     del0n = m%YT/Pen(2)  ! mode I cohesive initiation disp.
-    del0s = ds_str/KS  ! mode II cohesive initiation disp.
+    del0s = SC/Pen_sh  ! mode II cohesive initiation disp.
 
     ! Mode mixity
     beta = del_s*del_s + MAX(zero, del_n)*del_n
@@ -95,7 +98,7 @@ Contains
       beta = del_s*del_s/beta
     End If
     B_old = B
-    B = KS*beta/(KS*beta + Pen(2)*(one - beta))
+    B = Pen_sh*beta/(Pen_sh*beta + Pen(2)*(one - beta))
 
     ! Mixed-mode initiation displacements
     If (B >= one - mode_mix_limit) Then
@@ -107,7 +110,7 @@ Contains
       B = zero
       d0 = del0n
     Else
-      d0 = SQRT( (del0n**2 + (del0s**2*KS/Pen(2) - del0n**2)*B**m%eta_BK)*(one + B*(Pen(2)/KS - one)) )
+      d0 = SQRT( (del0n**2 + (del0s**2*Pen_sh/Pen(2) - del0n**2)*B**m%eta_BK)*(one + B*(Pen(2)/Pen_sh - one)) )
     End If
 
     FI = MIN(one, del/d0)
@@ -115,8 +118,8 @@ Contains
     DamageEvolution: If (present(R)) Then
 
       ! Cohesive displacements for final failure for pure mode I and mode II
-      delfn = two*m%GYT/del0n/Pen(2)  ! mode I cohesive final disp.
-      delfs = two*m%GSL/del0s/KS  ! mode II cohesive final disp.
+      delfn = two*m%GYT/m%YT  ! mode I cohesive final disp.
+      delfs = two*m%GSL/SC  ! mode II cohesive final disp.
 
       ! Mixed-mode final failure displacements
       If (B >= one - mode_mix_limit) Then
@@ -124,7 +127,7 @@ Contains
       Else If (B <= mode_mix_limit) Then
         df = delfn
       Else
-        df = (del0n*delfn + (del0s*delfs*KS/Pen(2) - del0n*delfn)*B**m%eta_BK)*(one + B*(Pen(2)/KS - one))/d0
+        df = (del0n*delfn + (del0s*delfs*Pen_sh/Pen(2) - del0n*delfn)*B**m%eta_BK)*(one + B*(Pen(2)/Pen_sh - one))/d0
       End If
 
       ! Determine the new damage state
@@ -176,6 +179,8 @@ Contains
       End If FatigueStep
 #endif
 
+      ! Calculate the penalty stiffness based cohesive damage variable
+      damage = R/(R + d0/df*(one - R))
       ! Calculate the change in normalized energy dissipation
       dR = R - R_old
 
