@@ -15,9 +15,11 @@ Subroutine vucharlength(  &
 
   Character(len=80) :: cmname
 
-  Integer :: fiberEdge, matrixEdge, thickEdge, edge_pair_1, edge_pair_2
+  Integer :: fiberEdge, matrixEdge, thickEdge, matrixEdge_test, edge_pair_1, edge_pair_2
   Double Precision :: center(ndim), edges(ndim, ndim), tri_edges(3, ndim), wedge_edges(4, ndim)
-  Double Precision :: thick_test, thick_test_max, da_max_matrix, da_avg_matrix, da_max_fiber, da_avg_fiber
+  Double Precision :: fiber_test, matrix_test, thick_test
+  Double Precision :: fiber_test_max, matrix_test_min, thick_test_max
+  Double Precision :: da_max_matrix, da_avg_matrix, da_max_fiber, da_avg_fiber
   Double Precision :: psi, gamma, Lc_meshlines_fiber, Lc_meshlines_matrix
 
   Dimension INTV(1), REALV(1)    ! For Abaqus warning messages
@@ -79,23 +81,39 @@ Subroutine vucharlength(  &
         End If WedgeEdges
 
         ! Determine the fiber-aligned edge vector
+        ! The edge vector closest to parallel with the fiber material direction is selected.
         fiber_test_max = zero
         Do i=1,3
-          fiber_test = ABS(DOT_PRODUCT(tri_edges(i,:)/Length(tri_edges(i,:)), direct(k,:,1)))
+          fiber_test = ABS(DOT_PRODUCT(tri_edges(i,:)/Length(tri_edges(i,:)), direct(k,:,1)))  ! a value of 1.0 indicates perpendicular
           If (fiber_test > fiber_test_max) Then
             fiber_test_max = fiber_test
             fiberEdge = i
           End If
         End Do
         edges(1,:) = tri_edges(fiberEdge,:)
-        edges(2,:) = -tri_edges(MOD(fiberEdge+1,3) + 1,:)
+
+        ! Determine the matrix-aligned edge vector
+        ! The edge vector most perpendicular to the fiber edge vector is selected.
+        matrix_test_min = HUGE(zero)
+        Do i=0,1
+          matrixEdge_test = MOD(fiberEdge+i,3)+1
+          matrix_test = ABS(DOT_PRODUCT(edges(1,:)/Length(edges(1,:)), -tri_edges(matrixEdge_test,:)/Length(tri_edges(matrixEdge_test,:))))
+          If (matrix_test < matrix_test_min) Then
+            matrix_test_min = matrix_test
+            matrixEdge = matrixEdge_test
+          End If
+        End Do
+        edges(2,:) = -tri_edges(matrixEdge,:)
+
+        ! Flip the direction of the edge vectors if the fiber edge is opposite the fiber material direction
         If (DOT_PRODUCT(tri_edges(fiberEdge,:), direct(k,:,1)) < zero) Then
           edges(1,:) = -edges(1,:)
           edges(2,:) = -edges(2,:)
         End If
-        If (ndim == 3) Then
-          edges(3,:) = wedge_edges(thickEdge,:)
-        End If
+
+        If (ndim == 3) edges(3,:) = wedge_edges(thickEdge,:)
+        
+        ! Reset element edge vector integer variables to corresponding indices in edges()
         fiberEdge = 1
         matrixEdge = 2
         thickEdge = 3
