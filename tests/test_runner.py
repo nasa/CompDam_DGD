@@ -272,11 +272,7 @@ class ParametricElementSizeTri(av.TestCase):
 
     # Closed-form equation for the matrix characteristic element length, valid for misalignment angles between -45 and +45 degrees and gamma = 90deg
     L2 = 0.2  # matrix-direction element edge length
-    # The calculated crack band widths for tri and wedge elements should be twice the corresponding quad and hex element values. In the vucharlength()
-    # subroutine, it is assumed that the mesh is uniform. Therefore, a tri mesh is equivalent to a quad mesh in which every element is bisected and
-    # the 2 quad element edges are parallel to 2 of the 3 tri edges (1 of which is the edge most closely aligned with the propgation direction). These
-    # assumptions double the number of elements, requiring the crack band width to double to dissipate equal energy for the same propagation distance.
-    Lc_eq = lambda L, alpha, psi: L * (alpha * math.sin(abs(math.radians(psi))) + math.cos(math.radians(psi))) * 2
+    Lc_eq = lambda L, alpha, psi: L * (alpha * math.sin(abs(math.radians(psi))) + math.cos(math.radians(psi)))
 
     # Element sizes are dependent on the misalignment and skew angles
     expectedpy_parameters = {'Lc1': [Lc_eq(L2*alpha, 1.0/alpha, psi) for alpha in parameters['alpha'] for psi in parameters['misalignment_angle']],
@@ -826,6 +822,16 @@ class SingleElementTests(av.TestCase):
     def test_CPS4R_elementSize(self):
         """ Characteristic element size test, plane stress element """
         self.runTest("test_CPS4R_elementSize")
+
+
+    def test_C3D6_matrixTension(self):
+        """ Simple tension in the matrix direction, two wedge elements """
+        self.runTest("test_C3D6_matrixTension")
+
+
+    def test_C3D6_simpleShear12(self):
+        """ Simple shear in the 1-2 plane, two wedge elements """
+        self.runTest("test_C3D6_simpleShear12")
 
 
 if __name__ == "__main__":

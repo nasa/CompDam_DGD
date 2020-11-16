@@ -1,7 +1,10 @@
-enerFrac = 0.277*0.1*0.1
-E2 = 9080.
-YT = 50
-enerElas = 0.5*YT**2/E2*0.1*0.1*0.1
+E2 = 9080.  # Young's modulus, matrix direction
+YT = 50.  # Matrix tensile strength
+GYT = 0.277  # Mode I fracture toughness
+length = 0.1  # Element edge length
+
+enerElas = 0.1354 * length**3
+enerFrac = GYT * length**2
 
 parameters = {
 	"results": [
@@ -13,8 +16,8 @@ parameters = {
                     "elset": "ALL_ELEMS",
                     "position": "Element 1 Int Point 1"
                 },
-            "referenceValue": YT, # YT
-            "tolerance": 0.001*YT
+            "referenceValue": YT,
+            "tolerance": YT * 0.001  # 0.1% error
         },
         {
             "type": "disp_at_zero_y",
@@ -33,8 +36,8 @@ parameters = {
             ],
             "window": [0.01, 0.015],
             "zeroTol": 0.005,  # Defines how close to zero the y value needs to be
-            "referenceValue": 0.01108, # u_f = 2*GYT/YT
-            "tolerance": 1e-5
+            "referenceValue": 2. * GYT / YT,  # Cohesive displacement-jump at complete failure
+            "tolerance": 2. * GYT / YT * 0.001  # 0.1% error
         },
         {
             "type": "max",
@@ -70,6 +73,17 @@ parameters = {
             "tolerance": 0.0
         },
         {
+            "type": "max",
+            "identifier": 
+                {
+                    "symbol": "SDV_CDM_alpha",
+                    "elset": "ALL_ELEMS",
+                    "position": "Element 1 Int Point 1"
+                },
+            "referenceValue": 0.0,
+            "tolerance": 0.0
+        },
+        {
             "type": "continuous",
             "identifier": 
                 {
@@ -84,19 +98,19 @@ parameters = {
             "type": "max",
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
             "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GYT*LC1*LC3
-            "tolerance": 0.01*enerFrac
+            "tolerance": enerFrac * 0.002  # 0.2% error
         },
         {
             "type": "finalValue",
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
             "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GYT*LC1*LC3
-            "tolerance": 0.01*enerFrac
+            "tolerance": enerFrac * 0.002  # 0.2% error
         },
         {
             "type": "max",
-            "identifier": "Strain energy: ALLSE for Whole Model",   # Recoverable strain energy
-            "referenceValue": enerElas,   # Elastic strain energy * volume
-            "tolerance": 0.03*enerElas
+            "identifier": "Strain energy: ALLSE for Whole Model",  # Recoverable strain energy
+            "referenceValue": enerElas,  # Elastic strain energy * volume
+            "tolerance": enerElas * 0.005  # 0.5% error
         }
 	]
 }

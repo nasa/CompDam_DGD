@@ -184,7 +184,6 @@ Subroutine vucharlength(  &
 
       ! Lc_ML_fiber is the characteristic element length for fiber damage growing along the mesh lines
       charLength(k,1) = Lc_meshlines_fiber * ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,2))) / da_avg_fiber
-      If (nnode == 3 .OR. nnode == 6) charLength(k,1) = charLength(k,1) * two
 
       ! Matrix-direction characteristic element length
       ! Lc_meshlines_matrix is the characteristic element length for matrix damage growing along the mesh lines
@@ -202,7 +201,6 @@ Subroutine vucharlength(  &
                         ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,2))))
 
       charLength(k,2) = Lc_meshlines_matrix * ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,1))) / da_avg_matrix  ! Equation 20
-      If (nnode == 3 .OR. nnode == 6) charLength(k,2) = charLength(k,2) * two
 
       ! Thickness-direction characteristic element length
       If (ndim == 3) charLength(k,3) = ABS(DOT_PRODUCT(edges(thickEdge,:), direct(k,:,3)))
