@@ -26,7 +26,7 @@ Subroutine vucharlength(  &
   Character(len=8) CHARV(1)      ! For Abaqus warning messages
 
   ! Parameters
-  Double Precision, parameter :: zero=0.d0, Pi=ACOS(-1.d0), two=2.d0, three=3.d0
+  Double Precision, parameter :: zero=0.d0, Pi=ACOS(-1.d0), one=1.d0, two=2.d0, three=3.d0
 
   ! Evaluate vucharlength() only when element length state variables are undefined.
   runOnce: If (stateOld(1,6) == zero) Then
@@ -46,7 +46,7 @@ Subroutine vucharlength(  &
         charLength(k,6) = DOT_PRODUCT(coordMp(k,:), direct(k,:,3))
       End If
 
-      ! The following assumes that nodes in coordNode() are numbered according to the Abqus documentation.
+      ! The following assumes that nodes in coordNode() are numbered according to the Abaqus documentation.
 
       elementShape: If (nnode == 3 .OR. nnode == 6) Then  ! For 3- and 6-node elements,
 
@@ -60,7 +60,8 @@ Subroutine vucharlength(  &
           wedge_edges(1,:) = (tri_edges(1,:) + coordNode(k,5,:) - coordNode(k,4,:)) / two
           wedge_edges(2,:) = (tri_edges(2,:) + coordNode(k,6,:) - coordNode(k,5,:)) / two
           wedge_edges(3,:) = (tri_edges(3,:) + coordNode(k,4,:) - coordNode(k,6,:)) / two
-          wedge_edges(4,:) = (coordNode(k,4,:) - coordNode(k,1,:) + coordNode(k,5,:) - coordNode(k,2,:) + coordNode(k,6,:) - coordNode(k,3,:)) / three
+          wedge_edges(4,:) = (coordNode(k,4,:) - coordNode(k,1,:) + coordNode(k,5,:) - coordNode(k,2,:) + & 
+                              coordNode(k,6,:) - coordNode(k,3,:)) / three
 
         ! Check to ensure wedge element thickness is aligned with the material direction thickness
           thick_test_max = zero
@@ -72,7 +73,7 @@ Subroutine vucharlength(  &
             End If
           End Do
           If (thickEdge /= 4) Then
-            Call XPLB_ABQERR(-3,"Wedge elements must have element thickness aligned with material thickness direction.",INTV,REALV,CHARV)
+            Call XPLB_ABQERR(-3,"Wedge elements must have thickness edge aligned with material 3-direction.",INTV,REALV,CHARV)
           Else
             tri_edges(1,:) = wedge_edges(1,:)
             tri_edges(2,:) = wedge_edges(2,:)
@@ -84,7 +85,7 @@ Subroutine vucharlength(  &
         ! The edge vector closest to parallel with the fiber material direction is selected.
         fiber_test_max = zero
         Do i=1,3
-          fiber_test = ABS(DOT_PRODUCT(tri_edges(i,:)/Length(tri_edges(i,:)), direct(k,:,1)))  ! a value of 1.0 indicates perpendicular
+          fiber_test = ABS(DOT_PRODUCT(tri_edges(i,:) / Length(tri_edges(i,:)), direct(k,:,1)))  ! a value of 1.0 indicates parallel
           If (fiber_test > fiber_test_max) Then
             fiber_test_max = fiber_test
             fiberEdge = i
@@ -97,19 +98,14 @@ Subroutine vucharlength(  &
         matrix_test_min = HUGE(zero)
         Do i=0,1
           matrixEdge_test = MOD(fiberEdge+i,3)+1
-          matrix_test = ABS(DOT_PRODUCT(edges(1,:)/Length(edges(1,:)), -tri_edges(matrixEdge_test,:)/Length(tri_edges(matrixEdge_test,:))))
+          matrix_test = ABS(DOT_PRODUCT(edges(1,:) / Length(edges(1,:)), &
+                                       -tri_edges(matrixEdge_test,:) / Length(tri_edges(matrixEdge_test,:))))
           If (matrix_test < matrix_test_min) Then
             matrix_test_min = matrix_test
             matrixEdge = matrixEdge_test
           End If
         End Do
         edges(2,:) = -tri_edges(matrixEdge,:)
-
-        ! Flip the direction of the edge vectors if the fiber edge is opposite the fiber material direction
-        If (DOT_PRODUCT(tri_edges(fiberEdge,:), direct(k,:,1)) < zero) Then
-          edges(1,:) = -edges(1,:)
-          edges(2,:) = -edges(2,:)
-        End If
 
         If (ndim == 3) edges(3,:) = wedge_edges(thickEdge,:)
         
@@ -129,7 +125,7 @@ Subroutine vucharlength(  &
           edges(3,:) = coordNode(k,5,:) - coordNode(k,1,:) + coordNode(k,6,:) - coordNode(k,2,:) + &
                        coordNode(k,7,:) - coordNode(k,3,:) + coordNode(k,8,:) - coordNode(k,4,:)
         End If
-        edges = 2 * edges / nnode
+        edges = two * edges / nnode
 
         ! Determine the thickness-aligned edge vector
         ThicknessEdgeHex: If (ndim == 3) Then
@@ -147,8 +143,8 @@ Subroutine vucharlength(  &
         ! Determine the fiber-aligned and matrix-aligned edge vectors
         edge_pair_1 = MOD(thickEdge,3) + 1
         edge_pair_2 = MOD(edge_pair_1,3) + 1
-        FiberEdgeTest: If (ABS(DOT_PRODUCT(edges(edge_pair_1,:)/Length(edges(edge_pair_1,:)), direct(k,:,1))) >= &
-            ABS(DOT_PRODUCT(edges(edge_pair_2,:)/Length(edges(edge_pair_2,:)), direct(k,:,1)))) Then
+        FiberEdgeTest: If (ABS(DOT_PRODUCT(edges(edge_pair_1,:) / Length(edges(edge_pair_1,:)), direct(k,:,1))) >= &
+                           ABS(DOT_PRODUCT(edges(edge_pair_2,:) / Length(edges(edge_pair_2,:)), direct(k,:,1)))) Then
           fiberEdge = edge_pair_1
           matrixEdge = edge_pair_2
         Else FiberEdgeTest
@@ -163,9 +159,17 @@ Subroutine vucharlength(  &
 
       End If elementShape
 
+      ! Flip the directions of the in-plane edge vectors if they are oriented opposite their respective material direction
+      If (DOT_PRODUCT(edges(fiberEdge,:) / Length(edges(fiberEdge,:)), direct(k,:,1)) < zero) Then
+        edges(fiberEdge,:)  = -edges(fiberEdge,:)
+      End If
+      If (DOT_PRODUCT(edges(matrixEdge,:) / Length(edges(matrixEdge,:)), direct(k,:,2)) < zero) Then
+        edges(matrixEdge,:) = -edges(matrixEdge,:)
+      End If
 
       ! Define attributes of the mesh related to its misalignment (psi) and skew (gamma)
-      psi = ACOS(DOT_PRODUCT(edges(fiberEdge,:) / Length(edges(fiberEdge,:)), direct(k, :, 1)))
+      psi = ACOS(MIN(one, DOT_PRODUCT(edges(fiberEdge,:) / Length(edges(fiberEdge,:)), direct(k,:,1))))
+      If (DOT_PRODUCT(edges(fiberEdge,:) / Length(edges(fiberEdge,:)), direct(k,:,2)) < zero) psi = -psi
       gamma = ACOS(DOT_PRODUCT(edges(fiberEdge,:) / Length(edges(fiberEdge,:)), edges(matrixEdge,:) / Length(edges(matrixEdge,:))))
 
       ! Fiber-direction characteristic element length
@@ -176,11 +180,11 @@ Subroutine vucharlength(  &
         da_max_fiber = Length(edges(matrixEdge,:)) * SIN(gamma) / COS(psi)
         da_avg_fiber = da_max_fiber * ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,1)))
       Else
-        da_max_fiber = Length(edges(fiberEdge,:)) * SIN(gamma) / -COS(psi + gamma)
+        da_max_fiber = Length(edges(fiberEdge,:)) * SIN(gamma) / ABS(COS(psi + gamma))
         da_avg_fiber = da_max_fiber * ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,1)))
       End If
       da_avg_fiber = da_avg_fiber / (ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,1))) + &
-                        ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,1))))
+                                     ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,1))))
 
       ! Lc_ML_fiber is the characteristic element length for fiber damage growing along the mesh lines
       charLength(k,1) = Lc_meshlines_fiber * ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,2))) / da_avg_fiber
@@ -191,7 +195,7 @@ Subroutine vucharlength(  &
 
       ! Equations 17 and 18
       If (ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,2))) > ABS(DOT_PRODUCT(edges(matrixEdge,:), direct(k,:,2)))) Then
-        da_max_matrix = Length(edges(matrixEdge,:)) * SIN(gamma) / SIN(psi)
+        da_max_matrix = Length(edges(matrixEdge,:)) * SIN(gamma) / SIN(ABS(psi))
         da_avg_matrix = da_max_matrix * ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,2)))
       Else
         da_max_matrix = Length(edges(fiberEdge,:)) * SIN(gamma) / SIN(psi + gamma)
