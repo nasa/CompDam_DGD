@@ -562,7 +562,7 @@ Contains
     Read(value,*) valueLogical
 
     ! Check for non-default
-    If ((valueLogical .NE. saveTo) .AND. nondefaultWarn) Then
+    If ((valueLogical .NEQV. saveTo) .AND. nondefaultWarn) Then
       Call log%warn("Non-default parameter: " // trim(key) // " = " // trim(str(valueLogical)))
     End If
 
