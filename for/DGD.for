@@ -39,8 +39,7 @@ Contains
     ! Locals
 
     Double Precision :: Stiff(ndir+nshr,ndir+nshr)                         ! Stiffness
-    Double Precision :: eps(ndir,ndir) !Strain
-    Double Precision :: eps_old(ndir, ndir)                          ! Strain
+    Double Precision :: eps(ndir,ndir), eps_old(ndir, ndir)                ! Strain
     Double Precision :: stress(ndir,ndir)                                  ! Stress
     Double Precision :: F_inverse_transpose(3,3)                           ! Inverse transpose of the Deformation Gradient Tensor
     Double Precision :: X(3,3)                                             ! Reference configuration
@@ -49,7 +48,7 @@ Contains
     Double Precision :: normal(3)                                          ! Normal vector (to cohesive surface)
     Double Precision :: R_cr(3,3)                                          ! Basis coordinate system for the cohesive surface
     Double Precision :: Pen(3)                                             ! Penalty stiffnesses
-    Double Precision :: T(3)                                               ! Tractions on the cohesive surface
+    Double Precision :: T(3), T_crack(3)                                   ! Tractions on the cohesive surface
     Double Precision :: delta(3)                                           ! Current displacement jumps in crack coordinate system
     Double Precision :: B_temp, beta                                       ! Placeholder (temp.) variables for Mode-mixity
     Double Precision :: FIm_temp
@@ -67,7 +66,7 @@ Contains
     Double Precision :: normalDir(3)                                       ! Normal to the crack plane in the reference configuration
     Double Precision :: fiberDir(3)                                        ! Current fiber direction
     Double Precision :: pk2_fiberDir(3,3)                                  ! 2PK stress in the fiber direction
-    Double Precision :: R_phi0(3,3), R_phi0_12(3,3), R_phi0_13(3,3)              ! Rotation to the misaligned frame (FKT)
+    Double Precision :: R_phi0(3,3), R_phi0_12(3,3), R_phi0_13(3,3)        ! Rotation to the misaligned frame (FKT)
     Double Precision :: gamma_rphi0                                        ! Shear strain in the misaligned frame
 
     ! Energy
@@ -279,30 +278,24 @@ Contains
         ! Current transverse direction
         R_cr(:,3) = CrossProduct(R_cr(:,1), R_cr(:,2))
 
-        ! -------------------------------------------------------------------- !
-        !    Determine the cohesive traction vector                            !
-        ! -------------------------------------------------------------------- !
-        T = MATMUL(Cauchy, R_cr(:,2)) ! Traction on fracture surface
+        T = MATMUL(Cauchy, R_cr(:,2))  ! Traction on fracture surface
 
-        ! -------------------------------------------------------------------- !
-        !    Determine the cohesive penalty stiffnesses                        !
-        ! -------------------------------------------------------------------- !
         ! Does this DGD crack represent a crack or a delamination?
         If (A == 90) Then
           Q = 3
         Else
           Q = 2
         End If
+
+        T_crack = MATMUL(TRANSPOSE(R_cr), T)  ! Traction on fracture surface, in crack C.S.
+
         ! Normal (Mode I) penalty stiffness
         Pen(2) = p%penStiffMult*m%E2/sv%Lc(Q)
         ! Longitudinal (Pen(1)) and transverse (Pen(3)) shear penalty stiffnesses
-        Pen(1) = Pen(2)*m%GYT*(m%SL - m%etaL*MIN(zero, T(2)))**2/(m%GSL*m%YT**2)
-        Pen(3) = Pen(2)*m%GYT*(m%ST - m%etaT*MIN(zero, T(2)))**2/(m%GSL*m%YT**2)
+        Pen(1) = Pen(2)*m%GYT*(m%SL - m%etaL*MIN(zero, T_crack(2)))**2/(m%GSL*m%YT**2)
+        Pen(3) = Pen(2)*m%GYT*(m%ST - m%etaT*MIN(zero, T_crack(2)))**2/(m%GSL*m%YT**2)
 
-        ! -------------------------------------------------------------------- !
-        !    Determine the cohesive displacement-jump                          !
-        ! -------------------------------------------------------------------- !
-        delta = MATMUL(TRANSPOSE(R_cr), T) / Pen
+        delta = T_crack / Pen  ! Cohesive displacement-jump
 
         ! -------------------------------------------------------------------- !
         !    Evaluate the cohesive law initiation criterion                    !
