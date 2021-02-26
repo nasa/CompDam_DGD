@@ -77,8 +77,8 @@ Contains
 
     ! Account for LaRC04 and calculate "mixed shear" strengths and stiffnesses
     If (del_s > zero) Then
-      SL = m%SL - m%etaL*Pen(2)*MIN(zero, delta_n_init, del_n)  ! LaRC04 longitudinal shear strength
-      ST = m%ST - m%etaT*Pen(2)*MIN(zero, delta_n_init, del_n)  ! LaRC04 transverse shear strength
+      SL = m%SL - m%etaL*MAX(-m%YC, Pen(2)*MIN(zero, delta_n_init, del_n))  ! LaRC04 longitudinal shear strength
+      ST = m%ST - m%etaT*MAX(-m%YC, Pen(2)*MIN(zero, delta_n_init, del_n))  ! LaRC04 transverse shear strength
       Pen_sh = SQRT((Pen(1)*del_s1)**2 + (Pen(3)*del_s2)**2)/del_s  ! Combined shear penalty stiffness
       SC = Pen_sh*del_s/SQRT((Pen(1)*del_s1/SL)**2 + (Pen(3)*del_s2/ST)**2)  ! Combined shear strength
     Else

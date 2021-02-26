@@ -307,8 +307,8 @@ Subroutine CompDam(  &
     ! Longitudinal (Pen(1)) and transverse (Pen(3)) shear penalty stiffnesses
     !  Defined according the material property relationships defined in Turon (2010). Also includes the
     !  normal compression load dependence of the shear strengths from LaRC04.
-    Pen(1) = Pen(2)*m%GYT*(m%SL - m%etaL*Pen(2)*MIN(zero, delta(2)))**2/(m%GSL*m%YT**2)
-    Pen(3) = Pen(2)*m%GYT*(m%ST - m%etaT*Pen(2)*MIN(zero, delta(2)))**2/(m%GSL*m%YT**2)
+    Pen(1) = Pen(2)*m%GYT*(m%SL - m%etaL*MAX(-m%YC, Pen(2)*MIN(zero, delta(2))))**2/(m%GSL*m%YT**2)
+    Pen(3) = Pen(2)*m%GYT*(m%ST - m%etaT*MAX(-m%YC, Pen(2)*MIN(zero, delta(2))))**2/(m%GSL*m%YT**2)
 
     ! Store current cohesive displacement-jump
     sv%Fb1 = delta(1)  ! Longitudinal shear displacement-jump

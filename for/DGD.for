@@ -292,8 +292,8 @@ Contains
         ! Normal (Mode I) penalty stiffness
         Pen(2) = p%penStiffMult*m%E2/sv%Lc(Q)
         ! Longitudinal (Pen(1)) and transverse (Pen(3)) shear penalty stiffnesses
-        Pen(1) = Pen(2)*m%GYT*(m%SL - m%etaL*MIN(zero, T_crack(2)))**2/(m%GSL*m%YT**2)
-        Pen(3) = Pen(2)*m%GYT*(m%ST - m%etaT*MIN(zero, T_crack(2)))**2/(m%GSL*m%YT**2)
+        Pen(1) = Pen(2)*m%GYT*(m%SL - m%etaL*MAX(-YC, MIN(zero, T_crack(2))))**2/(m%GSL*m%YT**2)
+        Pen(3) = Pen(2)*m%GYT*(m%ST - m%etaT*MAX(-YC, MIN(zero, T_crack(2))))**2/(m%GSL*m%YT**2)
 
         delta = T_crack / Pen  ! Cohesive displacement-jump
 
