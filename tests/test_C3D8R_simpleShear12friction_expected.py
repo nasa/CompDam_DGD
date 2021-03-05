@@ -3,7 +3,7 @@ import math
 applied_compression = -40.0
 coefficient_of_friction = 0.3
 
-SL = 92.3  # 1--2 plane shear strength
+SL = 92.3  # longitudinal shear strength
 YC = 199.8  # matrix compressive strength
 G2C = 0.788  # Mode II matrix fracture toughness
 alpha0_DGD = 0.9080748  # matrix crack orientation due to pure matrix compression failure

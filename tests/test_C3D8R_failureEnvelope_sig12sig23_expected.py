@@ -1,3 +1,6 @@
+GSL = 0.788
+length = 0.1
+
 parameters = {
     "results": [
         {
@@ -62,6 +65,12 @@ parameters = {
             },
             "referenceValue": 0.0,
             "tolerance": 0.0
+        },
+        {
+            "type": "max",
+            "identifier": "Plastic dissipation: ALLPD for Whole Model",
+            "referenceValue": GSL * (length * length),  # Unrecoverable energy dissipation from fracture * fracture area: GSL*LC1*LC3
+            "tolerance": GSL * (length * length) * 0.01
         }
     ]
 }

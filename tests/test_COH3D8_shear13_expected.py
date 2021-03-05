@@ -1,3 +1,9 @@
+SL = 92.3
+GSL = 0.788
+length = 0.2
+
+enerFrac = GSL * length * length
+
 parameters = {
 	"results": [
 		{
@@ -8,8 +14,8 @@ parameters = {
                     "elset": "COHESIVE",
                     "position": "Element 1 Int Point 1"
                 },
-            "referenceValue": 92.3,  # SL
-            "tolerance": 0.0923
+            "referenceValue": SL,
+            "tolerance": SL * 0.001  # 0.1% error
         },
         {
             "type": "disp_at_zero_y",
@@ -28,8 +34,8 @@ parameters = {
             ],
             "window": [0.015, 0.020],
             "zeroTol": 0.005,  # Defines how close to zero the y value needs to be
-            "referenceValue": 2.0*0.788/92.3,  # u_f = 2*GSL/SL
-            "tolerance": 1e-5
+            "referenceValue": 2. * GSL / SL,  # Cohesive displacement-jump at complete failure
+            "tolerance": 2. * GSL / SL * 0.001  # 0.1% error
         },
         {
             "type": "max",
@@ -52,6 +58,18 @@ parameters = {
                 },
             "referenceValue": 0.0,
             "tolerance": 0.2
+        },
+        {
+            "type": "max",
+            "identifier": "Plastic dissipation: ALLPD for Whole Model",
+            "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GSL*area
+            "tolerance": enerFrac * 0.001  # 0.1% error
+        },
+        {
+            "type": "finalValue",
+            "identifier": "Plastic dissipation: ALLPD for Whole Model",
+            "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GSL*area
+            "tolerance": enerFrac * 0.001  # 0.1% error
         }
 	]
 }

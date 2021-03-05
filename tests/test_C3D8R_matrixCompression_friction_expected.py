@@ -1,4 +1,5 @@
 YC = 199.8  # matrix compression strength
+GSL = 0.788
 length = 0.15
 thickness = 0.1
 
@@ -62,8 +63,8 @@ parameters = {
         {
             "type": "max",
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
-            "referenceValue": 0.788 * (length * thickness),  # Unrecoverable energy dissipation from fracture * fracture area: GSL*LC1*LC3
-            "tolerance": 0.788 * (length * thickness) * 0.01
+            "referenceValue": GSL * (length * thickness),  # Unrecoverable energy dissipation from fracture * fracture area: GSL*LC1*LC3
+            "tolerance": GSL * (length * thickness) * 0.01
         },
         {
             "type": "continuous",

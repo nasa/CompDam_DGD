@@ -92,7 +92,7 @@
  U, RF
 *Output, HISTORY, frequency=1
 *Energy Output
- ALLIE, ALLKE
+ ALLIE, ALLKE, ALLPD, ALLSE
 *Node Output, NSET=Z+
  U, RF
 *Element Output, ELSET=COHESIVE
@@ -114,7 +114,7 @@
  U, RF
 *Output, HISTORY, frequency=1
 *Energy Output
- ALLIE, ALLKE
+ ALLIE, ALLKE, ALLPD, ALLSE
 *Node Output, NSET=Z+
  U, RF
 *Element Output, ELSET=COHESIVE

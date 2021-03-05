@@ -1,3 +1,9 @@
+YT = 62.3
+GYT = 0.277
+length = 0.2
+
+enerFrac = GYT * length * length
+
 parameters = {
 	"results": [
 		{
@@ -8,8 +14,8 @@ parameters = {
                     "elset": "COHESIVE",
                     "position": "Element 1 Int Point 1"
                 },
-            "referenceValue": 62.3, # YT
-            "tolerance": 0.0623
+            "referenceValue": YT,
+            "tolerance": YT * 0.001  # 0.1% error
         },
         {
             "type": "disp_at_zero_y",
@@ -28,8 +34,8 @@ parameters = {
             ],
             "window": [0.008, 0.010],
             "zeroTol": 0.005,  # Defines how close to zero the y value needs to be
-            "referenceValue": 0.00889, # u_f = 2*GYT/YT
-            "tolerance": 1e-5
+            "referenceValue": 2. * GYT / YT,  # Cohesive displacement-jump at complete failure
+            "tolerance": 2. * GYT / YT * 0.001  # 0.1% error
         },
         {
             "type": "max",
@@ -52,6 +58,18 @@ parameters = {
                 },
             "referenceValue": 0.0,
             "tolerance": 0.1
+        },
+        {
+            "type": "max",
+            "identifier": "Plastic dissipation: ALLPD for Whole Model",
+            "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GYT*LC1*LC3
+            "tolerance": enerFrac * 0.001  # 0.1% error
+        },
+        {
+            "type": "finalValue",
+            "identifier": "Plastic dissipation: ALLPD for Whole Model",
+            "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GYT*LC1*LC3
+            "tolerance": enerFrac * 0.001  # 0.1% error
         }
 	]
 }

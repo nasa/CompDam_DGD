@@ -101,9 +101,11 @@
 *Output, history, frequency=1
 *Element Output, elset=all
  S, LE, SDV
+*Energy Output
+ ALLPD
 **
 *Output, history, frequency=1, filter=haltOnFailure
 *Element Output, elset=all
- SDV9
+ SDV1
 **
 *End Step
