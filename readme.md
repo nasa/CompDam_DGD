@@ -120,7 +120,7 @@ Example 1, using an [external material properties file](#defining-the-material-p
     **
     *Initial Conditions, type=SOLUTION
      elset_name,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-     0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0, 0.d0,
+     0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0, 0.d0,
      0.d0,  0.d0,  0.d0,  0.d0
 
 Example 2, using an [input deck command](#defining-the-material-properties-in-the-input-deck):
@@ -180,7 +180,7 @@ Example 2, using an [input deck command](#defining-the-material-properties-in-th
     **
     *Initial Conditions, type=SOLUTION
      elset_name,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-     0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0, 0.d0,
+     0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0, 0.d0,
      0.d0,  0.d0,  0.d0,  0.d0
 
 ### Running tests
@@ -506,7 +506,7 @@ When using the material model with cohesive elements, a different set of state v
 ### Initial conditions
 All state variables should be initialized using the `*Initial conditions` command. As a default, all state variables should be initialized as zero, except `CDM_alpha`, `CDM_STATUS`, `CDM_phi0_12`, and `CDM_phi0_13`.
 
-The initial condition for `CDM_alpha` can be used to specify a predefined angle for the cohesive surface normal. To specify a predefined `CDM_alpha`, set the initial condition for `CDM_alpha` to an integer (degrees). The range of valid values for `CDM_alpha` depends on the aspect ratio of the element, but values in the range of 0 to 90 degrees are always valid. Setting `CDM_alpha` to -999 will make the subroutine evaluate cracks every 10 degrees in the 2-3 plane to find the correct crack initiation angle. Note that `CDM_alpha` is measured from the 2-axis rotating about the 1-direction. The amount by which alpha is incremented when evaluating matrix crack initiation can be changed from the default of 10 degrees by modifying `alpha_inc` in the `CompDam.parameters` file. Note that `CDM_alpha = 90` only occurs when `CDM_alpha` is initialized as 90; when `CDM_alpha` is initialized to -999, the value of 90 is ignored in the search to find the correct initiation angle since it is assumed that delaminations are handled elsewhere in the finite element model (e.g., using cohesive interface elements).
+The initial condition for `CDM_alpha` can be used to specify a predefined angle for the cohesive surface normal. To specify a predefined `CDM_alpha`, set the initial condition for `CDM_alpha` to an integer (degrees). The range of valid values for `CDM_alpha` depends on the aspect ratio of the element, but values in the range of 0 to 90 degrees are always valid. Setting the parameter `alpha_search` to TRUE will make the subroutine evaluate cracks every 10 degrees (by default) in the 2-3 plane to find the correct crack initiation angle. Note that `CDM_alpha` is measured from the 2-axis rotating about the 1-direction. The amount by which alpha is incremented when evaluating matrix crack initiation can be changed by modifying `alpha_inc` in the `CompDam.parameters` file. Note that `CDM_alpha = 90` only occurs when `CDM_alpha` is initialized as 90; the value of 90 is ignored in the search to find the correct initiation angle since it is assumed that delaminations are handled elsewhere in the finite element model (e.g., using cohesive interface elements).
 
 Since `CDM_STATUS` is used for element deletion, always initialize `CDM_STATUS` to 1.
 
@@ -599,7 +599,7 @@ To run an analysis with CompDam in Abaqus/Standard, the following input deck tem
     **
     *Initial Conditions, Type=Solution
     ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-    0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+    0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
     0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
     0.d0,  0.d0,  0.d0,  0.d0,  0.d0
     *Initial Conditions, Type=Field, Variable=1
