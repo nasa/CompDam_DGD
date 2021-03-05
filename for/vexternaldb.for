@@ -193,7 +193,7 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
     analysis_status = 1
 
     ! Load the CompDam solution parameters
-    p = loadParameters()
+    p = loadParameters(.TRUE.)
 
     ! Global integer array for fatigue parameters
     ptr_fatigue_int = SMAIntArrayCreate(1, 2, 0)  ! create the pointer for fatigue parameters array

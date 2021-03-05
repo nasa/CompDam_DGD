@@ -86,16 +86,26 @@ Module parameters_Mod
 
 Contains
 
-  Type(parameters) Function loadParameters()
+  Type(parameters) Function loadParameters(runLogs_arg)
     ! Loads parameters into module variable p
 
     Use forlog_Mod
+
+    ! Arguments
+    Logical, intent(IN), optional :: runLogs_arg
 
     ! Locals
     Character(len=256) :: outputDir, jobName, fileName
     Integer :: lenOutputDir, lenJobName
     Logical :: fileExists
+    Logical :: runLogs
     ! -------------------------------------------------------------------- !
+
+    If (Present(runLogs_arg)) Then
+      runLogs = runLogs_arg
+    Else
+      runLogs = .FALSE.
+    End If
 
     ! Initializations
     Call initializeParameters()
@@ -125,10 +135,10 @@ Contains
 
     ! If the file is present, load parameters from file
     If (fileExists) Then
-      Call log%info("loadParameters: Using parameters file " // trim(fileName))
-      Call loadParametersFromFile(trim(fileName))
+      If (runLogs) Call log%info("loadParameters: Using parameters file " // trim(fileName))
+      Call loadParametersFromFile(trim(fileName), runLogs)
     Else
-      Call log%info("loadParameters: Parameters file not found. Using default values.")
+      If (runLogs) Call log%info("loadParameters: Parameters file not found. Using default values.")
     End If
 
     ! Return a reference to the parameters object
@@ -138,13 +148,14 @@ Contains
   End Function loadParameters
 
 
-  Subroutine loadParametersFromFile(fileName)
+  Subroutine loadParametersFromFile(fileName, runLogs_arg)
     ! Populates p with the solution parameters in the specified file
 
     Use forlog_Mod
 
     ! Arguments
     Character(len=*), intent(IN) :: fileName
+    Logical, optional, intent(IN) :: runLogs_arg
 
     ! Locals
     Integer, Parameter :: unit=109
@@ -152,8 +163,15 @@ Contains
     Character(len=256) :: line, key, value, tmp
     Character(len=30) :: featureFlags
     Integer :: commentTokenPos, equalTokenPos
+    Logical :: runLogs
     Double Precision, Parameter :: zero=0.d0, one=1.d0, two=2.d0
     ! -------------------------------------------------------------------- !
+
+    If (Present(runLogs_arg)) Then
+      runLogs = runLogs_arg
+    Else
+      runLogs = .TRUE.
+    End If
 
     ! Try to load CompDam parameters from a '.parameters' file
     Open(UNIT=unit, FILE=fileName, STATUS='old', ACTION='read', position='rewind', IOSTAT=iostat)
@@ -196,76 +214,76 @@ Contains
         Select Case (trim(key))
 
           Case ('logLevel')
-            Call verifyAndSaveProperty_int(trim(key), value, p%logLevel_min, p%logLevel_max, p%logLevel)
+            Call verifyAndSaveProperty_int(trim(key), value, p%logLevel_min, p%logLevel_max, p%logLevel, runLogs)
 
           Case ('logFormat')
-            Call verifyAndSaveProperty_int(trim(key), value, p%logFormat_min, p%logFormat_max, p%logFormat)
+            Call verifyAndSaveProperty_int(trim(key), value, p%logFormat_min, p%logFormat_max, p%logFormat, runLogs)
 
           Case ('cutbacks_max')
-            Call verifyAndSaveProperty_int(trim(key), value, p%cutbacks_max_min, p%cutbacks_max_max, p%cutbacks_max)
+            Call verifyAndSaveProperty_int(trim(key), value, p%cutbacks_max_min, p%cutbacks_max_max, p%cutbacks_max, runLogs)
 
           Case ('MD_max')
-            Call verifyAndSaveProperty_int(trim(key), value, p%MD_max_min, p%MD_max_max, p%MD_max)
+            Call verifyAndSaveProperty_int(trim(key), value, p%MD_max_min, p%MD_max_max, p%MD_max, runLogs)
 
           Case ('EQ_max')
-            Call verifyAndSaveProperty_int(trim(key), value, p%EQ_max_min, p%EQ_max_max, p%EQ_max)
+            Call verifyAndSaveProperty_int(trim(key), value, p%EQ_max_min, p%EQ_max_max, p%EQ_max, runLogs)
 
           Case ('alpha_inc')
-            Call verifyAndSaveProperty_int(trim(key), value, p%alpha_inc_min, p%alpha_inc_max, p%alpha_inc)
+            Call verifyAndSaveProperty_int(trim(key), value, p%alpha_inc_min, p%alpha_inc_max, p%alpha_inc, runLogs)
 
           Case ('tol_DGD_f')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%tol_DGD_f_min, p%tol_DGD_f_max, p%tol_DGD_f)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%tol_DGD_f_min, p%tol_DGD_f_max, p%tol_DGD_f, runLogs)
 
           Case ('dGdGc_min')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%dGdGc_min_min, p%dGdGc_min_max, p%dGdGc_min)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%dGdGc_min_min, p%dGdGc_min_max, p%dGdGc_min, runLogs)
 
           Case ('compLimit')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%compLimit_min, p%compLimit_max, p%compLimit)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%compLimit_min, p%compLimit_max, p%compLimit, runLogs)
 
           Case ('penStiffMult')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%penStiffMult_min, p%penStiffMult_max, p%penStiffMult)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%penStiffMult_min, p%penStiffMult_max, p%penStiffMult, runLogs)
 
           Case ('cutback_amount')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%cutback_amount_min, p%cutback_amount_max, p%cutback_amount)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%cutback_amount_min, p%cutback_amount_max, p%cutback_amount, runLogs)
 
           Case ('tol_divergence')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%tol_divergence_min, p%tol_divergence_max, p%tol_divergence)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%tol_divergence_min, p%tol_divergence_max, p%tol_divergence, runLogs)
 
           Case ('gamma_max')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%gamma_max_min, p%gamma_max_max, p%gamma_max)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%gamma_max_min, p%gamma_max_max, p%gamma_max, runLogs)
 
           Case ('kb_decompose_thres')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%kb_decompose_thres_min, p%kb_decompose_thres_max, p%kb_decompose_thres)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%kb_decompose_thres_min, p%kb_decompose_thres_max, p%kb_decompose_thres, runLogs)
 
           Case ('fkt_fiber_failure_angle')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_fiber_failure_angle_min, p%fkt_fiber_failure_angle_max, p%fkt_fiber_failure_angle)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_fiber_failure_angle_min, p%fkt_fiber_failure_angle_max, p%fkt_fiber_failure_angle, runLogs)
 
           Case ('schaefer_nr_tolerance')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%schaefer_nr_tolerance_min, p%schaefer_nr_tolerance_max, p%schaefer_nr_tolerance)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%schaefer_nr_tolerance_min, p%schaefer_nr_tolerance_max, p%schaefer_nr_tolerance, runLogs)
 
           Case ('schaefer_nr_counter_limit')
-            Call verifyAndSaveProperty_int(trim(key), value, p%schaefer_nr_counter_limit_min, p%schaefer_nr_counter_limit_max, p%schaefer_nr_counter_limit)
+            Call verifyAndSaveProperty_int(trim(key), value, p%schaefer_nr_counter_limit_min, p%schaefer_nr_counter_limit_max, p%schaefer_nr_counter_limit, runLogs)
 
           Case ('terminate_on_no_convergence')
-            Call verifyAndSaveProperty_logical(trim(key), adjustl(value), p%terminate_on_no_convergence)
+            Call verifyAndSaveProperty_logical(trim(key), adjustl(value), p%terminate_on_no_convergence, runLogs)
 
           Case ('debug_kill_at_total_time')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%debug_kill_at_total_time_min, p%debug_kill_at_total_time_max, p%debug_kill_at_total_time)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%debug_kill_at_total_time_min, p%debug_kill_at_total_time_max, p%debug_kill_at_total_time, runLogs)
 
           Case ('fkt_random_seed')
-            Call verifyAndSaveProperty_logical(trim(key), adjustl(value), p%fkt_random_seed)
+            Call verifyAndSaveProperty_logical(trim(key), adjustl(value), p%fkt_random_seed, runLogs)
 
           Case ('fkt_init_misalignment_azi_mu')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_azi_mu_min, p%fkt_init_misalignment_azi_mu_max, p%fkt_init_misalignment_azi_mu)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_azi_mu_min, p%fkt_init_misalignment_azi_mu_max, p%fkt_init_misalignment_azi_mu, runLogs)
 
           Case ('fkt_init_misalignment_azi_sigma')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_azi_sigma_min, p%fkt_init_misalignment_azi_sigma_max, p%fkt_init_misalignment_azi_sigma)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_azi_sigma_min, p%fkt_init_misalignment_azi_sigma_max, p%fkt_init_misalignment_azi_sigma, runLogs)
 
           Case ('fkt_init_misalignment_polar_shape')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_polar_shape_min, p%fkt_init_misalignment_polar_shape_max, p%fkt_init_misalignment_polar_shape)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_polar_shape_min, p%fkt_init_misalignment_polar_shape_max, p%fkt_init_misalignment_polar_shape, runLogs)
 
           Case ('fkt_init_misalignment_polar_scale')
-            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_polar_scale_min, p%fkt_init_misalignment_polar_scale_max, p%fkt_init_misalignment_polar_scale)
+            Call verifyAndSaveProperty_dbl(trim(key), value, p%fkt_init_misalignment_polar_scale_min, p%fkt_init_misalignment_polar_scale_max, p%fkt_init_misalignment_polar_scale, runLogs)
 
           Case ('fatigue_R_ratio')
             Call verifyAndSaveProperty_dbl(trim(key), value, p%fatigue_R_ratio_min, p%fatigue_R_ratio_max, p%fatigue_R_ratio, .FALSE.)
@@ -445,7 +463,7 @@ Contains
 
     Use forlog_Mod
 
-    !Arguments
+    ! Arguments
     Character(len=*), intent(IN) :: key, value
     Double Precision, intent(IN) :: min, max
     Double Precision, intent(INOUT) :: saveTo
