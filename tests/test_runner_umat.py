@@ -4,6 +4,7 @@
 
 import os
 import shutil
+import re
 import abaverify as av
 
 # Helper for dealing with .props files
@@ -17,6 +18,24 @@ def copyMatProps():
     propsFiles = [x for x in os.listdir(os.getcwd()) if x.endswith('.props')]
     for propsFile in propsFiles:
         shutil.copyfile(os.path.join(os.getcwd(), propsFile), os.path.join(os.getcwd(),'testOutput', propsFile))
+
+
+def modifyParametersFile(jobName='CompDam', **kwargs):
+    '''
+    For modifying the parameters file
+    Input dictionary should have key, value pairs that correspond to entries in CompDam.parameters
+    '''
+
+    # Copy/modify parameters file
+    with open(os.path.join(os.getcwd(), 'CompDam.parameters'), 'r') as f:
+        data = f.read()
+
+    for key, value in kwargs.items():
+        data = re.sub(key + r' ?= ?[-0-9\.d(TRUE)(FALSE)]+', key + ' = ' + value, data)
+
+    # Write to testOutput directory
+    with open(os.path.join(os.getcwd(), 'testOutput', jobName + '.parameters'), 'w') as f:
+        f.write(data)
 
 
 class SingleElementTests(av.TestCase):
@@ -58,6 +77,7 @@ class SingleElementTests(av.TestCase):
 
     def test_C3D8R_UMAT_nonlinearShear13(self):
         """ Nonlinear shear model, loading and unloading in 1-3 plane, Abaqus/Standard """
+        modifyParametersFile(alpha_search = '.FALSE.')
         self.runTest("test_C3D8R_UMAT_nonlinearShear13")
 
 

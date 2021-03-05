@@ -88,7 +88,7 @@
 **
 *Initial Conditions, Type=Solution
 ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 0.d0,  0.d0,  0.d0,  0.d0,  0.d0
 *Initial Conditions, Type=Field, Variable=1

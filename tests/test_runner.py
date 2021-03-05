@@ -60,7 +60,7 @@ def modifyParametersFile(jobName='CompDam', **kwargs):
         data = f.read()
 
     for key, value in kwargs.items():
-        data = re.sub(key + r' ?= ?[-0-9\.d]*', key + ' = ' + value, data)
+        data = re.sub(key + r' ?= ?[-0-9\.d(TRUE)(FALSE)]+', key + ' = ' + value, data)
 
     # Write to testOutput directory
     with open(os.path.join(os.getcwd(), 'testOutput', jobName + '.parameters'), 'w') as f:
@@ -221,7 +221,7 @@ class ParametricMixedModeMatrix(av.TestCase):
     @classmethod
     def setUpClass(cls):
         copyMatProps()
-        copyParametersFile()
+        modifyParametersFile(alpha_search = '.FALSE.')
 
 
 class ParametricElementSizeQuad(av.TestCase):
@@ -651,6 +651,7 @@ class SingleElementTests(av.TestCase):
 
     def test_C3D8R_simpleShear12friction(self):
         """ Compression followed by simple shear in the 1-2 plane """
+        modifyParametersFile(alpha_search = '.FALSE.')
         self.runTest("test_C3D8R_simpleShear12friction")
 
 
@@ -769,26 +770,31 @@ class SingleElementTests(av.TestCase):
 
     def test_C3D8R_nonlinearShear12(self):
         """ Nonlinear shear model, loading and unloading in 1-2 plane """
+        modifyParametersFile(alpha_search = '.FALSE.')
         self.runTest("test_C3D8R_nonlinearShear12")
 
 
     def test_C3D8R_nonlinearShear12_loadReversal(self):
         """ Nonlinear shear model, loading and unloading in 1-2 plane, including full load reversal """
+        modifyParametersFile(alpha_search = '.FALSE.')
         self.runTest("test_C3D8R_nonlinearShear12_loadReversal")
 
 
     def test_C3D8R_nonlinearShear13(self):
         """ Nonlinear shear model, loading and unloading in 1-3 plane"""
+        modifyParametersFile(alpha_search = '.FALSE.')
         self.runTest("test_C3D8R_nonlinearShear13")
 
 
     def test_C3D8R_nonlinearShear13_loadReversal(self):
         """ Nonlinear shear model, loading and unloading in 1-3 plane, including full load reversal"""
+        modifyParametersFile(alpha_search = '.FALSE.')
         self.runTest("test_C3D8R_nonlinearShear13_loadReversal")
 
 
     def test_C3D8R_schapery12(self):
         """ Schapery micro-damage model, loading and unloading in 1-2 plane"""
+        modifyParametersFile(alpha_search = '.FALSE.')
         self.runTest("test_C3D8R_schapery12")
 
 

@@ -242,8 +242,8 @@ Contains
       alphaQ = FLOOR(ATAN(sv%Lc(2)/sv%Lc(3))*rad_to_deg)
       alphaQ = alphaQ - MOD(alphaQ, p%alpha_inc)
 
-      ! Search through range of alphas to find the correct one (alpha=-999 is a flag to run this search)
-      If (sv%alpha == -999) Then
+      ! Search through range of alphas to find the correct one
+      If (p%alpha_search) Then
         A_min = -alphaQ
         A_max = alphaQ
 
@@ -339,13 +339,12 @@ Contains
 
       End Do CrackAngle
 
-      ! -------------------------------------------------------------------- !
-      !    If failure occurs, save alpha and indicate small dmg              !
-      ! -------------------------------------------------------------------- !
+      sv%alpha = alpha_test  ! save the alpha value for the maximum failure index
+
+      !  If failure occurs, set a small amount of matrix damage to flag DGDEvolve
       If (sv%FIm >= one) Then
-        sv%d2    = 1.d-8 ! Used as a flag to call DGDEvolve
-        sv%alpha = alpha_test
-        Call log%info('DGDInit found FIm > one. Matrix damage initiated.')
+        sv%d2 = 1.d-8 ! Used as a flag to call DGDEvolve
+        Call log%info('DGDInit predicts matrix damage initiation.')
         Call log%debug('alpha = ' // trim(str(sv%alpha)))
       End If
     End If
@@ -611,10 +610,6 @@ Contains
           If (restarts > restarts_max) Then
             ! ...and if the matrix damage is already fully developed, delete the element.
             If (sv%d2 >= dmg_max) Then
-              If (sv%alpha == -999) Then
-                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDEvolve')
-                Call log%terminate('Invalid alpha. Check value for alpha in the initial conditions.')
-              End If
               If (p%terminate_on_no_convergence) Then
                 Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDEvolve')
                 Call log%terminate('DGDEvolve nonconvergence, terminating analysis.')

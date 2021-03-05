@@ -44,6 +44,8 @@ fatigue_damage_max_threshold = 1.d-4 // Default value: 1.d-4
 
 // penalty stiffness multiplier, K/(E/thickness) = penStiffMult, Double precision
 penStiffMult = 1.d4 // Default value: 1.d+4
+// search for the matrix crack angle alpha which corresponds to the maximum failure index?, Logical
+alpha_search = .TRUE. // Default value: .TRUE.
 // increment for which the matrix failure criterion is evaluated [degrees], Integer
 alpha_inc = 10 // Default value: 10
 

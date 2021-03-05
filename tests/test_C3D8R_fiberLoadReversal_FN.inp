@@ -114,7 +114,7 @@ Part-1-1.loadApp, 1, 1.
 **
 *Initial Conditions, Type=Solution
 Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-               0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
+               0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,
                0.d0,  0.d0,  0.d0,  0.d0,  0.d0
 *Boundary
 Part-1-1.loadApp, 2, 2

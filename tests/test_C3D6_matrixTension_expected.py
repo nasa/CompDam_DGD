@@ -137,7 +137,7 @@ parameters = {
             "tolerance": 0.0
         },
         {
-            "type": "max",
+            "type": "finalValue",
             "identifier": 
                 {
                     "symbol": "SDV_CDM_alpha",
@@ -148,7 +148,7 @@ parameters = {
             "tolerance": 0.0
         },
         {
-            "type": "max",
+            "type": "finalValue",
             "identifier": 
                 {
                     "symbol": "SDV_CDM_alpha",

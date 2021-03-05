@@ -14,6 +14,7 @@ Module parameters_Mod
     Integer :: cutbacks_max                                       ! maximum number of cut-backs
     Integer :: MD_max                                             ! maximum number of damage increments per solution increment
     Integer :: EQ_max                                             ! maximum number of equilibrium iterations
+    Logical :: alpha_search                                       ! whether or not to search for the matrix crack angle with maximum failure index
     Integer :: alpha_inc                                          ! increment, in degrees, for which the matrix failure criterion is evaluated
     Integer :: schaefer_nr_counter_limit                          ! maximum number of Newton-Raphson loops before divergence is assumed
     Double Precision :: tol_DGD_f                                 ! tol_DGD_f = tol_DGD/YT
@@ -228,6 +229,9 @@ Contains
           Case ('EQ_max')
             Call verifyAndSaveProperty_int(trim(key), value, p%EQ_max_min, p%EQ_max_max, p%EQ_max, runLogs)
 
+          Case ('alpha_search')
+            Call verifyAndSaveProperty_logical(trim(key), adjustl(value), p%alpha_search, runLogs)
+
           Case ('alpha_inc')
             Call verifyAndSaveProperty_int(trim(key), value, p%alpha_inc_min, p%alpha_inc_max, p%alpha_inc, runLogs)
 
@@ -334,6 +338,7 @@ Contains
     p%cutbacks_max   = 4
     p%MD_max         = 1000
     p%EQ_max         = 1000
+    p%alpha_search   = .TRUE.
     p%alpha_inc      = 10
     p%tol_DGD_f      = 1.d-4
     p%dGdGc_min      = 1.d-12
@@ -611,6 +616,11 @@ Contains
     write(fileUnit, "(A,I1,A)")   '    "cutbacks_max": ', p%cutbacks_max, ','
     write(fileUnit, "(A,I5,A)")   '    "MD_max": ', p%MD_max, ','
     write(fileUnit, "(A,I5,A)")   '    "EQ_max": ', p%EQ_max, ','
+    If (p%alpha_search) Then
+      write(fileUnit,"(A)") '    "alpha_search": True,'
+    Else
+      write(fileUnit,"(A)") '    "alpha_search": False,'
+    End If
     write(fileUnit, "(A,I2,A)")   '    "alpha_inc": ', p%alpha_inc, ','
     write(fileUnit, nameValueFmt) '    "tol_DGD_f": ', p%tol_DGD_f, ','
     write(fileUnit, nameValueFmt) '    "dGdGc_min": ', p%dGdGc_min, ','
