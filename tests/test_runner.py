@@ -603,24 +603,6 @@ class SingleElementCohesiveTests(av.TestCase):
         self.runTest("test_COH3D8_shear23_friction")
 
 
-class SingleElementCohesiveFatigueTests(av.TestCase):
-    """
-    Single element models to test the cohesive element fatigue model
-    """
-
-    # -----------------------------------------------------------------------------------------
-    # Test methods
-    def test_COH3D8_fatigue_normal(self):
-        """ Single cohesive element fatigue test for mode I loading """
-        copyParametersFile("test_COH3D8_fatigue_normal")
-        self.runTest("test_COH3D8_fatigue_normal")
-
-    def test_COH3D8_fatigue_shear13(self):
-        """ Single cohesive element fatigue test for 1-3 shear loading """
-        copyParametersFile("test_COH3D8_fatigue_shear13")
-        self.runTest("test_COH3D8_fatigue_shear13")
-
-
 class SingleElementTests(av.TestCase):
     """
     Single element models to test the solid element material model features
@@ -838,6 +820,34 @@ class SingleElementTests(av.TestCase):
     def test_C3D6_simpleShear12(self):
         """ Simple shear in the 1-2 plane, two wedge elements """
         self.runTest("test_C3D6_simpleShear12")
+
+
+class SingleElementFatigueTests(av.TestCase):
+    """
+    Single element models to test the matrix crack fatigue model
+    """
+
+    # -----------------------------------------------------------------------------------------
+    # Test methods
+    def test_COH3D8_fatigue_normal(self):
+        """ Single cohesive element fatigue test for mode I loading """
+        copyParametersFile("test_COH3D8_fatigue_normal")
+        self.runTest("test_COH3D8_fatigue_normal")
+
+    def test_COH3D8_fatigue_shear13(self):
+        """ Single cohesive element fatigue test for 1-3 shear loading """
+        copyParametersFile("test_COH3D8_fatigue_shear13")
+        self.runTest("test_COH3D8_fatigue_shear13")
+        
+    def test_C3D8R_fatigue_matrixTension(self):
+        """ Single solid element fatigue test for tensile matrix loading """
+        copyParametersFile("test_C3D8R_fatigue_matrixTension")
+        self.runTest("test_C3D8R_fatigue_matrixTension")
+
+    def test_C3D8R_fatigue_simpleShear12(self):
+        """ Single solid element fatigue test for simple shear loading in the 1--2 plane """
+        copyParametersFile("test_C3D8R_fatigue_simpleShear12")
+        self.runTest("test_C3D8R_fatigue_simpleShear12")
 
 
 if __name__ == "__main__":

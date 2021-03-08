@@ -3,7 +3,7 @@ Module cohesive_mod
 
 Contains
 
-  Subroutine cohesive_damage(m, p, delta, Pen, delta_n_init, B, FI, R, damage, dR)
+  Subroutine cohesive_damage(m, p, delta, Pen, delta_n_init, B, FI, evolve_fatigue_arg, R, damage, dR)
     ! All properties are passed in as arguments
 
     Use forlog_Mod
@@ -18,6 +18,7 @@ Contains
     Double Precision, intent(IN) :: delta_n_init                             ! Normal cohesive displacement-jump at damage initiation
     Double Precision, intent(INOUT) :: B                                     ! Mode mixity
     Double Precision, intent(OUT) :: FI                                      ! Failure index
+    Logical, intent(IN) :: evolve_fatigue_arg                                ! flag for calculating fatigue damage
     Double Precision, optional, intent(INOUT) :: R                           ! Normalized energy dissipation
     Double Precision, optional, intent(OUT) :: damage                        ! Cohesive damage state variable
     Double Precision, optional, intent(OUT) :: dR                            ! Change in normalized energy dissipation
@@ -33,8 +34,10 @@ Contains
     Double Precision :: beta                                                 ! Intermediate variable for mode mixity
     Double Precision :: Pen_sh                                               ! Combined longitudinal and transverse shear penalty stiffness
     Double Precision :: B_old, R_old
+    Double Precision :: R_static                                             ! Normalized energy dissipation, static
     Double Precision :: mode_mix_limit
     Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0, seven=7.d0, ten=10.d0
+    Logical :: evolve_static, evolve_fatigue
 
     ! Fatigue
     Double Precision :: R_fatigue, R_fatigue_inc                             ! Damage measures
@@ -115,7 +118,28 @@ Contains
 
     FI = MIN(one, del/d0)
 
-    DamageEvolution: If (present(R)) Then
+    If (present(R)) Then
+      Call log%debug("R is present. Static damage can evolve.")
+      evolve_static = .TRUE.
+      R_old = R  ! Store the current damage variable
+    Else
+      Call log%debug("R is not present.")
+      evolve_static = .FALSE.
+      R_old = zero
+    End If
+
+    R_static = R_old
+    R_fatigue = R_old
+
+    evolve_fatigue = .FALSE.
+#ifndef PYEXT
+    If (evolve_fatigue_arg) Then
+      ptr_fatigue_int = SMAIntArrayAccess(1)
+      If (fatigue_parameters(1) == 1) evolve_fatigue = evolve_fatigue_arg
+    End If
+#endif
+
+    DamageEvolution: If (evolve_static .OR. evolve_fatigue) Then
 
       ! Cohesive displacements for final failure for pure mode I and mode II
       delfn = two*m%GYT/m%YT  ! mode I cohesive final disp.
@@ -130,21 +154,23 @@ Contains
         df = (del0n*delfn + (del0s*delfs*Pen_sh/Pen(2) - del0n*delfn)*B**m%eta_BK)*(one + B*(Pen(2)/Pen_sh - one))/d0
       End If
 
-      ! Determine the new damage state
-      R_old = R  ! Store the current damage variable
-      If (del == zero) Then
-        R = zero
-      Else
-        R = (del - d0)/(df - d0)  ! Calculate the new normalized energy dissipation
+      If (evolve_static) Then
+
+        ! Determine the new damage state
+        If (del == zero) Then
+            R_static = zero
+        Else
+            R_static = (del - d0)/(df - d0)  ! Calculate the new normalized energy dissipation
+        End If
+        R_static = MIN(R_static, R_max)  ! Cap the normalized energy dissipation variable
+        R_static = MAX(R_old, R_static)  ! Ensure no healing
+
       End If
-      R = MIN(R, R_max)  ! Cap the normalized energy dissipation variable
-      R = MAX(R_old, R)  ! Ensure no healing
 
 #ifndef PYEXT
-      ptr_fatigue_int = SMAIntArrayAccess(1)
 
-      ! If this is a fatigue step, and static damage progression has not occurred, and the damage is not already fully developed...
-      FatigueStep: If (fatigue_parameters(1) == 1 .AND. R < R_max) Then
+      ! If this is a fatigue step and the damage is not already fully developed...
+      FatigueStep: If (evolve_fatigue .AND. R_old < R_max) Then
 
         ptr_fatigue_dbl = SMARealArrayAccess(2)
 
@@ -174,17 +200,30 @@ Contains
         End If
 
         R_fatigue = MIN(R_fatigue, R_max)  ! Cap the fatigue normalized energy dissipation variable
-        R = MAX(R_old, R, R_fatigue)  ! Ensure no healing and use the greater of the static and fatigue damage
 
       End If FatigueStep
 #endif
 
-      ! Calculate the penalty stiffness based cohesive damage variable
-      damage = R/(R + d0/df*(one - R))
-      ! Calculate the change in normalized energy dissipation
-      dR = R - R_old
+      If (evolve_static) Then
+        ! This corresponds to any call to cohesive_damage() in which R is an argument.
+
+        R = MAX(R_old, R_static, R_fatigue)  ! Ensure no healing and use the greater of the static and fatigue damage
+        damage = R/(R + d0/df*(one - R))  ! Penalty stiffness based cohesive damage variable
+        dR = R - R_old  ! Change in normalized energy dissipation
+
+      Else If (evolve_fatigue .AND. R_fatigue_inc > zero) Then
+        ! This corresponds to calls from DGDInit during a fatigue analysis step. If fatigue damage growth is predicted, the failure
+        ! index is increased so as to guarantee that damage growth starts and DGDEvolve is called.
+        
+        FI = FI + one
+
+      End If
+
+      Call log%debug("End DamageEvolution If in cohesive_damage")
 
     End If DamageEvolution
+
+    Call log%debug("End cohesive_damage")
 
     Return
   End Subroutine cohesive_damage

@@ -300,7 +300,7 @@ Contains
         ! -------------------------------------------------------------------- !
         !    Evaluate the cohesive law initiation criterion                    !
         ! -------------------------------------------------------------------- !
-        Call cohesive_damage(m, p, delta, Pen, delta(2), B_temp, FIm_temp)
+        Call cohesive_damage(m, p, delta, Pen, delta(2), B_temp, FIm_temp, .TRUE.)
 
         ! -------------------------------------------------------------------- !
         !    Save the values corresponding to the maximum failure criteria     !
@@ -479,6 +479,9 @@ Contains
     Double Precision :: slide_old(2)
     Integer :: forced_sticking
     Logical :: Sliding
+
+    ! Fatigue
+    Logical :: evolve_fatigue
 
     Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
 
@@ -1004,10 +1007,15 @@ Contains
       ! Store the old cohesive damage variable for checking for convergence
       dmg_old = sv%d2
 
-      If (MD == 1) delta_n_init = MIN(zero, delta_coh(2,Q))
+      If (MD == 1) Then
+        delta_n_init = MIN(zero, delta_coh(2,Q))
+        evolve_fatigue = .TRUE.  ! Only calculate the new fatigue during the first DGD increment
+      Else
+        evolve_fatigue = .FALSE.
+      End If
 
       ! Update the cohesive damage variables
-      Call cohesive_damage(m, p, delta_coh(:,Q), Pen, delta_n_init, sv%B, sv%FIm, sv%d2, dmg_penalty, dGdGc)
+      Call cohesive_damage(m, p, delta_coh(:,Q), Pen, delta_n_init, sv%B, sv%FIm, evolve_fatigue, sv%d2, dmg_penalty, dGdGc)
       dmg_area = sv%d2
 
       ! Check for damage advancement

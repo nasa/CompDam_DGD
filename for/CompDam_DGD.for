@@ -316,11 +316,11 @@ Subroutine CompDam(  &
     sv%Fb3 = delta(3)  ! Transverse shear displacement-jump
 
     If (totalTime == 0) Then  ! Avoids calculating damage during the packager and the first solution increment
-      Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm)
+      Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm, .FALSE.)
       dmg_penalty = zero
       dGdGc = zero
     Else
-      Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm, sv%d2, dmg_penalty, dGdGc)
+      Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm, .TRUE., sv%d2, dmg_penalty, dGdGc)
     End If
 
     If (m%friction .AND. delta(2) <= zero) Then  ! Closed cracks with friction
