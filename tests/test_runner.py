@@ -365,7 +365,7 @@ class ParametricFailureEnvelope_sig12sig23(av.TestCase):
     @classmethod
     def setUpClass(cls):
         copyMatProps()
-        copyParametersFile()
+        modifyParametersFile(alpha_search = '.FALSE.')
 
     @classmethod
     def tearDownClass(cls):
