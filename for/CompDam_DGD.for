@@ -155,6 +155,20 @@ Subroutine CompDam(  &
   ! Solution parameters
   Type(parameters), save :: p
 
+  ! Fatigue
+  Logical :: fatigue_step
+  Integer :: fatigue_parameters(2)
+  Pointer(ptr_fatigue_int, fatigue_parameters)
+
+  Interface
+
+      Function SMAIntArrayAccess(ID)
+        ! Access an existing global integer array.
+        Integer(kind=8) :: SMAIntArrayAccess  ! Returns an address that can be associated with a Fortran pointer
+        Integer(kind=4) :: ID       ! Array ID
+      End Function SMAIntArrayAccess
+
+  End Interface
   ! -------------------------------------------------------------------- !
 
   ! Initialize structure of VUMAT args
@@ -269,6 +283,17 @@ Subroutine CompDam(  &
     m%fiberCompDamFKT12 = .FALSE.
     m%fiberCompDamFKT13 = .FALSE.
     m%friction = .FALSE.
+    fatigue_step = .FALSE.
+  Else
+    fatigue_step = .FALSE.
+#ifndef PYEXT
+    ! Is this a fatigue step?
+    ptr_fatigue_int = SMAIntArrayAccess(1)
+    If (fatigue_parameters(1) == 1) Then
+      fatigue_step = .TRUE.
+      Call log%debug("This is a fatigue step.")
+    End If
+#endif
   End If
 
   ! -------------------------------------------------------------------- !
@@ -320,7 +345,7 @@ Subroutine CompDam(  &
       dmg_penalty = zero
       dGdGc = zero
     Else
-      Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm, .TRUE., sv%d2, dmg_penalty, dGdGc)
+      Call cohesive_damage(m, p, delta, Pen, delta(2), sv%B, sv%FIm, fatigue_step, sv%d2, dmg_penalty, dGdGc)
     End If
 
     If (m%friction .AND. delta(2) <= zero) Then  ! Closed cracks with friction
@@ -435,14 +460,14 @@ Subroutine CompDam(  &
     ! Damage initiation prediction
     If (.NOT. (m%matrixDam .AND. sv%d2 > zero) .AND. .NOT. ((m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) .AND. sv%d1C > zero)) Then
 
-      Call DGDInit(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),density_abq(km),Cauchy,enerInternNew(km),enerInelasNew(km))
+      Call DGDInit(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),density_abq(km),Cauchy,enerInternNew(km),enerInelasNew(km),fatigue_step)
 
     End If
 
     ! Matrix crack damage evolution
     If (m%matrixDam .AND. sv%d2 > zero) Then
 
-      Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),density_abq(km),Cauchy,enerInternNew(km),enerInelasNew(km))
+      Call DGDEvolve(U,F,F_old,m,p,sv,ndir,nshr,tempNew(km),density_abq(km),Cauchy,enerInternNew(km),enerInelasNew(km),fatigue_step)
 
     ! Fiber compression damage evolution (FKT decomposition)
     Else If ((m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) .AND. sv%d1C > zero) Then

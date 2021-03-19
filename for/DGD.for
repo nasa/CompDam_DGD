@@ -4,7 +4,7 @@ Module DGD_Mod
 Contains
 
 
-  Subroutine DGDInit(U, F, F_old, m, p, sv, ndir, nshr, DT, density_abq, Cauchy, enerIntern, enerInelas)
+  Subroutine DGDInit(U, F, F_old, m, p, sv, ndir, nshr, DT, density_abq, Cauchy, enerIntern, enerInelas, fatigue_step)
     ! Checks for the initiation of matrix damage, represented as a DGD
     ! cohesive crack. If the crack orientation is a priori unknown, it
     ! will be determined in this subroutine.
@@ -15,7 +15,6 @@ Contains
     Use stateVar_Mod
     Use parameters_Mod
     Use stress_Mod
-    Use cohesive_mod
     Use strain_mod
     Use plasticity_mod
     Use CDM_fiber_mod
@@ -34,6 +33,7 @@ Contains
     Double Precision, intent(OUT) :: Cauchy(ndir,ndir)                     ! Cauchy stress
     Double Precision, intent(INOUT) :: enerIntern                          ! Internal energy per mass
     Double Precision, intent(INOUT) :: enerInelas                          ! Inelastic energy per mass
+    Logical, intent(IN) :: fatigue_step                                    ! flag for whether or not this is a fatigue step
 
     ! -------------------------------------------------------------------- !
     ! Locals
@@ -47,16 +47,15 @@ Contains
     ! Cohesive surface
     Double Precision :: normal(3)                                          ! Normal vector (to cohesive surface)
     Double Precision :: R_cr(3,3)                                          ! Basis coordinate system for the cohesive surface
-    Double Precision :: Pen(3)                                             ! Penalty stiffnesses
     Double Precision :: T(3), T_crack(3)                                   ! Tractions on the cohesive surface
-    Double Precision :: delta(3)                                           ! Current displacement jumps in crack coordinate system
-    Double Precision :: B_temp, beta                                       ! Placeholder (temp.) variables for Mode-mixity
-    Double Precision :: FIm_temp
+    Double Precision :: tau_s                                              ! Matrix shear traction
+    Double Precision :: B_temp                                             ! Placeholder (temp.) variable for Mode-mixity
+    Double Precision :: SL, ST, SC                                         ! Matrix shear strengths; longitudinal, transverse, combined
+    Double Precision :: FIm_temp                                           ! Placeholder (temp.) variable for failure index
 
     ! Matrix crack cohesive surface normal
     Double Precision :: alpha_temp                                         ! Current alpha (used in loop through possible alphas)
-    Integer :: alpha_test, alphaQ                                          ! Alpha = normal to matrix crack cohesive surface
-    Integer :: Q                                                           ! Flag: Q=2 for matrix crack; Q=3 for delamination
+    Integer :: alphaQ                                                      ! Alpha = normal to matrix crack cohesive surface
     Integer :: A, A_min, A_max                                             ! Range through which the code searches for alpha
     Integer :: alpha0_deg_2                                                ! negative symmetric alpha0 with normal in positive direction
 
@@ -271,47 +270,58 @@ Contains
         ! Crack normal in the reference configuration
         normal(2) = COS(alpha_temp)
         normal(3) = SIN(alpha_temp)
-
-        ! Current crack normal direction
-        R_cr(:,2) = Norm(MATMUL(F_inverse_transpose, normal))
-
-        ! Current transverse direction
-        R_cr(:,3) = CrossProduct(R_cr(:,1), R_cr(:,2))
+        
+        R_cr(:,2) = Norm(MATMUL(F_inverse_transpose, normal))  ! Current crack normal direction
+        R_cr(:,3) = CrossProduct(R_cr(:,1), R_cr(:,2))         ! Current transverse direction
 
         T = MATMUL(Cauchy, R_cr(:,2))  ! Traction on fracture surface
+        T_crack = MATMUL(TRANSPOSE(R_cr), T)  ! Traction on fracture surface, in crack C.S.
+        tau_s = SQRT(T_crack(1)**2 + T_crack(3)**2)  ! shear traction
 
-        ! Does this DGD crack represent a crack or a delamination?
-        If (A == 90) Then
-          Q = 3
-        Else
-          Q = 2
+        If (T_crack(2) <= zero) Then  ! Compressive normal traction
+          SL = m%SL - m%etaL*MAX(-m%YC, T_crack(2))
+          ST = m%ST - m%etaT*MAX(-m%YC, T_crack(2))
+          SC = tau_s / SQRT((T_crack(1) / SL)**2 + (T_crack(3) / ST)**2)
+
+          B_temp = one  ! Mode mixity
+          FIm_temp = tau_s / SC  ! Failure index
+        Else  ! Tensile normal traction
+          SC = tau_s / SQRT((T_crack(1) / m%SL)**2 + (T_crack(3) / m%ST)**2)
+
+          B_temp = tau_s**2 / (tau_s**2 + (m%GYT / m%GSL) * (SC / m%YT * T_crack(2))**2)  ! Mode mixity
+          FIm_temp = SQRT(tau_s**2 + T_crack(2)**2) / SQRT(m%YT*m%YT + (SC*SC - m%YT*m%YT) * B_temp**m%eta_BK)  ! Failure index
         End If
 
-        T_crack = MATMUL(TRANSPOSE(R_cr), T)  ! Traction on fracture surface, in crack C.S.
+        Fatigue: If (fatigue_step) Then
 
-        ! Normal (Mode I) penalty stiffness
-        Pen(2) = p%penStiffMult*m%E2/sv%Lc(Q)
-        ! Longitudinal (Pen(1)) and transverse (Pen(3)) shear penalty stiffnesses
-        Pen(1) = Pen(2)*m%GYT*(m%SL - m%etaL*MAX(-YC, MIN(zero, T_crack(2))))**2/(m%GSL*m%YT**2)
-        Pen(3) = Pen(2)*m%GYT*(m%ST - m%etaT*MAX(-YC, MIN(zero, T_crack(2))))**2/(m%GSL*m%YT**2)
+          ! Relative endurance at R=-1, corrected for mode mixity B
+          epsilon_mixed = m%fatigue_epsilon*(one - B_temp*0.42d0)
+          ! Relative endurance for all R ratios and mode mixities
+          endurance_relative = two*epsilon_mixed/(epsilon_mixed + one + p%fatigue_R_ratio*(epsilon_mixed - one))
+          
+          If (FIm_temp > endurance_relative) FIm_temp = FIm_temp + one  ! Fatigue failure criterion
 
-        delta = T_crack / Pen  ! Cohesive displacement-jump
-
-        ! -------------------------------------------------------------------- !
-        !    Evaluate the cohesive law initiation criterion                    !
-        ! -------------------------------------------------------------------- !
-        Call cohesive_damage(m, p, delta, Pen, delta(2), B_temp, FIm_temp, .TRUE.)
+        End If Fatigue
 
         ! -------------------------------------------------------------------- !
         !    Save the values corresponding to the maximum failure criteria     !
         ! -------------------------------------------------------------------- !
         If (FIm_temp >= sv%FIm) Then
-          sv%FIm        = FIm_temp
-          sv%B          = B_temp
-          alpha_test    = A
-          sv%Fb1        = F(1,Q)
-          sv%Fb2        = F(2,Q)
-          sv%Fb3        = F(3,Q)
+          sv%FIm   = FIm_temp  ! Failure index
+          sv%B     = B_temp    ! Mode mixity
+          sv%alpha = A         ! Crack angle in the 2--3 plane, degrees
+
+          ! Does this DGD crack represent a crack or a delamination?
+          If (A == 90) Then  ! Delamination
+            sv%Fb1        = F(1,3)
+            sv%Fb2        = F(2,3)
+            sv%Fb3        = F(3,3)
+          Else  ! Matrix crack
+            sv%Fb1        = F(1,2)
+            sv%Fb2        = F(2,2)
+            sv%Fb3        = F(3,2)
+          End If
+
         End If
 
         If (A == A_max) EXIT CrackAngle
@@ -334,18 +344,16 @@ Contains
             A = A + p%alpha_inc
           End If
 
-          If (A /= 90) Exit NextAngle  ! Only evaluate 90 if is set via initial condition
+          If (A /= 90) Exit NextAngle  ! Only evaluate 90 if pre-set and alpha_search is disabled
         End Do NextAngle
 
       End Do CrackAngle
-
-      sv%alpha = alpha_test  ! save the alpha value for the maximum failure index
 
       !  If failure occurs, set a small amount of matrix damage to flag DGDEvolve
       If (sv%FIm >= one) Then
         sv%d2 = 1.d-8 ! Used as a flag to call DGDEvolve
         Call log%info('DGDInit predicts matrix damage initiation.')
-        Call log%debug('alpha = ' // trim(str(sv%alpha)))
+        Call log%info('alpha = ' // trim(str(sv%alpha)))
       End If
     End If
 
@@ -374,7 +382,7 @@ Contains
   End Subroutine DGDInit
 
 
-  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, density_abq, Cauchy, enerIntern, enerInelas)
+  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, density_abq, Cauchy, enerIntern, enerInelas, fatigue_step)
     ! Determines the matrix damage state variable based on the current   !
     ! deformation and mode mixity.                                       !
 
@@ -403,6 +411,7 @@ Contains
     Double Precision, Intent(OUT) :: Cauchy(ndir,ndir)
     Double Precision, intent(INOUT) :: enerIntern                            ! Internal energy per mass
     Double Precision, intent(INOUT) :: enerInelas                            ! Inelastic energy per mass
+    Logical, intent(IN) :: fatigue_step                                    ! flag for whether or not this is a fatigue step
 
     ! -------------------------------------------------------------------- !
     ! Locals
@@ -1009,7 +1018,7 @@ Contains
 
       If (MD == 1) Then
         delta_n_init = MIN(zero, delta_coh(2,Q))
-        evolve_fatigue = .TRUE.  ! Only calculate the new fatigue during the first DGD increment
+        evolve_fatigue = fatigue_step  ! Only calculate the new fatigue during the first DGD increment
       Else
         evolve_fatigue = .FALSE.
       End If
