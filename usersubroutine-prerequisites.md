@@ -10,8 +10,10 @@ The table below summarizes the recommended compilers for use with different vers
 | 2017           | Visual Studio 2012 Update 5 | Intel Visual Fortran 16.0 update 1       | MS-MPI 4.2, 5.0 |
 | 2018           | Visual Studio 2015 Update 3 | Intel Visual Fortran 16.0 update 1       | MS-MPI 5.0, 8.0 |
 | 2019           | Visual Studio 2015 Update 3 | Intel Visual Fortran 16.0 update 1       | MS-MPI 9.0.1    |
+| 2020           | Visual Studio 2017          | Intel Visual Fortran 19.0.4              | MS-MPI 9.0.1    |
+| 2021           | Visual Studio 2017          | Intel Visual Fortran 19.0.5              | MS-MPI 9.0.1    |
 
-* Windos only seems to allow 1 MS-MPI installation. MS-MPI 9.0.1 appears to work for Abaqus 2017 - 2019.
+* Windos only seems to allow 1 MS-MPI installation. MS-MPI 9.0.1 appears to work for Abaqus 2017+.
 
 
 ## Linux
@@ -22,3 +24,5 @@ The table below summarizes the recommended compilers for use with different vers
 | 2017           | GCC                         | Intel Visual Fortran 16.0 update 1       |
 | 2018           | GCC                         | Intel Visual Fortran 16.0 update 1       |
 | 2019           | GCC                         | Intel Visual Fortran 16.0 update 1       |
+| 2020           | GCC >= 8.2                  | Intel Visual Fortran 16.0.1              |
+| 2021           | GCC >= 8.2                  | Intel Visual Fortran 16.0.1              |
