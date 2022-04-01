@@ -1,0 +1,110 @@
+//
+// CompDam Subroutine Parameters
+//
+// README
+// This is a comment line, it is ignored. Each uncommented line should
+// contain one subroutine parameter in the form [NAME] = [VALUE]
+//
+// This file optional, and is not required to execute the CompDam subroutine.
+// When used, this file must be placed in the Abaqus output directory, which is
+// the directory where the job is executed. If this file is not found, or
+// cannot be accessed, CompDam will use default values.
+
+
+// logger level of verbosity, Integer
+logLevel = 2 // Default value: 2
+
+// logger format (1=log file, 2=csv)
+logFormat = 1
+
+
+// fatigue analysis step number, Integer
+fatigue_step = 1000000
+
+// fatigue loading R ratio, Double Precision
+fatigue_R_ratio = 0.1d0 // Default value: 0.1d0
+
+// fatigue cycles per solution increment (initial), Double Precision
+cycles_per_increment_init = 1.d-4 // Default value: 1.d-4
+// fatigue cycles per solution increment (maximum), Double Precision
+cycles_per_increment_max = 1.d5 // Default value: 1.d5
+// fatigue cycles per solution increment (minimum), Double Precision
+cycles_per_increment_min = 1.d-5 // Default value: 1.d-5
+// Percent change to fatigue cycles per solution increment when rate of energy dissipation is out-of-range, Double Precision
+cycles_per_increment_mod = 0.1d0 // Default value: 0.1d0
+
+// thresholds for fatigue damage progression per solution increment in terms of percent fracture toughness, Double precision
+fatigue_damage_min_threshold = 5.d-5 // Default value: 5.d-6
+fatigue_damage_max_threshold = 1.d-3 // Default value: 1.d-4
+
+
+// penalty stiffness multiplier, K/(E/thickness) = penStiffMult, Double precision
+penStiffMult = 1.d4 // Default value: 1.d+4
+
+
+// increment for which the matrix failure criterion is evaluated [degrees], Integer
+alpha_inc = 10 // Default value: 10
+
+
+// maximum number of cut-backs in the DGD equilibrium convergence loop, Integer
+cutbacks_max = 4 // Default value: 4
+// amount by which to reduce the rate of change of F_bulk, Double precision
+cutback_amount = 0.5d0 // Default value: 0.5d0
+// DGD equilibrium convergence tolerance factor: tol_DGD_f = tol_{DGD}/YT, Double precision
+tol_DGD_f = 1.d-4 // Default value: 1.d-4
+
+// minimum amount of fracture energy dissipated per MD increment, Double precision
+dGdGc_min = 1.d-12 // Default value: 1.d-12
+// maximum number of damage increments per solution increment, Integer
+MD_max = 1000 // Default value: 1000
+
+// maximum number of equilibrium iterations per solution increment for kink band model, Integer
+EQ_max = 1000 // Default value: 1000
+
+
+// minimum acceptable determinant of F_bulk, Double precision
+compLimit = 0.25d0 // Default value: 0.25d0
+
+
+// Tolerance for divergence of internal Newton Raphson loop. Triggers divergence logic if (err - err_old)/err_old > tol_divergence
+tol_divergence = 1.d-6 // Default value: 0.1d0
+
+// maximum value for shear strain. If this value is exceeded, the element is deleted. Set to zero to disable.
+gamma_max = 4.d0 // Default value: 4.d0
+
+// Ratio of kink band width to element size at which decomposition is used. Set to 0 to turn off decomposition for kinking.
+kb_decompose_thres = 0.99d0 // Default value: 0.99d0
+
+// Fiber failure angle [degrees]. Set to < 0 to disable.
+fkt_fiber_failure_angle = -1.d0
+
+// Schaefer Theory Parameters
+
+// Schaefer Newton Raphson Tolerance. The convergence loop calculates a J0 vector (which should tend towards the zero vector).
+// A residual is calculated with the norm of that vector. Newton Raphson loop convergence is defined as when the residual is less than the below tolerance value:
+schaefer_nr_tolerance = 1.d-6 //Default 1.d-6
+
+// The Schaefer Newton Raphson loop counter limit. If a Schaefer Newton Raphson takes more than this number of loops, then a warning message is printed.
+// A high number of iterations might indicate that Newton Raphson loop won't converge
+schaefer_nr_counter_limit = 10000000 // Default 10000000
+
+// Determines the behavior when internal convergence cannot be found.
+// Defaults to .TRUE. in which case the analysis is terminated when no converged solution is found
+// Setting to .FALSE. triggers a warning, deletes the element, and proceeds with the analysis
+terminate_on_no_convergence = .TRUE. // Default .TRUE.
+
+// DEBUGGING (only activated when > 0 and logLevel > 2)
+// Specify total time at which to kill the analysis. The analysis is killed immediately before CompDam exits if totalTime is >= value
+// specified below. Debug data is written.
+debug_kill_at_total_time = -1.d0
+
+// Set to true to use the time as the seed for initial fiber misalignment to get different results for each realization
+fkt_random_seed = .FALSE.  // Default .FALSE.
+
+// Initial fiber misalignments (only activated when the 3-D fiber kinking model is enabled, feature flag = '5', and the initial condition for phi0 is 3.0)
+fkt_init_misalignment_azi_mu = 0.d0  // Default 0.d0, Normal distribution mean in degrees
+fkt_init_misalignment_azi_sigma = 45.0d0  // Default 45.0d0, Normal distribution variance in degrees
+fkt_init_misalignment_polar_shape = 0.676d0  // Default 0.676d0, Lognormal distribution shape parameter in degrees
+fkt_init_misalignment_polar_scale = 2.25d0   // Default 2.25d0, Lognormal distribution scale parameter in degrees
+
+// End of file (Do not remove me)

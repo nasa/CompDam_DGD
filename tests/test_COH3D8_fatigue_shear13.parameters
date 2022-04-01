@@ -1,0 +1,41 @@
+//
+// CompDam Subroutine Parameters
+//
+// README
+// This is a comment line, it is ignored. Each uncommented line should
+// contain one subroutine parameter in the form [NAME] = [VALUE]
+//
+// This file optional, and is not required to execute the CompDam subroutine.
+// When used, this file must be placed in the Abaqus output directory, which is
+// the directory where the job is executed. If this file is not found, or
+// cannot be accessed, CompDam will use default values.
+
+
+// logger level of verbosity, Integer
+logLevel = 2 // Default value: 2
+
+// logger format (1=log file, 2=csv)
+logFormat = 1
+
+
+// fatigue analysis step number, Integer
+fatigue_step = 2
+
+// fatigue loading R ratio, Double Precision
+fatigue_R_ratio = 0.1d0 // Default value: 0.1d0
+
+// fatigue cycles per solution increment (initial), Double Precision
+cycles_per_increment_init = 1.d-4 // Default value: 1.d-4
+// fatigue cycles per solution increment (maximum), Double Precision
+cycles_per_increment_max = 1.d5 // Default value: 1.d5
+// fatigue cycles per solution increment (minimum), Double Precision
+cycles_per_increment_min = 1.d-5 // Default value: 1.d-5
+// Percent change to fatigue cycles per solution increment when rate of energy dissipation is out-of-range, Double Precision
+cycles_per_increment_mod = 0.1d0 // Default value: 0.1d0
+
+// thresholds for fatigue damage progression per solution increment in terms of percent fracture toughness, Double precision
+fatigue_damage_min_threshold = 5.d-7 // Default value: 5.d-6
+fatigue_damage_max_threshold = 1.d-4 // Default value: 1.d-4
+
+
+// End of file (Do not remove me)

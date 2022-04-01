@@ -1,0 +1,130 @@
+*Parameter
+l = 0.5
+t = 0.25
+stepDuration = 0.1
+loadRatio = 0.8
+abcissaStrength = 2326.2
+ordinateStrength = 62.3
+normalTraction11 = loadRatio*abcissaStrength*3
+normalTraction22 = (1-loadRatio)*(ordinateStrength*3)
+**
+*Node, nset=all
+      1,  <l>,          <l>,          <t>
+      2,  <l>,           0.,          <t>
+      3,  <l>,          <l>,           0.
+      4,  <l>,           0.,           0.
+      5,  0.,           <l>,          <t>
+      6,  0.,            0.,          <t>
+      7,  0.,           <l>,           0.
+      8,  0.,            0.,           0.
+*Element, type=C3D8R, elset=all
+1, 3, 4, 2, 1, 7, 8, 6, 5
+**
+*Nset, nset=loadSurface
+ 1, 3, 5, 7,
+*Nset, nset=followersx
+ 2, 3, 4
+*Nset, nset=followersy
+ 3, 5, 7
+*Nset, nset=followersz
+ 2, 5, 6
+*Nset, nset=pin
+ 8,
+*Nset, nset=piny
+ 2, 4, 6
+*Nset, nset=pinx
+ 5, 6, 7
+*Nset, nset=pinz
+ 3, 4, 7
+**
+*Orientation, name=Ori-1
+          1.,           0.,           0.,          0.,           1.,           0.
+3, 0.
+**
+*Solid Section, elset=all, orientation=Ori-1, material=IM7-8552, controls=SectionCtrl-1
+,
+**
+*Equation
+2
+followersx, 1, -1., 1, 1, 1.
+2
+followersy, 2, -1., 1, 2, 1.
+2
+followersz, 3, -1., 1, 3, 1.
+**
+*Section controls, name=SectionCtrl-1, distortion control=YES
+**
+*Amplitude, name=Amp-1, definition=SMOOTH STEP
+             0.,              0.,    <stepDuration>,              1.
+**
+*Material, name=IM7-8552
+*Density
+1.57e-09,
+*User material, constants=5
+ 101101, , <t>,  ,   ,  ,  ,  ,
+*Depvar
+  19,
+  1, CDM_d2
+  2, CDM_Fb1
+  3, CDM_Fb2
+  4, CDM_Fb3
+  5, CDM_B
+  6, CDM_Lc1
+  7, CDM_Lc2
+  8, CDM_Lc3
+  9, CDM_FIm
+ 10, CDM_alpha
+ 11, CDM_STATUS
+ 12, CDM_Plas12
+ 13, CDM_Inel12
+ 14, CDM_FIfT
+ 15, CDM_slide1
+ 16, CDM_slide2
+ 17, CDM_FIfC
+ 18, CDM_d1T
+ 19, CDM_d1C
+*Characteristic Length, definition=USER, components=3
+**
+*Initial Conditions, Type=Solution
+all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+      0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,
+      0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+**
+*Boundary
+ pin, 1, 1
+ pin, 2, 2
+ pin, 3, 3
+ piny, 2, 2
+ pinx, 1, 1
+ pinz, 3, 3
+**
+*Filter, name=haltOnFailure, operator=Max, limit=1.0, HALT
+** ----------------------------------------------------------------
+*Step, name=Step-1, nlgeom=YES
+*Dynamic, Explicit
+, <stepDuration>
+**
+*Fixed Mass Scaling, factor=5000.
+**
+*Dload, Amplitude=Amp-1, Constant resultant=Yes, follower=No
+ 1, TRVEC1, <normalTraction11>, 1.0, 0.0, 0.0
+ 1, TRVEC6, <normalTraction22>, 0.0, 1.0, 0.0
+**
+*Output, field, number interval=50
+*Node Output
+ U, RF
+*Element Output
+ S, LE, SDV
+**
+*Output, history, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+**
+*Element Output, elset=all
+ S, LE, SDV
+**
+*Output, history, frequency=1, filter=haltOnFailure
+*Element Output, elset=all
+ SDV9, SDV14, SDV17
+**
+*End Step

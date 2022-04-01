@@ -1,0 +1,91 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Configuration file
+etc/config.json
+
+# Version file
+for/version.for
+
+# Abaverify
+abaverify/
+
+# Compiled fortran files and modules
+build/
+
+# Abaqus output files
+*.abq
+*.com
+*.dat
+*.log
+*.mdl
+*.msg
+*.odb
+*.pac
+*.par
+*.pes
+*.pmg
+*.prt
+*.res
+*.sel
+*.sim
+*.sta
+*.stt
+
+# Abaqus cae files
+*.cae
+*.jnl
+*.rec
+*.deps
+*.rpy*
+
+# Dynamically generated input files for testing
+tests/test_C3D8R_mixedModeMatrix_alpha*
+*abcissa*
+
+# Old files directory (backup)
+old/
+
+# Results
+results/
+testOutput/
+archivedTestResults/
+
+# Sublime text
+*.sublime-project
+*.sublime-workspace
+
+# vscode
+.vscode/
+
+# Python extension module build files
+pyextmod/*.f90
+pyextmod/*.o
+pyextmod/*.fpp
+pyextmod/*.mod
+pyextmod/src*
+pyextmod/*.so
+pyextmod/.f2py_f2cmap
+pyextmod/libsrc.a
+pyextmod/CompDam_DGD.py
+pyextmod/pyextmod*.txt

@@ -1,0 +1,258 @@
+*Heading
+ Single element test for matrix nonlinear shear response
+**
+*Parameter
+ length = 0.2
+ shear_displacement = 0.02
+ shear_displacement_half = shear_displacement/2.
+**
+** NODES
+**
+*NODE, NSET=GLOBAL
+      1,            0.,            0.,            0.
+      2,      <length>,            0.,            0.
+      3,      <length>,      <length>,            0.
+      4,            0.,      <length>,            0.
+      5,            0.,            0.,      <length>
+      6,      <length>,            0.,      <length>
+      7,      <length>,      <length>,      <length>
+      8,            0.,      <length>,      <length>
+*NSET, NSET=X+
+  2, 3, 6, 7
+*NSET, NSET=X-
+  1, 4, 5, 8
+*NSET, NSET=Y+
+  3, 4, 7, 8
+*NSET, NSET=Y-
+  1, 2, 5, 6
+*NSET, NSET=Z+
+  5, 6, 7, 8
+*NSET, NSET=Z-
+  1, 2, 3, 4
+**
+** ELEMENTS
+**
+*ELEMENT, TYPE=C3D8R, ELSET=ALL_ELEMS
+  1, 1, 2, 3, 4, 5, 6, 7, 8
+**
+** PROPERTIES
+**
+*SOLID SECTION, ELSET=ALL_ELEMS, MATERIAL=IM7-8552
+**
+** MATERIALS
+**
+*Material, name=IM7-8552
+*Density
+ 1.59d-05,
+*User material, constants=4
+** 1              2                  3          4
+** feature flags, , thickness, 4, 5, 6, 7, 8
+         040000,  ,  <length>,  ,  ,  ,  ,  ,
+*Depvar, delete=11
+ 21,
+ 1, CDM_d2
+ 2, CDM_Fb1
+ 3, CDM_Fb2
+ 4, CDM_Fb3
+ 5, CDM_B
+ 6, CDM_Lc1
+ 7, CDM_Lc2
+ 8, CDM_Lc3
+ 9, CDM_FIm
+10, CDM_alpha
+11, CDM_STATUS
+12, CDM_Plas12
+13, CDM_Inel12
+14, CDM_FIfT
+15, CDM_slide1
+16, CDM_slide2
+17, CDM_FIfC
+18, CDM_d1T
+19, CDM_d1C
+20, CDM_Plas13
+21, CDM_Inel13
+*Characteristic Length, definition=USER, components=3
+**
+** INITIAL CONDITIONS
+**
+*Initial Conditions, Type=Solution
+ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,       0.d0,  90,     1,  0.d0,  0.d0,  0.d0,  0.d0,  
+0.d0,       0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+*BOUNDARY
+  Y-, 2, 3, 0
+  Z+, 1, 1, 0
+  Z+, 3, 3, 0
+  Z-, 1, 1, 0
+  Z-, 3, 3, 0
+**
+*Equation
+ 2
+ 5, 3, 1., 6, 3, -1.
+ 2
+ 6, 3, 1., 7, 3, -1.
+ 2
+ 7, 3, 1., 8, 3, -1.
+**
+*Amplitude, name=Step1, definition=SMOOTH STEP
+0., 0.0,  0.1, 0.2
+*Amplitude, name=Step2, definition=SMOOTH STEP
+0., 0.2, 0.05, 0.1
+**
+*Amplitude, name=Step3, definition=SMOOTH STEP
+0., 0.1,  0.1, 0.4
+*Amplitude, name=Step4, definition=SMOOTH STEP
+0., 0.4, 0.05, 0.0
+**
+*Amplitude, name=Step5, definition=SMOOTH STEP
+0., 0.0,  0.1, -0.2
+*Amplitude, name=Step6, definition=SMOOTH STEP
+0., -0.2, 0.05, 0.2
+**
+*************************************************************
+*STEP, NLGEOM=YES
+*Dynamic, Explicit
+ , 0.1, ,
+**
+** OUTPUT
+**
+*OUTPUT, FIELD
+*ELEMENT OUTPUT
+  SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
+*NODE OUTPUT, NSET=Z+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step1
+ Z+, 1, 1, <shear_displacement>
+*END STEP
+*STEP, NLGEOM=YES
+*Dynamic, Explicit
+ , 0.05, ,
+**
+** OUTPUT
+**
+*OUTPUT, FIELD
+*ELEMENT OUTPUT
+  SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
+*NODE OUTPUT, NSET=Z+
+ U,RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step2
+ Z+, 1, 1, <shear_displacement>
+*END STEP
+*************************************************************
+*STEP, NLGEOM=YES
+*Dynamic, Explicit
+ , 0.1, ,
+**
+** OUTPUT
+**
+*OUTPUT, FIELD
+*ELEMENT OUTPUT
+  SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
+*NODE OUTPUT, NSET=Z+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step3
+ Z+, 1, 1, <shear_displacement>
+*END STEP
+*STEP, NLGEOM=YES
+*Dynamic, Explicit
+ , 0.05, ,
+**
+** OUTPUT
+**
+*OUTPUT, FIELD
+*ELEMENT OUTPUT
+  SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
+*NODE OUTPUT, NSET=Z+
+ U,RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step4
+ Z+, 1, 1, <shear_displacement>
+*END STEP
+*************************************************************
+*STEP, NLGEOM=YES
+*Dynamic, Explicit
+ , 0.1, ,
+**
+** OUTPUT
+**
+*OUTPUT, FIELD
+*ELEMENT OUTPUT
+  SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
+*NODE OUTPUT, NSET=Z+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step5
+ Z+, 1, 1, <shear_displacement>
+*END STEP
+*STEP, NLGEOM=YES
+*Dynamic, Explicit
+ , 0.05, ,
+**
+** OUTPUT
+**
+*OUTPUT, FIELD
+*ELEMENT OUTPUT
+  SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
+*NODE OUTPUT, NSET=Z+
+ U,RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step6
+ Z+, 1, 1, <shear_displacement>
+*END STEP

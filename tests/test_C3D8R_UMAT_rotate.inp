@@ -1,0 +1,141 @@
+*Heading
+ Single element test for simple shear loading
+**
+*Parameter
+ length = 0.1
+ displacement = 0.1
+ rotation = 90
+ stepDuration = 1.0
+**
+ rotation_rad = rotation*atan(1.0)/45.0
+**
+** NODES
+**
+*NODE, NSET=GLOBAL
+      1,            0.,            0.,            0.
+      2,      <length>,            0.,            0.
+      3,      <length>,      <length>,            0.
+      4,            0.,      <length>,            0.
+      5,            0.,            0.,      <length>
+      6,      <length>,            0.,      <length>
+      7,      <length>,      <length>,      <length>
+      8,            0.,      <length>,      <length>
+*NSET, NSET=X+
+  2, 3, 6, 7
+*NSET, NSET=X-
+  1, 4, 5, 8
+*NSET, NSET=Y+
+  3, 4, 7, 8
+*NSET, NSET=Y-
+  1, 2, 5, 6
+*NSET, NSET=Z+
+  5, 6, 7, 8
+*NSET, NSET=Z-
+  1, 2, 3, 4
+**
+** ELEMENTS
+**
+*ELEMENT, TYPE=C3D8R, ELSET=ALL_ELEMS
+  1, 1, 2, 3, 4, 5, 6, 7, 8
+*ELEMENT, TYPE=S4R, ELSET=DUP
+  2, 1, 2, 3, 4
+**
+** PROPERTIES
+**
+*Orientation, name=Ori-1
+          1.,           0.,           0.,          0.,           1.,           0.
+3, 0.
+*SOLID SECTION, ELSET=ALL_ELEMS, MATERIAL=IM7-8552, controls=C-1, Orientation=Ori-1
+*Section Controls, name=C-1, hourglass=ENHANCED
+*SHELL SECTION, ELSET=DUP, MATERIAL=IM7-8552-bi
+ <length>
+**
+** MATERIALS
+**
+*Material, name=IM7-8552-bi
+*Density
+ 1.59d-05,
+*Elastic, type=ENGINEERING CONSTANTS
+ 171420.,   9080.,   9080.,    0.32,    0.32,     0.52,   5209.,   5209.
+ 3026.67,
+*Material, name=IM7-8552
+*Density
+ 1.59d-05,
+*User material, constants=4
+** 1              2                  3          4
+** feature flags, , thickness, 4, 5, 6, 7, 8
+          0, ,  <length>,  ,  ,  ,  ,  ,
+**
+*Depvar, delete=11
+  33,
+  1, CDM_d2
+  2, CDM_Fb1
+  3, CDM_Fb2
+  4, CDM_Fb3
+  5, CDM_B
+  6, CDM_Lc1
+  7, CDM_Lc2
+  8, CDM_Lc3
+  9, CDM_FIm
+ 10, CDM_alpha
+ 11, CDM_STATUS
+ 12, CDM_Plas12
+ 13, CDM_Inel12
+ 14, CDM_FIfT
+ 15, CDM_slide1
+ 16, CDM_slide2
+ 17, CDM_FIfC
+ 18, CDM_d1T
+ 19, CDM_d1C
+ 20, CDM_20
+ 21, CDM_21
+ 22, CDM_22
+ 23, CDM_23
+ 24, CDM_24
+ 25, CDM_DIRECT11
+ 26, CDM_DIRECT21
+ 27, CDM_DIRECT31
+ 28, CDM_DIRECT12
+ 29, CDM_DIRECT22
+ 30, CDM_DIRECT32
+ 31, CDM_DIRECT13
+ 32, CDM_DIRECT23
+ 33, CDM_DIRECT33
+*User defined field
+**
+** INITIAL CONDITIONS
+**
+*Initial Conditions, Type=Solution
+ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+*Initial Conditions, Type=Field, Variable=1
+GLOBAL,  0.d0
+**
+** STEP 1 - Rotation
+**
+*BOUNDARY
+  1, 1, 2, 0
+  5, 1, 2, 0
+  Z-, 3, 3, 0
+  Z+, 3, 3, 0
+*STEP, name=Rotate, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.1, <stepDuration>, 5.e-6, 0.1
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*Restart, write
+**
+** LOADING
+**
+*BOUNDARY, Type=VELOCITY
+ 1, 6, 6, <rotation_rad>
+*END STEP

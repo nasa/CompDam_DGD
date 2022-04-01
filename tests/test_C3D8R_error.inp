@@ -1,0 +1,122 @@
+*Heading
+ Single element test for inducing a DGD convergence error
+**
+*Parameter
+ length = 0.2
+ displacement = 0.01
+ stepDuration = 0.1
+**
+ error_time_fraction = 0.45
+ error_time = stepDuration * error_time_fraction
+ error_time_end = error_time + stepDuration * 0.001
+**
+*Node, nset=AllNodes
+      1,            0.,            0.,            0.
+      2,      <length>,            0.,            0.
+      3,      <length>,      <length>,            0.
+      4,            0.,      <length>,            0.
+      5,            0.,            0.,      <length>
+      6,      <length>,            0.,      <length>
+      7,      <length>,      <length>,      <length>
+      8,            0.,      <length>,      <length>
+*Nset, nset=X+
+  2, 3, 6, 7
+*Nset, nset=X-
+  1, 4, 5, 8
+*Nset, nset=Y+
+  3, 4, 7, 8
+*Nset, nset=Y-
+  1, 2, 5, 6
+*Nset, nset=Z+
+  5, 6, 7, 8
+*Nset, nset=Z-
+  1, 2, 3, 4
+**
+*Element, type=C3D8R, elset=SingleElement
+  1, 1, 2, 3, 4, 5, 6, 7, 8
+**
+*Solid Section, elset=SingleElement, material=IM7-8552
+**
+*Material, name=IM7-8552
+*Density
+ 1.57e-09,
+*User material, constants=4
+ 100000, , <length>, , , , , ,
+*Depvar, delete=11
+19,
+1, CDM_d2
+2, CDM_Fb1
+3, CDM_Fb2
+4, CDM_Fb3
+5, CDM_B
+6, CDM_Lc1
+7, CDM_Lc2
+8, CDM_Lc3
+9, CDM_FIm
+10, CDM_alpha
+11, CDM_STATUS
+12, CDM_Plas12
+13, CDM_Inel12
+14, CDM_FIfT
+15, CDM_slide1
+16, CDM_slide2
+17, CDM_FIfC
+18, CDM_d1T
+19, CDM_d1C
+*Characteristic Length, definition=USER, components=3
+**
+*Initial Conditions, type=Solution
+SingleElement, 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+*Boundary
+1, 2, 3
+2, 1, 3
+3, 1, 1
+3, 3, 3
+4, 1, 1
+4, 3, 3
+5, 2, 2
+6, 1, 2
+7, 1, 1
+7, 3, 3
+8, 1, 1
+8, 3, 3
+**
+*Amplitude, name=Displace, definition=SMOOTH STEP
+0., 0., <stepDuration>, <displacement>
+*Amplitude, name=InsideOut, definition=TABULAR
+0., 0., <error_time>, 0., <error_time_end>, <length>, <stepDuration>, <length>
+**
+*Step, nlgeom=YES
+*Dynamic, Explicit
+ , <stepDuration>, ,
+**
+*Fixed Mass Scaling, factor=5000.
+**
+*Boundary, amplitude=Displace
+Y+, 2, 2, -1.0
+*Boundary, amplitude=InsideOut
+1, 1, 1, 1.0
+1, 3, 3, 1.0
+2, 1, 1, -1.0
+2, 3, 3, 1.0
+5, 1, 1, 1.0
+5, 3, 3, -1.0
+6, 1, 1, -1.0
+6, 3, 3, -1.0
+**
+*Output, HISTORY, frequency=1
+*Energy Output
+ALLWK, ALLSE, ALLKE, ALLPD, ALLAE
+*Element Output, elset=SingleElement
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11, SDV15,
+SDV16
+**
+*Output, FIELD, number interval=10
+*Element Output
+SDV, S, LE
+*Node Output
+U, RF
+**
+*END STEP

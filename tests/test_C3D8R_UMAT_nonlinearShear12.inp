@@ -1,0 +1,597 @@
+*Heading
+ Single element test for simple shear loading
+**
+*Parameter
+ length = 0.2
+ displacement = 0.02
+**
+** NODES
+**
+*NODE, NSET=GLOBAL
+      1,            0.,            0.,            0.
+      2,      <length>,            0.,            0.
+      3,      <length>,      <length>,            0.
+      4,            0.,      <length>,            0.
+      5,            0.,            0.,      <length>
+      6,      <length>,            0.,      <length>
+      7,      <length>,      <length>,      <length>
+      8,            0.,      <length>,      <length>
+*NSET, NSET=X+
+  2, 3, 6, 7
+*NSET, NSET=X-
+  1, 4, 5, 8
+*NSET, NSET=Y+
+  3, 4, 7, 8
+*NSET, NSET=Y-
+  1, 2, 5, 6
+*NSET, NSET=Z+
+  5, 6, 7, 8
+*NSET, NSET=Z-
+  1, 2, 3, 4
+**
+** ELEMENTS
+**
+*ELEMENT, TYPE=C3D8R, ELSET=ALL_ELEMS
+  1, 1, 2, 3, 4, 5, 6, 7, 8
+**
+** PROPERTIES
+**
+*Orientation, name=Ori-1
+ 1., 0., 0., 0., 1., 0.
+3, 0.
+*SOLID SECTION, ELSET=ALL_ELEMS, MATERIAL=IM7-8552, controls=C-1, Orientation=Ori-1
+*Section Controls, name=C-1, hourglass=ENHANCED
+**
+** MATERIALS
+**
+*Material, name=IM7-8552
+*Density
+ 1.59d-05,
+*User material, constants=4
+** 1              2                  3          4
+** feature flags, , thickness, 4, 5, 6, 7, 8
+          110000, ,  <length>,  ,  ,  ,  ,  ,
+**
+*Depvar, delete=11
+  28,
+  1, CDM_d2
+  2, CDM_Fb1
+  3, CDM_Fb2
+  4, CDM_Fb3
+  5, CDM_B
+  6, CDM_Lc1
+  7, CDM_Lc2
+  8, CDM_Lc3
+  9, CDM_FIm
+ 10, CDM_alpha
+ 11, CDM_STATUS
+ 12, CDM_Plas12
+ 13, CDM_Inel12
+ 14, CDM_FIfT
+ 15, CDM_slide1
+ 16, CDM_slide2
+ 17, CDM_FIfC
+ 18, CDM_d1T
+ 19, CDM_d1C
+ 20, CDM_DIRECT11
+ 21, CDM_DIRECT21
+ 22, CDM_DIRECT31
+ 23, CDM_DIRECT12
+ 24, CDM_DIRECT22
+ 25, CDM_DIRECT32
+ 26, CDM_DIRECT13
+ 27, CDM_DIRECT23
+ 28, CDM_DIRECT33
+*User defined field
+**
+** INITIAL CONDITIONS
+**
+*Initial Conditions, Type=Solution
+ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+*Initial Conditions, Type=Field, Variable=1
+GLOBAL,  0.d0
+**
+** Boundary conditions
+**
+*BOUNDARY
+  Y-, 1, 2, 0
+  Y+, 1, 2, 0
+  Z-, 3, 3, 0
+**
+*Equation
+ 2
+ 5, 3, 1., 6, 3, -1.
+ 2
+ 6, 3, 1., 7, 3, -1.
+ 2
+ 7, 3, 1., 8, 3, -1.
+**
+*Amplitude, name=Step1, definition=SMOOTH STEP
+0., 0.0,  0.1, 0.2
+*Amplitude, name=Step2, definition=SMOOTH STEP
+0., 0.2, 0.05, 0.1
+**
+*Amplitude, name=Step3, definition=SMOOTH STEP
+0., 0.1,  0.1, 0.3
+*Amplitude, name=Step4, definition=SMOOTH STEP
+0., 0.3, 0.05, 0.2
+**
+*Amplitude, name=Step5, definition=SMOOTH STEP
+0., 0.2,  0.1, 0.4
+*Amplitude, name=Step6, definition=SMOOTH STEP
+0., 0.4, 0.05, 0.3
+**
+*Amplitude, name=Step7, definition=SMOOTH STEP
+0., 0.3,  0.1, 0.5
+*Amplitude, name=Step8, definition=SMOOTH STEP
+0., 0.5, 0.05, 0.4
+**
+*Amplitude, name=Step9, definition=SMOOTH STEP
+0., 0.4,  0.1, 0.6
+*Amplitude, name=Step10, definition=SMOOTH STEP
+0., 0.6, 0.05, 0.5
+**
+*Amplitude, name=Step11, definition=SMOOTH STEP
+0., 0.5,  0.1, 0.7
+*Amplitude, name=Step12, definition=SMOOTH STEP
+0., 0.7, 0.05, 0.6
+**
+*Amplitude, name=Step13, definition=SMOOTH STEP
+0., 0.6,  0.1, 0.8
+*Amplitude, name=Step14, definition=SMOOTH STEP
+0., 0.8, 0.05, 0.7
+**
+*Amplitude, name=Step15, definition=SMOOTH STEP
+0., 0.7,  0.1, 0.9
+*Amplitude, name=Step16, definition=SMOOTH STEP
+0., 0.9, 0.05, 0.8
+**
+*Amplitude, name=Step17, definition=SMOOTH STEP
+0., 0.8,  0.1, 1.0
+*Amplitude, name=Step18, definition=SMOOTH STEP
+0., 1.0, 0.05, 0.0
+**
+*************************************************************
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.1, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step1
+ Y+, 1, 1, <displacement>
+*END STEP
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.05, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step2
+ Y+, 1, 1, <displacement>
+*END STEP
+*************************************************************
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.1, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step3
+ Y+, 1, 1, <displacement>
+*END STEP
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.05, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step4
+ Y+, 1, 1, <displacement>
+*END STEP
+*************************************************************
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.1, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step5
+ Y+, 1, 1, <displacement>
+*END STEP
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.05, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step6
+ Y+, 1, 1, <displacement>
+*END STEP
+*************************************************************
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.1, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step7
+ Y+, 1, 1, <displacement>
+*END STEP
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.05, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step8
+ Y+, 1, 1, <displacement>
+*END STEP
+*************************************************************
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.1, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step9
+ Y+, 1, 1, <displacement>
+*END STEP
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.05, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step10
+ Y+, 1, 1, <displacement>
+*END STEP
+*************************************************************
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.1, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step11
+ Y+, 1, 1, <displacement>
+*END STEP
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.05, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step12
+ Y+, 1, 1, <displacement>
+*END STEP
+*************************************************************
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.1, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step13
+ Y+, 1, 1, <displacement>
+*END STEP
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.05, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step14
+ Y+, 1, 1, <displacement>
+*END STEP
+*************************************************************
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.1, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step15
+ Y+, 1, 1, <displacement>
+*END STEP
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.05, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step16
+ Y+, 1, 1, <displacement>
+*END STEP
+*************************************************************
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.1, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step17
+ Y+, 1, 1, <displacement>
+*END STEP
+*STEP, nlgeom=YES, inc=1000
+*Dynamic, application=QUASI-STATIC, initial=NO
+ 0.001, 0.05, 5.e-6, 0.001
+**
+** OUTPUT
+**
+*OUTPUT, FIELD, frequency=1
+*ELEMENT OUTPUT
+ SDV, S, LE
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*NODE OUTPUT, NSET=Y+
+ U, RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=Step18
+ Y+, 1, 1, <displacement>
+*END STEP

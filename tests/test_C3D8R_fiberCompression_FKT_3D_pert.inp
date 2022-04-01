@@ -1,0 +1,189 @@
+*Heading
+ Single element test for fiber compression DGD
+**
+*Parameter
+l = 0.15
+w = 0.15
+t = 0.15
+wkbToTotal = 1
+wkb = wkbToTotal*l
+stepDuration = 0.1
+**
+** PARTS
+**
+*Part, name=Part-1
+*Node
+      1,  <l>,          <w>,          <t>
+      2,  <l>,           0.,          <t>
+      3,  <l>,          <w>,           0.
+      4,  <l>,           0.,           0.
+      5,  0.,           <w>,          <t>
+      6,  0.,            0.,          <t>
+      7,  0.,           <w>,           0.
+      8,  0.,            0.,           0.
+*Element, type=C3D8R
+ 1, 3, 4, 2, 1, 7, 8, 6, 5
+*Nset, nset=loadApp
+ 4,
+*Nset, nset=loadFollowers
+ 1, 2, 3
+*Nset, nset=pin
+ 8,
+*Nset, nset=pinx
+ 5, 6, 7
+*Nset, nset=all, generate
+ 1,  8,  1
+*Elset, elset=all
+ 1,
+*Orientation, name=Ori-1
+          1.,           0.,           0.,          0.,           1.,           0.
+ 3, 0.
+** Section: Section-1
+*Solid Section, elset=all, orientation=Ori-1, material=IM7-8552, controls=SectionCtrl-1
+,
+*End Part
+**
+**
+** ASSEMBLY
+**
+*Assembly, name=Assembly
+**
+*Instance, name=Part-1-1, part=Part-1
+*End Instance
+**
+** Constraint: LoadApp
+*Equation
+ 2
+ Part-1-1.loadFollowers, 1, -1., Part-1-1.loadApp, 1, 1.
+*Equation
+ 2
+ Part-1-1.1, 2, -1., Part-1-1.3, 2, 1.
+*Equation
+ 2
+ Part-1-1.1, 3, -1., Part-1-1.2, 3, 1.
+*Equation
+ 4
+ Part-1-1.5, 2, -1., Part-1-1.1, 2, 1., Part-1-1.6, 2, 1., Part-1-1.2, 2, -1.
+*Equation
+ 4
+ Part-1-1.7,2,-1., Part-1-1.3,2,1., Part-1-1.8,2,1., Part-1-1.4,2,-1.
+*Equation
+ 4
+ Part-1-1.5, 3, -1., Part-1-1.1, 3, 1., Part-1-1.6, 3, 1., Part-1-1.2, 3, -1.
+*Equation
+ 4
+ Part-1-1.7,3,-1., Part-1-1.3,3,1., Part-1-1.8,3,1., Part-1-1.4,3,-1.
+*End Assembly
+**
+*Section controls, name=SectionCtrl-1, distortion control=YES
+**
+*Amplitude, name=Amp-1, definition=SMOOTH STEP
+             0.,              0.,    <stepDuration>,              1.
+**
+** MATERIALS
+**
+*Material, name=IM7-8552
+*Density
+ 1.57e-09,
+*User material, constants=39
+** 1              2                  3          4
+** feature flags, , thickness, 4, 5, 6, 7, 8
+          030500, ,       <t>,  ,  ,  ,  ,  ,
+**
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+    171420.0, 9080.0,   5290.0,   0.32,     0.52,     62.3,     92.30,    0.277,
+**
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,     
+    0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
+**
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,     
+    -5.5d-6,  2.58d-5,  4.412d-10, 5.934,     2326.2,   0.2,      133.3,    0.5, 
+**
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     cl,    w_kb,     ,         mu
+    1200.1,      ,         ,          ,     ,         <wkb>,    ,         0.3
+**
+*Depvar
+ 25,
+ 1, CDM_d2
+ 2, CDM_Fb1
+ 3, CDM_Fb2
+ 4, CDM_Fb3
+ 5, CDM_B
+ 6, CDM_Lc1
+ 7, CDM_Lc2
+ 8, CDM_Lc3
+ 9, CDM_FIm
+10, CDM_alpha
+11, CDM_STATUS
+12, CDM_Plas12
+13, CDM_Inel12
+14, CDM_FIfT
+15, CDM_slide1
+16, CDM_slide2
+17, CDM_FIfC
+18, CDM_d1T
+19, CDM_d1C
+20, CDM_Plas13
+21, CDM_Inel13
+22, CDM_phi0_12
+23, CDM_gamma_12
+24, CDM_phi0_13
+25, CDM_gamma_13
+*Characteristic Length, definition=USER, components=3
+*Damping, alpha=1.d+4
+**
+** INITIAL CONDITIONS
+**
+*Initial Conditions, Type=Solution
+  Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+  0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.0376858d0,  0.d0,
+  0.0377858d0,  0.d0,
+** ----------------------------------------------------------------
+**
+** STEP: Step-1
+**
+*Step, name=Step-1, nlgeom=YES
+*Dynamic, Explicit
+ , <stepDuration>
+*Bulk Viscosity
+ 0.06, 1.2
+** Mass Scaling: Semi-Automatic
+**               Whole Model
+*Fixed Mass Scaling, factor=10000.
+**
+** BOUNDARY CONDITIONS
+**
+** Applied displacement end
+*Boundary, amplitude=Amp-1
+Part-1-1.loadApp, 1, 1, -0.01
+** Fixed end
+*Boundary, amplitude=Amp-1
+Part-1-1.pin, 1, 3
+*Boundary, amplitude=Amp-1
+Part-1-1.pinx, 1, 1
+Part-1-1.6, 2, 2
+Part-1-1.7, 3, 3
+**
+** OUTPUT REQUESTS
+**
+*Output, field, number interval=100
+*Node Output
+U, RF
+*Element Output
+S, LE, SDV
+**
+** HISTORY OUTPUT: H-Output-1
+**
+*Output, history, frequency=1
+*Energy Output
+ ALLIE, ALLKE
+*Node Output, nset=Part-1-1.loadApp
+RF1, U1, U2
+*Element Output, elset=Part-1-1.all
+S, LE, SDV
+*End Step

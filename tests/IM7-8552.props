@@ -1,0 +1,148 @@
+//
+// Material properties for IM7-8552, 190 gsm
+//
+// README
+// This is a comment line, it is ignored. Each uncommented line should
+// contain one material property in the for [NAME] = [VALUE]
+//
+// See the CompDam readme.md file for more information on the features available
+// in CompDam and the material properties required for each.
+//
+// This file must be placed in the abaqus output directory, which is the
+// directory where the job is executed. If this file is not found, or cannot
+// be accessed, CompDam will attempt to load material properties from the
+// input deck.
+//
+// References
+// 1. Camanho PP, Maimi P, Dávila CG. Prediction of size effects in notched laminates using continuum damage mechanics. Compos Sci Technol 2007;67:2715–27.
+// 2. Camanho PP, Bessa MA, Catalanotti G, Vogler M, Rolfes R. Modeling the inelastic deformation and fracture of polymer composites – Part II: Smeared crack model. Mech Mater 2013;59:36–49.
+// 3. Catalanotti G, Camanho PP, Xavier J, Dávila CG, Marques AT. Measurement of resistance curves in the longitudinal failure of composites using digital image correlation. Compos Sci Technol 2010;70:1986–93.
+
+// Elastic Properties
+// ------------------------------------------------------------
+
+// Longitudinal modulus [MPa]; Ref 1.
+E1 = 171420.0
+
+// Transverse modulus [MPa]; Ref 1.
+E2 = 9080.0
+
+// Shear modulus in 1-2 plane [MPa]; Ref 1.
+G12 = 5290.0
+
+// Poisson's ratio in 1-2 plane; Ref 1.
+v12 = 0.32
+
+// Poisson's ratio in 2-3 plane; Ref 2.
+v23 = 0.52
+
+
+
+// CTEs
+// ------------------------------------------------------------
+alpha11 = -5.5e-6
+alpha22 = 2.58e-5
+
+
+
+// Shear non linearity
+// ------------------------------------------------------------
+alpha_PL = 4.412E-10
+n_PL = 5.934
+
+
+
+// Strengths
+// ------------------------------------------------------------
+
+// Longitudinal tensile strength [MPa]; Ref 1.
+XT = 2326.2
+
+// Longitudinal tensile strength ratio
+fXT = 0.75
+
+// Longitudinal compressive strength [MPa]; Ref 2.
+XC = 1200.1
+
+// Longitudinal compressive strength ratio
+fXC = 0.75
+
+// Transverse tensile strength, in-situ [MPa]; Ref 1.
+YT = 62.3
+
+// Shear strength, in-situ [MPa]; Ref 1.
+SL = 92.30
+
+// Transverse compressive strength [MPa]; Ref 1.
+YC = 199.8
+
+// Fracture Toughness
+// ------------------------------------------------------------
+
+// Longitudinal tensile fracture toughness [N/mm]; Ref 3.
+GXT = 133.30
+
+// Longitudinal tensile fracture toughness ratio
+fGXT = 0.375
+
+// Longitudinal compression fracture toughness [N/mm]; Ref 2.
+GXC = 47.5
+
+// Longitudinal compression fracture toughness ratio
+fGXC = 0.375
+
+// Transverse tensile Mode I fracture toughness [N/mm]; Ref 2.
+GYT = 0.2770
+
+// Transverse tensile Mode II fracture toughness [N/mm]; Ref 2.
+GSL = 0.7880
+
+// BK exponent for mode-mixity; Ref 2.
+eta_BK = 1.634
+
+
+
+// DGD fiber compression damage model
+// ------------------------------------------------------------
+
+// Kink-band width [mm]
+w_kb = 0.1
+
+
+
+// Schapery micro-damage
+// ------------------------------------------------------------
+
+es0 =  1.d0
+es1 =  0.d0
+es2 =  0.d0
+es3 =  0.d0
+
+gs0 =  1.33d0
+gs1 = -1.47d0
+gs2 =  5.05d-1
+gs3 = -1.18d-2
+
+// Schaefer Theory 
+// ------------------------------------------------------------
+
+schaefer_a6 = 3.1
+schaefer_b2 = 0.3
+schaefer_n = 6.4
+// 1.2e-11 (1/KSI)^n *(KSI/MPa)^n ....(KSI/MPa)^n = (0.1450377)^n
+//A = 1.2e-11 * (0.1450377)^6.4
+schaefer_A = 4.18673e-17
+
+
+// Misc
+// ------------------------------------------------------------
+
+// Fracture plane angle for pure transverse compression
+alpha0 = 0.9250
+
+// Coefficient of friction
+mu = 0.3
+
+
+
+// End of file (Do not remove me)
