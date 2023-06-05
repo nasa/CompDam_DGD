@@ -238,7 +238,7 @@ for match in matches:
         '*Characteristic Length, definition=USER, components=3\n'+
         '*Initial Conditions, Type=Solution\n'+
         ' orphanMeshPart-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
-        ' 0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
+        ' 0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
         ' 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
         ' 0.d0,  0.d0,  0.d0')
 

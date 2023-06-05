@@ -4,7 +4,7 @@ Module DGD_Mod
 Contains
 
 
-  Subroutine DGDInit(U, F, F_old, m, p, sv, ndir, nshr, DT, density_abq, Cauchy, enerIntern, enerInelas)
+  Subroutine DGDInit(U, F, F_old, m, p, sv, ndir, nshr, DT, density_abq, Cauchy, enerIntern, enerInelas, fatigue_step)
     ! Checks for the initiation of matrix damage, represented as a DGD
     ! cohesive crack. If the crack orientation is a priori unknown, it
     ! will be determined in this subroutine.
@@ -15,71 +15,67 @@ Contains
     Use stateVar_Mod
     Use parameters_Mod
     Use stress_Mod
-    Use cohesive_mod
     Use strain_mod
     Use plasticity_mod
     Use CDM_fiber_mod
     Use schapery_mod
 
-    ! -------------------------------------------------------------------- !
+    ! ---------------------------------------------------------------------------------------------------------------------------- !
     ! Arguments
     Type(matProps), intent(IN) :: m
     Type(parameters), intent(IN) :: p
     Type(stateVars), intent(INOUT) :: sv
-    Double Precision, intent(IN) :: F(3,3), U(3,3), F_old(3,3)             ! Deformation gradient stretch tensor
+    Double Precision, intent(IN) :: F(3,3), U(3,3), F_old(3,3)         ! Deformation gradient stretch tensor
     Integer, intent(IN) :: ndir
     Integer, intent(IN) :: nshr
     Double Precision, intent(IN) :: DT
-    Double Precision, intent(IN) :: density_abq                            ! Density as provided by abaqus
-    Double Precision, intent(OUT) :: Cauchy(ndir,ndir)                     ! Cauchy stress
-    Double Precision, intent(INOUT) :: enerIntern                          ! Internal energy per mass
-    Double Precision, intent(INOUT) :: enerInelas                          ! Inelastic energy per mass
+    Double Precision, intent(IN) :: density_abq                        ! Density as provided by Abaqus
+    Double Precision, intent(OUT) :: Cauchy(ndir,ndir)                 ! Cauchy stress
+    Double Precision, intent(INOUT) :: enerIntern                      ! Internal energy per mass
+    Double Precision, intent(INOUT) :: enerInelas                      ! Inelastic energy per mass
+    Logical, intent(IN) :: fatigue_step                                ! flag for whether or not this is a fatigue step
 
-    ! -------------------------------------------------------------------- !
+    ! ---------------------------------------------------------------------------------------------------------------------------- !
     ! Locals
 
-    Double Precision :: Stiff(ndir+nshr,ndir+nshr)                         ! Stiffness
-    Double Precision :: eps(ndir,ndir) !Strain
-    Double Precision :: eps_old(ndir, ndir)                          ! Strain
-    Double Precision :: stress(ndir,ndir)                                  ! Stress
-    Double Precision :: F_inverse_transpose(3,3)                           ! Inverse transpose of the Deformation Gradient Tensor
-    Double Precision :: X(3,3)                                             ! Reference configuration
+    Double Precision :: Stiff(ndir+nshr,ndir+nshr)                     ! Stiffness
+    Double Precision :: eps(ndir,ndir), eps_old(ndir, ndir)            ! Strain
+    Double Precision :: stress(ndir,ndir)                              ! Stress
+    Double Precision :: F_inverse_transpose(3,3)                       ! Inverse transpose of the Deformation Gradient Tensor
+    Double Precision :: X(3,3)                                         ! Reference configuration
 
     ! Cohesive surface
-    Double Precision :: normal(3)                                          ! Normal vector (to cohesive surface)
-    Double Precision :: R_cr(3,3)                                          ! Basis coordinate system for the cohesive surface
-    Double Precision :: Pen(3)                                             ! Penalty stiffnesses
-    Double Precision :: T(3)                                               ! Tractions on the cohesive surface
-    Double Precision :: delta(3)                                           ! Current displacement jumps in crack coordinate system
-    Double Precision :: B_temp, beta                                       ! Placeholder (temp.) variables for Mode-mixity
-    Double Precision :: FIm_temp
+    Double Precision :: normal(3)                                      ! Normal vector (to cohesive surface)
+    Double Precision :: R_cr(3,3)                                      ! Basis coordinate system for the cohesive surface
+    Double Precision :: T(3), T_crack(3)                               ! Tractions on the cohesive surface
+    Double Precision :: tau_s                                          ! Matrix shear traction
+    Double Precision :: B_temp                                         ! Placeholder (temp.) variable for Mode-mixity
+    Double Precision :: SL, ST, SC                                     ! Matrix shear strengths; longitudinal, transverse, combined
+    Double Precision :: FIm_temp                                       ! Placeholder (temp.) variable for failure index
 
     ! Matrix crack cohesive surface normal
-    Double Precision :: alpha_temp                                         ! Current alpha (used in loop through possible alphas)
-    Integer :: alpha_test, alphaQ                                          ! Alpha = normal to matrix crack cohesive surface
-    Integer :: Q                                                           ! Flag: Q=2 for matrix crack; Q=3 for delamination
-    Integer :: A, A_min, A_max                                             ! Range through which the code searches for alpha
-    Integer :: alpha0_deg_2                                                ! negative symmetric alpha0 with normal in positive direction
+    Double Precision :: alpha_temp                                     ! Current alpha (used in loop through possible alphas)
+    Integer :: A, A_min, A_max                                         ! Range through which the code searches for alpha
 
     ! Fiber
-    Double Precision :: FIfC                                               ! Fiber compression damage threshold
+    Double Precision :: FIfC                                           ! Fiber compression damage threshold
     Double Precision :: d1
-    Double Precision :: normalDir(3)                                       ! Normal to the crack plane in the reference configuration
-    Double Precision :: fiberDir(3)                                        ! Current fiber direction
-    Double Precision :: pk2_fiberDir(3,3)                                  ! 2PK stress in the fiber direction
-    Double Precision :: R_phi0(3,3), R_phi0_12(3,3), R_phi0_13(3,3)              ! Rotation to the misaligned frame (FKT)
-    Double Precision :: gamma_rphi0                                        ! Shear strain in the misaligned frame
+    Double Precision :: normalDir(3)                                   ! Normal to the crack plane in the reference configuration
+    Double Precision :: fiberDir(3)                                    ! Current fiber direction
+    Double Precision :: pk2_fiberDir(3,3)                              ! 2PK stress in the fiber direction
+    Double Precision :: R_phi0(3,3), R_phi0_12(3,3), R_phi0_13(3,3)    ! Rotation to the misaligned frame (FKT)
+    Double Precision :: gamma_rphi0                                    ! Shear strain in the misaligned frame
 
     ! Energy
-    Double Precision :: enerPlasInc                                        ! Increment of dissipated plastic energy
+    Double Precision :: enerPlasInc                                    ! Increment of dissipated plastic energy
 
     ! Miscellaneous
     Double Precision :: rad_to_deg, deg_to_rad
     Double Precision :: eye(3,3)
     Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
-    Double Precision, parameter :: pert=0.0001d0                           ! Small perturbation used to compute a numerical derivative
+    Double Precision, parameter :: pert=0.0001d0                       ! Small perturbation used to compute a numerical derivative
 
-    ! -------------------------------------------------------------------- !
+    ! ---------------------------------------------------------------------------------------------------------------------------- !
     Call log%debug('Start of DGDInit')
 
     ! Miscellaneous constants
@@ -107,7 +103,7 @@ Contains
     Call Strains(F_old, m, DT, ndir, eps_old)
 
     ! Check fiber tension or fiber compression damage
-    If (eps(1,1) >= -1d-6) Then  ! Fiber tension
+    FiberDamage: If (eps(1,1) >= -1d-6) Then  ! Fiber tension
 
       ! Set rfC for failure index output
       If (sv%rfC <= one) sv%rfC = zero
@@ -130,7 +126,7 @@ Contains
       stress = Hooke(Stiff, eps, nshr)
       Cauchy = convertToCauchy(stress, F)
 
-    Else  ! Compression in 1-dir
+    Else FiberDamage  ! Compression in 1-dir
 
       ! Set rfT for failure index output
       If (sv%rfT <= one) sv%rfT = zero
@@ -229,41 +225,27 @@ Contains
 
       End If
 
-    End If
+    End If FiberDamage
 
-    ! -------------------------------------------------------------------- !
-    !    Search for matrix crack initiation only when no fiber damage has occurred
-    ! -------------------------------------------------------------------- !
-    If (m%matrixDam .AND. sv%d1T == zero .AND. sv%d1C == zero) Then
+    ! ---------------------------------------------------------------------------------------------------------------------------- !
+    !    Search for matrix crack initiation only when no fiber damage has occurred                                                 !
+    ! ---------------------------------------------------------------------------------------------------------------------------- !
+    MatrixInitiation: If (m%matrixDam .AND. sv%d1T == zero .AND. sv%d1C == zero) Then
       ! Get fiber direction
-      R_cr(:,1) = Norm(F(:,1)) ! fiber direction
+      R_cr(:,1) = Norm(F(:,1))  ! fiber direction
       normal(1) = zero
 
-      ! alphaQ is the angle between intralaminar and interlaminar oriented cracks
-      alphaQ = FLOOR(ATAN(sv%Lc(2)/sv%Lc(3))*rad_to_deg)
-      alphaQ = alphaQ - MOD(alphaQ, p%alpha_inc)
+      If (p%alpha_search) Then  ! Search through range of alphas to find the correct one
+        A_max = p%alpha_max - MOD(p%alpha_max, p%alpha_inc)
+        A_min = -A_max
 
-      ! Search through range of alphas to find the correct one (alpha=-999 is a flag to run this search)
-      If (sv%alpha == -999) Then
-        A_min = -alphaQ
-        A_max = alphaQ
-
-        If (-m%alpha0_deg < A_min) Then
-          alpha0_deg_2 = 180 - m%alpha0_deg
-        Else
-          alpha0_deg_2 = -m%alpha0_deg
-        End If
-
-      ! Alpha was specified in the initial conditions, use the specified angle
-      Else
+      Else  ! alpha was specified in the initial conditions, use the specified angle
         ! TODO - check that alpha is a valid angle.
         A_min = sv%alpha
         A_max = sv%alpha
       End If
 
-      ! -------------------------------------------------------------------- !
-      !    Loop through possible alphas, save the angle where the FC is max  !
-      ! -------------------------------------------------------------------- !
+      ! Loop through possible alphas, save the angle where the failure criterion is max
       A = A_min
       CrackAngle: Do  ! Test various alphas
 
@@ -272,48 +254,64 @@ Contains
         ! Crack normal in the reference configuration
         normal(2) = COS(alpha_temp)
         normal(3) = SIN(alpha_temp)
+        
+        R_cr(:,2) = Norm(MATMUL(F_inverse_transpose, normal))  ! Current crack normal direction
+        R_cr(:,3) = CrossProduct(R_cr(:,1), R_cr(:,2))         ! Current transverse direction
 
-        ! Current crack normal direction
-        R_cr(:,2) = Norm(MATMUL(F_inverse_transpose, normal))
+        T = MATMUL(Cauchy, R_cr(:,2))  ! Traction on fracture surface
+        T_crack = MATMUL(TRANSPOSE(R_cr), T)  ! Traction on fracture surface, in crack C.S.
+        tau_s = SQRT(T_crack(1)**2 + T_crack(3)**2)  ! shear traction
 
-        ! Current transverse direction
-        R_cr(:,3) = CrossProduct(R_cr(:,1), R_cr(:,2))
+        If (T_crack(2) <= zero) Then  ! Compressive normal traction
+          SL = m%SL - m%etaL*MAX(-m%YC, T_crack(2))
+          ST = m%ST - m%etaT*MAX(-m%YC, T_crack(2))
+          If (tau_s > zero) Then
+            SC = tau_s / SQRT((T_crack(1) / SL)**2 + (T_crack(3) / ST)**2)
+          Else
+            SC = SL
+          End If
 
-        ! -------------------------------------------------------------------- !
-        !    Determine the cohesive penalty stiffnesses                        !
-        ! -------------------------------------------------------------------- !
-        ! Does this DGD crack represent a crack or a delamination?
-        If (A == 90) Then
-          Q = 3
-        Else
-          Q = 2
+          B_temp = one  ! Mode mixity
+          FIm_temp = tau_s / SC  ! Failure index
+        Else  ! Tensile normal traction
+          If (tau_s > zero) Then
+            SC = tau_s / SQRT((T_crack(1) / m%SL)**2 + (T_crack(3) / m%ST)**2)
+          Else
+            SC = m%SL
+          End If
+
+          B_temp = tau_s**2 / (tau_s**2 + (m%GYT / m%GSL) * (SC / m%YT * T_crack(2))**2)  ! Mode mixity
+          FIm_temp = SQRT(tau_s**2 + T_crack(2)**2) / SQRT(m%YT*m%YT + (SC*SC - m%YT*m%YT) * B_temp**m%eta_BK)  ! Failure index
         End If
-        Pen(2) = p%penStiffMult*m%E2/sv%Lc(Q)
-        Pen(1) = Pen(2)*m%GYT*m%SL*m%SL/(m%GSL*m%YT*m%YT) ! Corresponds to Turon et al (2010)
-        Pen(3) = Pen(2)*m%GYT*m%ST*m%ST/(m%GSL*m%YT*m%YT)
 
-        ! -------------------------------------------------------------------- !
-        !    Determine the cohesive displacement-jump                          !
-        ! -------------------------------------------------------------------- !
-        T = MATMUL(Cauchy, R_cr(:,2)) ! Traction on fracture surface
+        Fatigue: If (fatigue_step) Then
 
-        delta = MATMUL(TRANSPOSE(R_cr), T) / Pen
+          ! Relative endurance at R=-1, corrected for mode mixity B
+          epsilon_mixed = m%fatigue_epsilon*(one - B_temp*0.42d0)
+          ! Relative endurance for all R ratios and mode mixities
+          endurance_relative = two*epsilon_mixed/(epsilon_mixed + one + p%fatigue_R_ratio*(epsilon_mixed - one))
+          
+          If (FIm_temp > endurance_relative) FIm_temp = FIm_temp + one  ! Fatigue failure index
 
-        ! -------------------------------------------------------------------- !
-        !    Evaluate the cohesive law initiation criterion                    !
-        ! -------------------------------------------------------------------- !
-        Call cohesive_damage(m, p, delta, Pen, delta(2), B_temp, FIm_temp)
+        End If Fatigue
 
-        ! -------------------------------------------------------------------- !
-        !    Save the values corresponding to the maximum failure criteria     !
-        ! -------------------------------------------------------------------- !
-        If (FIm_temp > sv%FIm) Then
-          sv%FIm        = FIm_temp
-          sv%B          = B_temp
-          alpha_test    = A
-          sv%Fb1        = F(1,Q)
-          sv%Fb2        = F(2,Q)
-          sv%Fb3        = F(3,Q)
+        ! Save the values corresponding to the maximum failure index
+        If (FIm_temp >= sv%FIm) Then
+          sv%FIm   = FIm_temp  ! Failure index
+          sv%B     = B_temp    ! Mode mixity
+          sv%alpha = A         ! Crack angle in the 2--3 plane, degrees
+
+          ! Does this DGD crack represent a crack or a delamination?
+          If (A == 90) Then  ! Delamination
+            sv%Fb1        = F(1,3)
+            sv%Fb2        = F(2,3)
+            sv%Fb3        = F(3,3)
+          Else  ! Matrix crack
+            sv%Fb1        = F(1,2)
+            sv%Fb2        = F(2,2)
+            sv%Fb3        = F(3,2)
+          End If
+
         End If
 
         If (A == A_max) EXIT CrackAngle
@@ -327,34 +325,31 @@ Contains
           Else If (A == m%alpha0_deg) Then
             A = A + p%alpha_inc - MOD(A + p%alpha_inc, p%alpha_inc)
           ! Check to see if incrementing alpha would pass over -alpha0
-          Else If (A < alpha0_deg_2 .AND. A + p%alpha_inc > alpha0_deg_2) Then
-            A = alpha0_deg_2
+          Else If (A < -alpha0_deg .AND. A + p%alpha_inc > -alpha0_deg) Then
+            A = -alpha0_deg
           ! If already at -alpha0, increment to next nearest multiple of alpha_inc
-          Else If (A == alpha0_deg_2) Then
+          Else If (A == -alpha0_deg) Then
             A = A + p%alpha_inc - MOD(A + p%alpha_inc, p%alpha_inc)
           Else
             A = A + p%alpha_inc
           End If
 
-          If (A /= 90) Exit NextAngle  ! Only evaluate 90 if is set via initial condition
+          If (A /= 90) Exit NextAngle  ! Only evaluate 90 if pre-set and alpha_search is disabled
         End Do NextAngle
 
       End Do CrackAngle
 
-      ! -------------------------------------------------------------------- !
-      !    If failure occurs, save alpha and indicate small dmg              !
-      ! -------------------------------------------------------------------- !
+      !  If failure occurs, set a small amount of matrix damage to flag DGDEvolve
       If (sv%FIm >= one) Then
-        sv%d2    = 1.d-8 ! Used as a flag to call DGDEvolve
-        sv%alpha = alpha_test
-        Call log%info('DGDInit found FIm > one. Matrix damage initiated.')
-        Call log%debug('alpha = ' // trim(str(sv%alpha)))
+        sv%d2 = 1.d-8 ! Used as a flag to call DGDEvolve
+        Call log%info('DGDInit predicts matrix damage initiation.')
+        Call log%info('alpha = ' // trim(str(sv%alpha)))
       End If
-    End If
+    End If MatrixInitiation
 
-    ! -------------------------------------------------------------------- !
-    !    Update energy variables                                           !
-    ! -------------------------------------------------------------------- !
+    ! ---------------------------------------------------------------------------------------------------------------------------- !
+    !    Update energy variables                                                                                                   !
+    ! ---------------------------------------------------------------------------------------------------------------------------- !
     ! Inelastic (unrecoverable) energy
     If (m%accumulateDissipPlasEnergy) Then
       sv%enerPlasNew = sv%enerPlasOld + enerPlasInc   ! For debugging, can be remove
@@ -377,7 +372,7 @@ Contains
   End Subroutine DGDInit
 
 
-  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, density_abq, Cauchy, enerIntern, enerInelas)
+  Subroutine DGDEvolve(U, F, F_old, m, p, sv, ndir, nshr, DT, density_abq, Cauchy, enerIntern, enerInelas, fatigue_step)
     ! Determines the matrix damage state variable based on the current   !
     ! deformation and mode mixity.                                       !
 
@@ -406,6 +401,7 @@ Contains
     Double Precision, Intent(OUT) :: Cauchy(ndir,ndir)
     Double Precision, intent(INOUT) :: enerIntern                            ! Internal energy per mass
     Double Precision, intent(INOUT) :: enerInelas                            ! Inelastic energy per mass
+    Logical, intent(IN) :: fatigue_step                                    ! flag for whether or not this is a fatigue step
 
     ! -------------------------------------------------------------------- !
     ! Locals
@@ -423,12 +419,14 @@ Contains
     Double Precision :: T_coh(3)                                             ! Traction on crack interface from cohesive law
     Double Precision :: normal(3)                                            ! Normal to the crack plane in the reference configuration
     Double Precision :: delta_coh(ndir,ndir)                                 ! matrix of cohesive displacements
-    Double Precision :: damage_max                                           ! Maximum value for damage variable
     Double Precision :: Pen(3)                                               ! Penalty stiffnesses
-    Double Precision :: damage_old, AdAe
+    Double Precision :: dmg_max      ! Maximum value for damage variable
+    Double Precision :: dmg_penalty  ! Matrix damage variable affecting penalty stiffness
+    Double Precision :: dmg_area     ! Matrix damage variable based on fracture area (or fracture energy)
+    Double Precision :: dmg_old      ! Temporary variable for incremental change in matrix damage in MatrixDamage Do loop
     Double Precision :: delta_n_init
-    Integer :: Q, alphaQ                                                     ! Flag to specify matrix crack or delamination (Q=2 matrix crack, Q=3 delam); angle at which transition occurs (depends on element geometry)
-    Integer :: MD, EQk                                                       ! MatrixDamage and equilibrium loop indices
+    Integer :: Q                                                             ! Flag to specify matrix crack or delamination (Q=2 matrix crack, Q=3 delam)
+    Integer :: MDk, EQk                                                      ! MatrixDamage and Equilibrium loop indices
 
     ! Equilibrium loop
     Double Precision :: F_bulk(3,3)
@@ -446,6 +444,7 @@ Contains
     Double Precision :: r1length, r2length                                   ! Magnitude used for computing derivative
     Double Precision :: Jac(3,3)                                             ! Jacobian
     Double Precision :: T_coh_d_den_temp
+    Double Precision :: Pen_d(3,3)
 
     ! Convergence tools
     Double Precision :: crack_inflection_aid, aid, crack_inflection_cutback
@@ -480,13 +479,16 @@ Contains
     Integer :: forced_sticking
     Logical :: Sliding
 
+    ! Fatigue
+    Logical :: evolve_fatigue
+
     Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
 
     ! -------------------------------------------------------------------- !
 
     Call log%debug('Start of DGDEvolve')
 
-    damage_max = one ! Maximum value for damage variables
+    dmg_max = one ! Maximum value for damage variables
 
     restarts_max = 2  ! equal to the number of starting points minus 1
     crack_inflection_cutback = 0.99d0
@@ -503,8 +505,6 @@ Contains
     tol_DGD = m%YT*p%tol_DGD_f ! Equilibrium loop tolerance [stress]
 
     ! crack or delamination?
-    alphaQ = FLOOR(ATAN(sv%Lc(2)/sv%Lc(3))*45.d0/ATAN(one))
-    alphaQ = alphaQ - MOD(alphaQ, p%alpha_inc)
     If (sv%alpha /= 90) Then
       Q = 2 ! matrix crack
     Else
@@ -513,9 +513,9 @@ Contains
     alpha_rad = sv%alpha/45.d0*ATAN(one) ! alpha [radians]
 
     ! -------------------------------------------------------------------- !
-    ! Penalty stiffness
+    ! Initialize penalty stiffnesses, assuming zero or tensile normal load
     Pen(2) = p%penStiffMult*m%E2/sv%Lc(Q)
-    Pen(1) = Pen(2)*m%GYT*m%SL*m%SL/(m%GSL*m%YT*m%YT) ! Corresponds to Turon et al (2010)
+    Pen(1) = Pen(2)*m%GYT*m%SL*m%SL/(m%GSL*m%YT*m%YT)
     Pen(3) = Pen(2)*m%GYT*m%ST*m%ST/(m%GSL*m%YT*m%YT)
 
     ! -------------------------------------------------------------------- !
@@ -541,11 +541,12 @@ Contains
     ! Old strains
     Call Strains(F_bulk, m, DT, ndir, eps_old)
 
-    ! Initialize the displ across the cohesive interface as zero
+    ! Initialize the cohesive displacement-jump as zero
     delta_coh = zero
+    delta_n_init = zero
 
     ! -------------------------------------------------------------------- !
-    !    Definition of Equilibrium alternate starting points:              !
+    !    Definition of Equilibrium Loop starting points:                   !
     ! -------------------------------------------------------------------- !
     ! Starting point 1 is the Q-th column of the previous solution for F_bulk
     ! Starting point 2 is the Q-th column of F
@@ -555,15 +556,17 @@ Contains
     ! -------------------------------------------------------------------- !
     !    MatrixDamage Loop and solution controls definition                !
     ! -------------------------------------------------------------------- !
-    MD = 0 ! Counter for MatrixDamage loop
+    MDk = 0  ! Counter for MatrixDamage loop
+
+    ! Initialize matrix damage variables
+    dmg_area = sv%d2
+    dmg_penalty = damage_area_to_penalty(dmg_area, delta_initiation(m%YT, Pen(2)), delta_final(m%YT, m%GYT))
 
     MatrixDamage: Do
-      MD = MD + 1
-      Call log%debug('MD', MD)
-      Fb_s1(:) = F_bulk(:,Q) ! Starting point 1
+      MDk = MDk + 1
+      Call log%debug("MDk " // trim(str(MDk)))
+      Fb_s1(:) = F_bulk(:,Q)  ! Starting point 1
       slide_old(:) = sv%slide(:)
-
-      AdAe = sv%d2/(sv%d2 + (one - sv%d2)*two*Pen(1)*m%GSL/(m%SL*m%SL))
 
       ! -------------------------------------------------------------------- !
       !    Equilibrium Loop and solution controls definition                 !
@@ -571,7 +574,7 @@ Contains
       Restart = .False.
       Cutback = .False.
       restarts = 0  ! Indicates the number of loop restarts with new starting points
-      cutbacks = 0  ! Cut-back counter
+      cutbacks = 0  ! Cutback counter
       crack_inversions = 0
       crack_inverted = .False.
 
@@ -582,78 +585,71 @@ Contains
       EQk = 0
 
       Equilibrium: Do ! Loop to determine the current F_bulk
-        EQk = EQk + 1
-        Call log%debug('EQk', EQk)
 
-        ! -------------------------------------------------------------------- !
-        If (Restart) Then
+        RestartOrCutback: If (Restart) Then
 
           ! Reset the Restart and Cutback flags
           Restart = .False.
           Cutback = .False.
+          
+          EQk = 0  ! Reset Equilibrium loop counter
 
-          ! Attempt to use the "no sliding" condition, if not converged conventionally with friction.
+          ! Attempt to use the "forced sticking" condition, if not converged conventionally with friction.
           If (forced_sticking == 0 .AND. m%friction) Then
-            Call log%info('Attempting no sliding, MD: ' // trim(str(MD)) // ' Restart: ' // trim(str(restarts)))
+            Call log%debug('Attempting "forced sticking", MDk: ' // trim(str(MDk)) // ' Restart: ' // trim(str(restarts)))
             forced_sticking = 1
           Else
-            ! Advance the restart counter
-            restarts = restarts + 1
-            Call log%info('Restarting Equilibrium loop with new start point, Restart: ' // trim(str(restarts)))
-            forced_sticking = 0
-          End If
+            restarts = restarts + 1  ! Advance the restart counter
 
-          ! If all starting points have been fully used...
-          If (restarts > restarts_max) Then
-            ! ...and if the matrix damage is already fully developed, delete the element.
-            If (sv%d2 >= damage_max) Then
-              If (sv%alpha == -999) Then
-                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDEvolve')
-                Call log%terminate('Invalid alpha. Check value for alpha in the initial conditions.')
-              End If
-              If (p%terminate_on_no_convergence) Then
-                Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDEvolve')
-                Call log%terminate('DGDEvolve nonconvergence, terminating analysis.')
-              Else
-                Call log%warn('DGDEvolve nonconvergence, deleting failed element.')
+            ! If all starting points have been used, either...
+            MaxRestarts: If (restarts > restarts_max) Then
+              Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDEvolve')
+              TerminateOrDelete: If (p%terminate_on_no_convergence) Then
+              ! ...raise an error and halt the subroutine, or...
+                Call log%terminate('DGDEvolve nonconvergence. Terminating analysis.')
+                Return
+              Else TerminateOrDelete
+              ! ...delete the element and continue the analysis.
+                Call log%warn('DGDEvolve nonconvergence. Deleting element.')
                 sv%STATUS = 0
-              End If
-              Exit MatrixDamage
-            End If
-            ! ...raise an error and halt the subroutine.
-            Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDEvolve')
-            Call log%terminate('No starting points produced a valid solution (DGDEvolve).')
-            Exit MatrixDamage
+                Return
+              End If TerminateOrDelete
+            End If MaxRestarts
+            
+            Call log%warn('Using new start point in Equilibrium loop, Restart #' // trim(str(restarts)))
+            forced_sticking = 0
           End If
 
           cutbacks = 0
           crack_inversions = 0
           crack_inverted = .False.
 
-          ! Restart from a starting point
+          ! Select a starting point for the Equilibrium Newton-Raphson loop
           F_bulk = F
-          If (restarts == 0) Then
+          StartingPointSelection: If (restarts == 0) Then
             F_bulk(:,Q) = Fb_s1(:)  ! Use starting point 1
-          Else If (restarts == 1) Then
+          Else If (restarts == 1) Then StartingPointSelection
             Continue                ! Use starting point 2
-          Else If (restarts == 2) Then
+          Else If (restarts == 2) Then StartingPointSelection
             F_bulk(:,Q) = Fb_s3(:)  ! Use starting point 3
-          End If
+          Else StartingPointSelection
+            Call log%error('DGDEvolve: restart counter out-of-range: ' // trim(str(restarts)))
+          End If StartingPointSelection
 
           aid = one
           crack_inflection_aid = one
 
           ! Reset err
           err = Huge(zero)
-        ! -------------------------------------------------------------------- !
-        Else If (Cutback) Then
+
+        Else If (Cutback) Then RestartOrCutback
 
           ! Reset the Cutback flag
           Cutback = .False.
 
           ! Advance the cutback counter
           cutbacks = cutbacks + 1
-          Call log%info('Cutting back, Cutbacks: ' // trim(str(cutbacks)) //', Restart: ' // trim(str(restarts)))
+          Call log%debug('Cutting back, Cutbacks: ' // trim(str(cutbacks)) //', Restart: ' // trim(str(restarts)))
 
           aid = p%cutback_amount**cutbacks
 
@@ -661,8 +657,11 @@ Contains
 
           ! Reset err to the last converged value
           err = err_old
-        End If
-        ! -------------------------------------------------------------------- !
+        End If RestartOrCutback
+        
+        EQk = EQk + 1
+        Call log%debug("EQk " // trim(str(EQk)))
+
         ! Initialize all temporary state variables for use in Equilibrium loop:
 
         ! Shear nonlinearity temporary variables
@@ -690,6 +689,10 @@ Contains
         Else
           crack_open = .False.
         End If
+
+        ! Update shear penalty stiffnesses based on cohesive displacement-jump
+        Pen(1) = Pen(2)*m%GYT*(m%SL - m%etaL*Pen(2)*MIN(zero, delta_n_init, delta_coh(2,Q)))**2/(m%GSL*m%YT**2)
+        Pen(3) = Pen(2)*m%GYT*(m%ST - m%etaT*Pen(2)*MIN(zero, delta_n_init, delta_coh(2,Q)))**2/(m%GSL*m%YT**2)
 
         ! Compute the Green-Lagrange strain tensor for the bulk material: eps
         Call Strains(F_bulk, m, DT, ndir, eps)
@@ -726,24 +729,19 @@ Contains
         !    Determine the cohesive tractions:                                 !
         ! -------------------------------------------------------------------- !
         If (crack_open) Then  ! Open cracks
-
-          T_coh(:) = cohesive_traction(delta_coh(:,Q), Pen(:), sv%d2)
+          T_coh(:) = cohesive_traction(delta_coh(:,Q), Pen(:), dmg_penalty)
           sv%slide(1) = delta_coh(1,Q)
           sv%slide(2) = delta_coh(3,Q)
 
-        Else  ! Closed cracks
+        Else If (.NOT. m%friction) Then  ! Closed cracks without friction
+          T_coh(:) = cohesive_traction(delta_coh(:,Q), Pen(:), dmg_penalty)
+          sv%slide(1) = delta_coh(1,Q)
+          sv%slide(2) = delta_coh(3,Q)
 
-          If (.NOT. m%friction) Then  ! Closed cracks without friction
-            T_coh(:) = cohesive_traction(delta_coh(:,Q), Pen(:), sv%d2)
-            sv%slide(1) = delta_coh(1,Q)
-            sv%slide(2) = delta_coh(3,Q)
-
-          Else  ! Closed cracks with friction
-            Sliding = crack_is_sliding(delta_coh(:,Q), Pen, slide_old, m%mu, m%mu)
-            If (forced_sticking == 1) Sliding = .False.
-            Call crack_traction_and_slip(delta_coh(:,Q), Pen, slide_old, sv%slide, m%mu, m%mu, sv%d2, AdAe, T_coh, Sliding)
-
-          End If
+        Else  ! Closed cracks with friction
+          Sliding = crack_is_sliding(delta_coh(:,Q), Pen, slide_old, m%mu, m%mu)
+          If (forced_sticking == 1) Sliding = .False.
+          Call crack_traction_and_slip(delta_coh(:,Q), Pen, slide_old, sv%slide, m%mu, m%mu, dmg_penalty, dmg_area, T_coh, Sliding)
 
         End If
 
@@ -767,36 +765,40 @@ Contains
         ! -------------------------------------------------------------------- !
 
         ! Check for a diverging solution
-        If (err >= err_old) Then
+        DivergenceCheck: If ((err - err_old)/err_old > p%tol_divergence) Then
 
           If (crack_inverted) Then
-            ! A cut-back will not be performed if the crack opening state has just changed. It is necessary to
+            ! A cutback will not be performed if the crack opening state has just changed. It is necessary to
             ! allow this increase in error so the Jacobian can be calculated on "this side" of the crack state.
             Continue
           Else
 
-            Call log%info('Solution is diverging, err: ' // trim(str(err)) // ' > ' // trim(str(err_old)))
+            Call log%debug('DGDEvolve divergence using Starting Point ' // trim(str(restarts+1)))
+            Call log%debug('  EQk: ' // trim(str(EQk)))
+            Call log%debug('  cutbacks: ' // trim(str(cutbacks)) // ' of ' // trim(str(p%cutbacks_max)))
+            Call log%debug('  err: ' // trim(str(err)) // ' > ' // trim(str(err_old)))
 
-            ! Cut-back using the current starting point
-            If (cutbacks < p%cutbacks_max) Then
+            ! Cutback using the current starting point
+            MaxCutbacks: If (cutbacks < p%cutbacks_max) Then
               Cutback = .True.
 
             ! Restart using a new starting point, if available
-            Else
+            Else MaxCutbacks
               Restart = .True.
-            End If
+            End If MaxCutbacks
 
             Cycle Equilibrium
 
           End If
 
-        End If
+        End If DivergenceCheck
 
-        ! Ensures that an artificial no "sliding condition" is not forced as the solution
+        ! Ensures that artificial "forced sticking" is not accepted as a solution
         If (err < tol_DGD .AND. forced_sticking == 1 .AND. .NOT. crack_open) Then
+          Call log%debug('DGDEvolve: "forced sticking" solution found. Allowing sliding.')
           If (Sliding .NEQV. crack_is_sliding(delta_coh(:,Q), Pen, slide_old, m%mu, m%mu)) Then
-            forced_sticking = 2  ! Deactivates forced "no sliding" condition
-            err = Huge(zero)  ! Resets the error. An increase in error here does not indicate divergence.
+            forced_sticking = 2  ! Deactivates "forced sticking" condition
+            err = Huge(zero)  ! Resets the error. An increase in error from here does not indicate divergence.
             Cycle Equilibrium
           End If
         End If
@@ -805,7 +807,8 @@ Contains
         F_bulk_det = MDet(F_bulk)
         If (err < tol_DGD .AND. F_bulk_det < p%compLimit) Then
 
-          Call log%warn('det(F_bulk) is below limit: ' // trim(str(F_bulk_det)) // ' Restart: ' // trim(str(restarts)))
+          Call log%warn('Excessive bulk compression using Starting Point ' // trim(str(restarts+1)))
+          Call log%debug('  det(F_bulk) is below limit: ' // trim(str(F_bulk_det)) // ' < ' // trim(str(p%compLimit)))
 
           ! Restart using new starting point
           Restart = .True.
@@ -813,7 +816,7 @@ Contains
         End If
 
         ! If converged,
-        If (err < tol_DGD) Then
+        ConvergenceCheck: If (err < tol_DGD) Then
 
           Call log%debug('Equilibrium loop found a converged solution.')
 
@@ -829,13 +832,24 @@ Contains
           Call finalizeTemp(sv, m)
 
           ! If fully damaged
-          If (sv%d2 >= damage_max) Then
-            sv%d2 = damage_max
+          If (sv%d2 >= dmg_max) Then
+            sv%d2 = dmg_max
             sv%FIm = one
             EXIT MatrixDamage
+          Else
+            EXIT Equilibrium ! Check for change in sv%d2
           End If
-          EXIT Equilibrium ! Check for change in sv%d2
-        End If
+        End If ConvergenceCheck
+        
+        ! Check for maximum number of iterations
+        EquilbiriumIteractionCheck: If (EQk > p%EQ_max) Then
+          
+          Call log%warn('Equilibrium loop limit exceeded using Starting Point ' // trim(str(restarts+1)))
+          
+          ! Restart using new starting point
+          Restart = .True.
+          Cycle Equilibrium
+        End If EquilbiriumIteractionCheck
 
         ! -------------------------------------------------------------------- !
         !    Find the derivative of the Cauchy stress tensor.                  !
@@ -848,6 +862,7 @@ Contains
         Cauchy_d    = zero
         T_d         = zero
         T_coh_d     = zero
+        Pen_d       = zero
 
         Do I=1,3
           F_bulk_d(I,Q,I) = one
@@ -860,27 +875,35 @@ Contains
 
           delta_coh_d(:,Q,I) = MATMUL(TRANSPOSE(R_cr_d(:,:,I)), (F(:,Q) - F_bulk(:,Q)))*X(Q,Q) - MATMUL(TRANSPOSE(R_cr), F_bulk_d(:,Q,I))*X(Q,Q)
 
+          If (delta_n_init > delta_coh(2,Q) .AND. .NOT. crack_open) Then
+            Pen_d(1,I) = Pen(2)*m%GYT/(m%GSL*m%YT**2) * two*(m%SL - m%etaL*Pen(2)*MIN(zero, delta_n_init, delta_coh(2,Q))) * -m%etaL*Pen(2)*delta_coh_d(2,Q,I)
+            Pen_d(2,I) = zero
+            Pen_d(3,I) = Pen(2)*m%GYT/(m%GSL*m%YT**2) * two*(m%ST - m%etaT*Pen(2)*MIN(zero, delta_n_init, delta_coh(2,Q))) * -m%etaT*Pen(2)*delta_coh_d(2,Q,I)
+          End If
+
           If (crack_open) Then ! Open cracks
-            T_coh_d(:,I) = Pen(:)*(one - sv%d2)*delta_coh_d(:,Q,I)
+            T_coh_d(:,I) = Pen(:)*(one - dmg_penalty)*delta_coh_d(:,Q,I)
 
           Else If (.NOT. m%friction) Then ! Closed cracks without friction
-            T_coh_d(1,I) = Pen(1)*(one - sv%d2)*delta_coh_d(1,Q,I)
+
+            T_coh_d(1,I) = Pen(1)*(one - dmg_penalty)*delta_coh_d(1,Q,I) + Pen_d(1,I)*(one - dmg_penalty)*delta_coh(1,Q)
             T_coh_d(2,I) = Pen(2)*delta_coh_d(2,Q,I)
-            T_coh_d(3,I) = Pen(3)*(one - sv%d2)*delta_coh_d(3,Q,I)
+            T_coh_d(3,I) = Pen(3)*(one - dmg_penalty)*delta_coh_d(3,Q,I) + Pen_d(3,I)*(one - dmg_penalty)*delta_coh(3,Q)
 
           Else If (Sliding) Then ! Closed cracks with sliding friction
             T_coh_d_den_temp = (Pen(1)*(delta_coh(1,Q) - slide_old(1)))**2 + (Pen(3)*(delta_coh(3,Q) - slide_old(2)))**2
 
-            T_coh_d(1,I) = Pen(1)*(one - sv%d2)*delta_coh_d(1,Q,I)
-            T_coh_d(3,I) = Pen(3)*(one - sv%d2)*delta_coh_d(3,Q,I)
+            T_coh_d(1,I) = Pen(1)*(one - dmg_penalty)*delta_coh_d(1,Q,I) + Pen_d(1,I)*(one - dmg_penalty)*delta_coh(1,Q)
+            T_coh_d(3,I) = Pen(3)*(one - dmg_penalty)*delta_coh_d(3,Q,I) + Pen_d(3,I)*(one - dmg_penalty)*delta_coh(3,Q)
 
             If (T_coh_d_den_temp /= zero) Then
-              T_coh_d(1,I) = T_coh_d(1,I) - AdAe*m%mu*Pen(2)*Pen(1)/SQRT(T_coh_d_den_temp)* &
+              ! TODO: include Pen_d in T_coh_d_den_temp and the following two equations
+              T_coh_d(1,I) = T_coh_d(1,I) - dmg_area*m%mu*Pen(2)*Pen(1)/SQRT(T_coh_d_den_temp)* &
                 (delta_coh_d(2,Q,I)*(delta_coh(1,Q) - slide_old(1)) + delta_coh(2,Q)*delta_coh_d(1,Q,I) - delta_coh(2,Q)*(delta_coh(1,Q) - slide_old(1))* &
                 (Pen(1)*Pen(1)*(delta_coh(1,Q) - slide_old(1))*delta_coh_d(1,Q,I) + &
                  Pen(3)*Pen(3)*(delta_coh(3,Q) - slide_old(2))*delta_coh_d(3,Q,I))/T_coh_d_den_temp)
 
-              T_coh_d(3,I) = T_coh_d(3,I) - AdAe*m%mu*Pen(2)*Pen(3)/SQRT(T_coh_d_den_temp)* &
+              T_coh_d(3,I) = T_coh_d(3,I) - dmg_area*m%mu*Pen(2)*Pen(3)/SQRT(T_coh_d_den_temp)* &
                 (delta_coh_d(2,Q,I)*(delta_coh(3,Q) - slide_old(2)) + delta_coh(2,Q)*delta_coh_d(3,Q,I) - delta_coh(2,Q)*(delta_coh(3,Q) - slide_old(2))* &
                 (Pen(1)*Pen(1)*(delta_coh(1,Q) - slide_old(1))*delta_coh_d(1,Q,I) + &
                  Pen(3)*Pen(3)*(delta_coh(3,Q) - slide_old(2))*delta_coh_d(3,Q,I))/T_coh_d_den_temp)
@@ -888,9 +911,9 @@ Contains
             T_coh_d(2,I) = Pen(2)*delta_coh_d(2,Q,I)
 
           Else ! Closed cracks with sticking friction
-            T_coh_d(1,I) = Pen(1)*(one - sv%d2 + AdAe)*delta_coh_d(1,Q,I)
+            T_coh_d(1,I) = Pen(1)*(one - dmg_penalty + dmg_area)*delta_coh_d(1,Q,I) + Pen_d(1,I)*((one - dmg_penalty)*delta_coh(1,Q) + dmg_area*(delta_coh(1,Q) - slide_old(1)))
             T_coh_d(2,I) = Pen(2)*delta_coh_d(2,Q,I)
-            T_coh_d(3,I) = Pen(3)*(one - sv%d2 + AdAe)*delta_coh_d(3,Q,I)
+            T_coh_d(3,I) = Pen(3)*(one - dmg_penalty + dmg_area)*delta_coh_d(3,Q,I) + Pen_d(3,I)*((one - dmg_penalty)*delta_coh(3,Q) + dmg_area*(delta_coh(3,Q) - slide_old(2)))
           End If
 
           eps_d(:,:,I) = (MATMUL(TRANSPOSE(F_bulk_d(:,:,I)), F_bulk) + MATMUL(TRANSPOSE(F_bulk), F_bulk_d(:,:,I)))/two
@@ -947,9 +970,9 @@ Contains
 
         Else If (crack_inversions < crack_inversions_max) Then
           If (crack_open) Then
-            Call log%info('Change in crack opening. Crack now open.')
+            Call log%debug('Change in crack opening. Crack now open.')
           Else
-            Call log%info('Change in crack opening. Crack now closed.')
+            Call log%debug('Change in crack opening. Crack now closed.')
           End If
           crack_inversions = crack_inversions + 1
           crack_inverted = .True.
@@ -990,40 +1013,48 @@ Contains
       Call log%debug('Exited Equilibrium loop.')
 
       ! Store the old cohesive damage variable for checking for convergence
-      damage_old = sv%d2
+      dmg_old = sv%d2
 
-      If (MD == 1) delta_n_init = MIN(zero, delta_coh(2,Q))
+      If (MDk == 1) Then
+        delta_n_init = MIN(zero, delta_coh(2,Q))
+        evolve_fatigue = fatigue_step  ! Only calculate the new fatigue during the first DGD increment
+      Else
+        evolve_fatigue = .FALSE.
+      End If
 
-      ! Update the cohesive damage variable
-      Call cohesive_damage(m, p, delta_coh(:,Q), Pen, delta_n_init, sv%B, sv%FIm, sv%d2, dGdGc)
+      ! Update the cohesive damage variables
+      Call cohesive_damage(m, p, delta_coh(:,Q), Pen, delta_n_init, sv%B, sv%FIm, evolve_fatigue, sv%d2, dmg_penalty, dGdGc)
+      dmg_area = sv%d2
 
       ! Check for damage advancement
-      If (sv%d2 <= damage_old) Then  ! If there is no damage progression,
+      If (sv%d2 <= dmg_old) Then  ! If there is no damage progression,
         Call log%debug('No change in matrix damage variable, d2 ' // trim(str(sv%d2)))
         EXIT MatrixDamage
       Else
-        Call log%debug('Change in matrix damage variable, d2 ' // trim(str(sv%d2)))
+        Call log%debug('Change in matrix damage variable, dGdGc ' // trim(str(dGdGc)))
+        Call log%debug('d2: ' // trim(str(sv%d2)))
         enerFracInc = enerFracInc + dGdGc*(m%GYT + (m%GSL - m%GYT)*sv%B**m%eta_BK)
       End If
 
-      ! Check for convergence based on rate of energy dissipation
+      ! Check for convergence based on change in normalized energy dissipation
       If (dGdGc < p%dGdGc_min) Then
-        Call log%info('Solution accepted due to small change in dmg.')
-        Call log%info('MD: ' // trim(str(MD)) // ' AdAe: ' // trim(str(AdAe)))
+        Call log%info('Solution accepted due to small incremental damage')
+        Call log%debug('MDk: ' // trim(str(MDk)) // ' dGdGc: ' // trim(str(dGdGc)))
+        Call log%debug('d2:  ' // trim(str(sv%d2)))
         EXIT MatrixDamage
       End If
 
       ! Limit number of MatrixDamage loop iterations
-      If (MD > p%MD_max) Then
-        Call log%info('MatrixDamage loop limit exceeded. MD: ' // trim(str(MD)))
-        Call log%info('dGdGc: ' // trim(str(dGdGc)) // ' AdAe: ' // trim(str(AdAe)))
+      If (MDk > p%MD_max) Then
+        Call log%info('MatrixDamage loop limit exceeded. MDk: ' // trim(str(MDk)))
+        Call log%debug('d2: ' // trim(str(sv%d2)) // ' dGdGc: ' // trim(str(dGdGc)))
         EXIT MatrixDamage
       End If
 
     End Do MatrixDamage
 
 
-    Call log%debug('Exited matrix damage loop, MD: ' // trim(str(MD)))
+    Call log%debug('Exited matrix damage loop, MDk: ' // trim(str(MDk)))
 
     ! -------------------------------------------------------------------- !
     !    Update elastic energy variable.                                   !
@@ -1196,7 +1227,7 @@ Contains
     err = Huge(zero)
     EQk = 0
     Cutback = .False.
-    cutbacks = 0  ! Cut-back counter
+    cutbacks = 0  ! Cutback counter
     Restart = .False.
     restarts = 0  ! Restart counter
 
@@ -1218,7 +1249,7 @@ Contains
 
           ! Advance the cutback counter
           cutbacks = cutbacks + 1
-          Call log%info('Cutting back, Cutbacks: ' // trim(str(cutbacks)))
+          Call log%debug('Cutting back, Cutbacks: ' // trim(str(cutbacks)))
 
           aid = p%cutback_amount**cutbacks
       End If
@@ -1304,6 +1335,7 @@ Contains
         Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDKinkband')
         If (p%terminate_on_no_convergence) Then
           Call log%terminate('Highly distorted element (DGDKinkband).')
+          Return
         Else
           Call log%warn('Deleting highly distorted element (DGDKinkband).')
           sv%STATUS = 0
@@ -1336,6 +1368,7 @@ Contains
           Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDKinkband')
           If (p%terminate_on_no_convergence) Then
             Call log%terminate('Equilibrium loop reached maximum number of iterations (DGDKinkband).')
+            Return
           Else
             Call log%warn('Deleting element for which equilibrium loop reached maximum number of iterations (DGDKinkband).')
             sv%STATUS = 0
@@ -1345,10 +1378,10 @@ Contains
       End If
 
       ! Check for a diverging solution
-      If (percentChangeInErr > 0.1d0) Then
+      If (percentChangeInErr > p%tol_divergence) Then
         Call log%info('Solution is diverging, err: ' // trim(str(err)) // ' > ' // trim(str(err_old)))
 
-        ! Cut-back using the current starting point
+        ! Cutback using the current starting point
         If (cutbacks < p%cutbacks_max) Then
           Cutback = .True.
 
@@ -1361,6 +1394,7 @@ Contains
           Call writeDGDArgsToFile(m,p,sv,U,F,F_old,ndir,nshr,DT,density_abq,log%arg,'DGDKinkband')
           If (p%terminate_on_no_convergence) Then
             Call log%terminate('Reached max cutback limit (DGDKinkband).')
+            Return
           Else
             Call log%warn('Reached max cutback limit, deleting element (DGDKinkband).')
             sv%STATUS = 0
@@ -1466,6 +1500,12 @@ Contains
 
   Function alpha0_DGD(m)
     ! Determines the orientation of the angle alpha0 when subject to sigma22 = -Yc
+    !
+    ! The material input alpha0 is the orientation of the crack surface normal in the 2--3 plane
+    ! with respect to the material 2 direction for a crack caused by pure matrix compression.
+    ! alpha0 is the orientation of the resulting crack after the material has been unloaded, as it
+    ! would be measured in a tested specimen. This function calculates the orientation of the
+    ! crack normal defined by alpha0 when damage initiates due to pure compressive matrix loading.
 
     Use forlog_Mod
     Use matrixAlgUtil_Mod
@@ -1566,6 +1606,8 @@ Contains
       F = F - MATMUL(MInverse(Jac), Residual)
 
     End Do alphaLoop
+
+    Call log%info('alpha0_DGD: ' // trim(str(alpha0_DGD)))
 
     Return
   End Function alpha0_DGD

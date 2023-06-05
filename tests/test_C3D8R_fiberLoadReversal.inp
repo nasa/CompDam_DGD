@@ -38,6 +38,21 @@ stepDuration = 0.1
 ** Section: Section-1
 *Solid Section, elset=all, orientation=Ori-1, material=IM7-8552, controls=SectionCtrl-1
 ,
+*Equation
+** Keep the +z face parallel to the -z face
+2
+2, 3, 1.0, 1, 3, -1.0
+2
+5, 3, 1.0, 2, 3, -1.0
+2
+6, 3, 1.0, 5, 3, -1.0
+** Keep the +y face parallel to the -y face
+2
+3, 2, 1.0, 1, 2, -1.0
+2
+5, 2, 1.0, 3, 2, -1.0
+2
+7, 2, 1.0, 5, 2, -1.0
 *End Part
 **
 **
@@ -98,7 +113,7 @@ Part-1-1.loadApp, 1, 1.
 **
 *Initial Conditions, Type=Solution
 Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-               0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
+               0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,
                0.d0,  0.d0,  0.d0,  0.d0,  0.d0
 *Boundary
 Part-1-1.loadApp, 2, 2
@@ -158,11 +173,6 @@ S11, LE11, SDV
 *Step, name=Step-2, nlgeom=YES
 *Dynamic, Explicit
 , <stepDuration>
-*Bulk Viscosity
-0.06, 1.2
-** Mass Scaling: Semi-Automatic
-**               Whole Model
-*Fixed Mass Scaling, factor=5000.
 **
 ** BOUNDARY CONDITIONS
 **
@@ -194,11 +204,6 @@ S11, LE11, SDV
 *Step, name=Step-3, nlgeom=YES
 *Dynamic, Explicit
 , <stepDuration>
-*Bulk Viscosity
-0.06, 1.2
-** Mass Scaling: Semi-Automatic
-**               Whole Model
-*Fixed Mass Scaling, factor=5000.
 **
 ** BOUNDARY CONDITIONS
 **
@@ -230,11 +235,6 @@ S11, LE11, SDV
 *Step, name=Step-4, nlgeom=YES
 *Dynamic, Explicit
 , <stepDuration>
-*Bulk Viscosity
-0.06, 1.2
-** Mass Scaling: Semi-Automatic
-**               Whole Model
-*Fixed Mass Scaling, factor=5000.
 **
 ** BOUNDARY CONDITIONS
 **
@@ -266,11 +266,6 @@ S11, LE11, SDV
 *Step, name=Step-5, nlgeom=YES
 *Dynamic, Explicit
 , <stepDuration>
-*Bulk Viscosity
-0.06, 1.2
-** Mass Scaling: Semi-Automatic
-**               Whole Model
-*Fixed Mass Scaling, factor=5000.
 **
 ** BOUNDARY CONDITIONS
 **
@@ -302,11 +297,6 @@ S11, LE11, SDV
 *Step, name=Step-6, nlgeom=YES
 *Dynamic, Explicit
 , <stepDuration>
-*Bulk Viscosity
-0.06, 1.2
-** Mass Scaling: Semi-Automatic
-**               Whole Model
-*Fixed Mass Scaling, factor=5000.
 **
 ** BOUNDARY CONDITIONS
 **
@@ -338,11 +328,6 @@ S11, LE11, SDV
 *Step, name=Step-7, nlgeom=YES
 *Dynamic, Explicit
 , <stepDuration>
-*Bulk Viscosity
-0.06, 1.2
-** Mass Scaling: Semi-Automatic
-**               Whole Model
-*Fixed Mass Scaling, factor=5000.
 **
 ** BOUNDARY CONDITIONS
 **
@@ -374,11 +359,6 @@ S11, LE11, SDV
 *Step, name=Step-8, nlgeom=YES
 *Dynamic, Explicit
 , <stepDuration>
-*Bulk Viscosity
-0.06, 1.2
-** Mass Scaling: Semi-Automatic
-**               Whole Model
-*Fixed Mass Scaling, factor=5000.
 **
 ** BOUNDARY CONDITIONS
 **
@@ -410,11 +390,6 @@ S11, LE11, SDV
 *Step, name=Step-9, nlgeom=YES
 *Dynamic, Explicit
 , <stepDuration>
-*Bulk Viscosity
-0.06, 1.2
-** Mass Scaling: Semi-Automatic
-**               Whole Model
-*Fixed Mass Scaling, factor=5000.
 **
 ** BOUNDARY CONDITIONS
 **

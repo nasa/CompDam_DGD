@@ -38,14 +38,18 @@ v23 = 0.52
 
 
 
-// CTEs
+// Thermal expansion and residual stress
 // ------------------------------------------------------------
+// Coefficients of thermal expansion
 alpha11 = -5.5e-6
 alpha22 = 2.58e-5
+alpha33 = 2.58e-5
+// Stress-free temperature
+T_sf = 0.0
 
 
 
-// Shear non linearity
+// Ramberg-Osgood shear nonlinearity model
 // ------------------------------------------------------------
 alpha_PL = 4.412E-10
 n_PL = 5.934
@@ -123,7 +127,7 @@ gs1 = -1.47d0
 gs2 =  5.05d-1
 gs3 = -1.18d-2
 
-// Schaefer Theory 
+// Schaefer nonlinearity model 
 // ------------------------------------------------------------
 
 schaefer_a6 = 3.1

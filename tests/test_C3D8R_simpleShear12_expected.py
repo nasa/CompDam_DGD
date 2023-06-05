@@ -1,4 +1,8 @@
-enerFrac = 0.788*0.1*0.1
+SL = 92.3
+GSL = 0.788
+length = 0.1
+
+enerFrac = GSL * (length * length)
 
 parameters = {
 	"results": [
@@ -10,8 +14,8 @@ parameters = {
                     "elset": "ALL_ELEMS",
                     "position": "Element 1 Int Point 1"
                 },
-            "referenceValue": 92.3,
-            "tolerance": 0.05
+            "referenceValue": SL,
+            "tolerance": SL * 0.001
         },
         {
             "type": "disp_at_zero_y",
@@ -29,8 +33,8 @@ parameters = {
                 }
             ],
             "zeroTol": 0.006,  # Defines how close to zero the y value needs to be
-            "referenceValue": 0.0170741,
-            "tolerance": 1e-5
+            "referenceValue": 2. * GSL / SL,
+            "tolerance": (2. * GSL / SL) * 0.001
         },
         {
             "type": "max",
@@ -80,13 +84,13 @@ parameters = {
             "type": "max",
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
             "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GSL*LC1*LC3
-            "tolerance": 0.01*enerFrac
+            "tolerance": enerFrac * 0.001
         },
         {
             "type": "finalValue",
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
             "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GSL*LC1*LC3
-            "tolerance": 0.01*enerFrac
+            "tolerance": enerFrac * 0.001
         }
 	]
 }

@@ -75,6 +75,9 @@ archivedTestResults/
 *.sublime-project
 *.sublime-workspace
 
+# vscode
+.vscode/
+
 # Python extension module build files
 pyextmod/*.f90
 pyextmod/*.o

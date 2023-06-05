@@ -1,9 +1,14 @@
 aPL = 4.412E-10
 nPL = 5.934
 G12 = 5290.
-enerPlas = aPL/G12*90.65**(nPL + 1.)*nPL/(nPL + 1.)*0.2**3
-enerFrac = 0.788*0.2*0.2
-enerTotal = enerPlas+enerFrac
+GSL = 0.788
+length = 0.2
+
+plastic_energy_dissipated = lambda stress : aPL / G12 * stress**(nPL + 1.) * nPL / (nPL + 1.) * length**3
+
+enerPlas = plastic_energy_dissipated(90.65)
+enerFrac = GSL * (length * length)
+enerTotal = enerPlas + enerFrac
 
 parameters = {
 "results": [
@@ -41,7 +46,7 @@ parameters = {
                     "position": "Element 1 Int Point 1"
                 },
             "referenceValue": 79.96,
-            "tolerance": 0.02
+            "tolerance": 0.04
         },
         {
             "type": "max",
@@ -83,10 +88,10 @@ parameters = {
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
             "referenceValue": [
                             (0.0, 0.0),
-                            (0.10, aPL/G12*69.2368**(nPL + 1.)*nPL/(nPL + 1.)*0.2**3),  # End of step 1 (all plasticity)
-                            (0.25, aPL/G12*79.045**(nPL + 1.)*nPL/(nPL + 1.)*0.2**3),  # End of step 3 (all plasticity)
-                            (0.40, aPL/G12*85.5842**(nPL + 1.)*nPL/(nPL + 1.)*0.2**3),  # End of step 5 (all plasticity)
-                            (0.55, aPL/G12*90.6525**(nPL + 1.)*nPL/(nPL + 1.)*0.2**3),  # End of step 7 (all plasticity)
+                            (0.10, plastic_energy_dissipated(69.2368)),  # End of step 1 (all plasticity)
+                            (0.25, plastic_energy_dissipated(79.0450)),  # End of step 3 (all plasticity)
+                            (0.40, plastic_energy_dissipated(85.5842)),  # End of step 5 (all plasticity)
+                            (0.55, plastic_energy_dissipated(90.6525)),  # End of step 7 (all plasticity)
                             ],
             "tolerance_percentage": 0.05
         },

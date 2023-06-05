@@ -43,10 +43,9 @@
 *Material, name=IM7-8552
 *Density
  1.59d-05,
-*User material, constants=39
-** 1              2                  3          4
-** feature flags, , thickness, 4, 5, 6, 7, 8
-          100000, ,  <length>,  ,  ,  ,  ,  ,
+*User material, constants=40
+** feature flags, 2, 3, 4, 5, 6, 7, 8
+          100000,  ,  ,  ,  ,  ,  ,  ,
 **
 **  9         10        11        12        13        14        15        16
 **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
@@ -61,8 +60,8 @@
     -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.2,      133.3,    0.5,
 **
 **  33        34        35        36        37        38        39        40
-**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
-    1200.1,      ,         ,          ,     0.2618,   0.1,      0.038,    0
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     T_sf,     mu
+    1200.1,      ,         ,          ,     0.2618,   0.1,      0.0,      0
 **
 *Depvar, delete=11
   19,
@@ -91,7 +90,7 @@
 **
 *Initial Conditions, Type=Solution
  ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
- 0.d0,       0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0,       0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
  0.d0,       0.d0,  0.d0,  0.d0
 *BOUNDARY
   Y-, 2, 2, 0

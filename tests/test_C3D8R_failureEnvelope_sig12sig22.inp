@@ -77,7 +77,7 @@ normalTraction = (1-loadRatio)*(matrixStrength*2)
 **
 *Initial Conditions, Type=Solution
 all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-      0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
+      0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,
       0.d0,  0.d0,  0.d0,  0.d0,  0.d0
 **
 *Boundary

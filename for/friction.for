@@ -3,7 +3,7 @@ Module friction_mod
 
 Contains
 
-  Pure Subroutine crack_traction_and_slip(delta, Pen, slide_old, slide, mu_L, mu_T, dmg, AdAe, stress, Sliding)
+  Pure Subroutine crack_traction_and_slip(delta, Pen, slide_old, slide, mu_L, mu_T, dmg_penalty, dmg_area, stress, Sliding)
     ! Returns the traction on the crack and the amount of slip between the crack surfaces
 
     ! Arguments
@@ -11,7 +11,7 @@ Contains
     Double Precision, intent(IN) :: slide_old(2)  ! previous amount of displacement slip [length]
     Double Precision, intent(IN) :: Pen(3)        ! cohesive penalty stiffnesses [stress/length]
     Double Precision, intent(IN) :: mu_L, mu_T    ! coefficients of friction in longitudinal and transverse directions
-    Double Precision, intent(IN) :: dmg, AdAe     ! cohesive damage variables
+    Double Precision, intent(IN) :: dmg_penalty, dmg_area  ! cohesive damage variables
     Logical, intent(IN) :: Sliding
 
     ! Output
@@ -32,9 +32,9 @@ Contains
 
       If (.NOT. Sliding) Then  ! Sticking
 
-        stress(1) = (one - dmg)*Pen(1)*delta(1) + AdAe*stress_old(1)
+        stress(1) = (one - dmg_penalty)*Pen(1)*delta(1) + dmg_area*stress_old(1)
         stress(2) = stress_old(2)
-        stress(3) = (one - dmg)*Pen(3)*delta(3) + AdAe*stress_old(3)
+        stress(3) = (one - dmg_penalty)*Pen(3)*delta(3) + dmg_area*stress_old(3)
 
         slide(1) = slide_old(1)
         slide(2) = slide_old(2)
@@ -50,9 +50,9 @@ Contains
         SD(2) = stress_old(2)
         SD(3) = -mu*stress_old(2)*stress_old(3)/shear
 
-        stress(1) = (one - dmg)*Pen(1)*delta(1) + AdAe*SD(1)
+        stress(1) = (one - dmg_penalty)*Pen(1)*delta(1) + dmg_area*SD(1)
         stress(2) = SD(2)
-        stress(3) = (one - dmg)*Pen(3)*delta(3) + AdAe*SD(3)
+        stress(3) = (one - dmg_penalty)*Pen(3)*delta(3) + dmg_area*SD(3)
 
         slide(1) = (mu*stress_old(2) + shear)/Pen(1)*stress_old(1)/shear + slide_old(1)
         slide(2) = (mu*stress_old(2) + shear)/Pen(3)*stress_old(3)/shear + slide_old(2)
@@ -61,7 +61,7 @@ Contains
 
     Else  ! Open crack
 
-      stress(:) = (one - dmg)*Pen(:)*delta(:)
+      stress(:) = (one - dmg_penalty)*Pen(:)*delta(:)
 
       slide(1) = delta(1)
       slide(2) = delta(3)

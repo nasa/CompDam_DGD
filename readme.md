@@ -28,17 +28,14 @@ Examples of this code being applied can be found in the following publications:
 For any questions, please contact the developers:
 - Frank Leone   | [frank.a.leone@nasa.gov](mailto:frank.a.leone@nasa.gov)     | (W) 757-864-3050
 - Andrew Bergan | [andrew.c.bergan@nasa.gov](mailto:andrew.c.bergan@nasa.gov) | (W) 757-864-3744
-- Carlos Dávila | [carlos.g.davila@nasa.gov](mailto:carlos.g.davila@nasa.gov) | (W) 757-864-9130
-
 
 ## Table of contents
 - [Getting started](#getting-started)
+- [Element compatibility](#element-compatibility)
 - [Model features](#model-features)
-- [Elements](#elements)
 - [Material properties](#material-properties)
 - [State variables](#state-variables)
-- [Fatigue analyses](#fatigue-analyses)
-- [Implicit solver compatibility](#implicit-solver-compatibility)
+- [Model parameters](#model-parameters)
 - [Example problems](#example-problems)
 - [Advanced debugging](#advanced-debugging)
 - [Python extension module](#python-extension-module)
@@ -53,7 +50,7 @@ For any questions, please contact the developers:
 The user subroutine source code is located in the `for` directory. The main entry point is `CompDam_DGD.for`.
 
 ### Prerequisites
-[Intel Fortran Compiler](https://software.intel.com/en-us/fortran-compilers) version 11.1 or newer is required to compile the code ([more information about compiler versions](usersubroutine-prerequisites.md)). MPI must be installed and configured properly so that the MPI libraries can be linked by CompDam. It is recommended that Abaqus 2016 or newer is used with this code. Current developments and testing are conducted with Abaqus 2019. Python supporting files require Python 2.7.
+[Intel Fortran Compiler](https://software.intel.com/en-us/fortran-compilers) version 11.1 or newer is required to compile the code ([more information about compiler versions](usersubroutine-prerequisites.md)). MPI must be installed and configured properly so that the MPI libraries can be linked by CompDam. Current developments and testing are conducted with Abaqus 2021. Python supporting files require Python 2.7.
 
 ### Initial setup
 After cloning the CompDam_DGD git repository, it is necessary to run the setup script file `setup.py` located in the repository root directory:
@@ -61,7 +58,9 @@ After cloning the CompDam_DGD git repository, it is necessary to run the setup s
 $ python setup.py
 ```
 
-The main purpose of the setup.py script is to 1) set the `for/version.for` file and 2) add git-hooks that automatically update the `for/version.for`.
+The main purpose of the setup.py script is to:
+1) Set the `for/version.for` file, and
+2) Add git-hooks that automatically update the `for/version.for`.
 
 In the event that you do not have access to python, rename `for/version.for.nogit` to `for/version.for` manually. The additional configuration done by `setup.py` is not strictly required.
 
@@ -74,6 +73,8 @@ A sample environment file is provided in the `tests` directory for Windows and L
 This code is an Abaqus/Explicit VUMAT. Please refer to the Abaqus documentation for the general instructions on how to submit finite element analyses using user subroutines. Please see the [example input file statements](#example-input-file-statements) for details on how to interface with this particular VUMAT subroutine.
 
 Analyses with this code **must** be run in double precision. Some of the code has double precision statements and variables hard-coded, so if Abaqus/Explicit is run in single precision, compile-time errors will arise. When submitting an Abaqus/Explicit job from the command line, double precision is specified by including the command line argument `double=both`.
+
+Geometric nonlinearity must be used in each analysis step. Geometric nonlinearity being turned on is the default in Abaqus/Explicit analysis steps. Geometric nonlinearity can be explicitly stated in the input deck `*Step` command with the keyword option `nlgeom=YES`.
 
 For example, run the test model `test_C3D8R_elastic_fiberTension` in the `tests` directory with the following command:
 ```
@@ -88,8 +89,9 @@ Example 1, using an [external material properties file](#defining-the-material-p
     *Material, name=IM7-8552
     *Density
      1.57e-09,
-    *Depvar, delete=11
-    ** the above delete statement is optional
+    *Depvar
+    ** *Depvar, delete=11
+    ** The delete keyword is optional. It uses a state variable as a flag to delete elements.
       19,
       1, CDM_d2
       2, CDM_Fb1
@@ -111,16 +113,14 @@ Example 1, using an [external material properties file](#defining-the-material-p
      18, CDM_d1T
      19, CDM_d1C
     *Characteristic Length, definition=USER, components=3
-    *User material, constants=3
-    ** 1              2  3
-    ** feature flags,  , thickness
-              100001,  ,       0.1
+    *User material, constants=1
+    ** feature flags,
+              100001,
     **
     *Initial Conditions, type=SOLUTION
      elset_name,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-     0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0, 0.d0,
+     0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0, 0.d0,
      0.d0,  0.d0,  0.d0,  0.d0
-    ** In each step, NLGEOM=YES must be used. This is the default setting.
 
 Example 2, using an [input deck command](#defining-the-material-properties-in-the-input-deck):
 
@@ -129,8 +129,9 @@ Example 2, using an [input deck command](#defining-the-material-properties-in-th
     *Material, name=IM7-8552
     *Density
      1.57e-09,
-    *Depvar, delete=11
-    ** the above delete statement is optional
+    *Depvar
+    ** *Depvar, delete=11
+    ** The delete keyword is optional. It uses a state variable as a flag to delete elements.
       19,
       1, CDM_d2
       2, CDM_Fb1
@@ -153,9 +154,9 @@ Example 2, using an [input deck command](#defining-the-material-properties-in-th
      19, CDM_d1C
     *Characteristic Length, definition=USER, components=3
     *User material, constants=40
-    ** 1              2  3          4  5  6  7  8
-    ** feature flags,  , thickness, 4, 5, 6, 7, 8
-              100001,  ,       0.1,  ,  ,  ,  ,  ,
+    ** 1              2  3  4  5  6  7  8
+    ** feature flags,  ,  ,  ,  ,  ,  ,  ,
+              100001,  ,  ,  ,  ,  ,  ,  ,
     **
     **  9         10        11        12        13        14        15        16
     **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT,
@@ -170,17 +171,16 @@ Example 2, using an [input deck command](#defining-the-material-properties-in-th
         -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.2,      133.3,    0.5,
     **
     **  33        34        35        36        37        38        39        40
-    **  XC,       fXC,      GXC,      fGXC,       cl,     w_kb,     None,     mu
-        1200.1,      ,         ,          ,         ,     0.1,          ,     0.3
+    **  XC,       fXC,      GXC,      fGXC,       cl,     w_kb,     T_sf,     mu
+        1200.1,      ,         ,          ,         ,     0.1,      0.0,      0.3
     ** For spacing below a6=schaefer_a6, b2=schaefer_b2, n=schaefer_n and A=schaefer_A
     **  41        42        43        44
     **  a6,       b2,       n,        A
     **
     *Initial Conditions, type=SOLUTION
      elset_name,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-     0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0, 0.d0,
+     0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0, 0.d0,
      0.d0,  0.d0,  0.d0,  0.d0
-    ** In each step, NLGEOM=YES must be used. This is the default setting.
 
 ### Running tests
 Test cases are available in the `tests` directory. The tests are useful for demonstrating the capabilities of the VUMAT as well as to verify that the code performs as intended. Try running some of the test cases to see how the code works. The test cases can be submitted as a typical Abaqus job using the Abaqus command line arguments.
@@ -197,23 +197,34 @@ This command will create shared libraries for the operating system it is execute
 
 When using a pre-compiled shared library, it is only necessary to specify the location of the shared library files in the environment file (the compiler options are not required). To run an analysis using a shared library, add `usub_lib_dir = <full path to shared library file>` to the Abaqus environment file in the Abaqus working directory.
 
+
+## Element compatibility
+CompDam_DGD has been developed and tested using the Abaqus three-dimensional (3-D), reduced-integration `C3D8R` hexahedral solid elements and 3-D `COH3D8` cohesive elements. Limited testing has been performed using the following element types:
+- `CPS4R` plane stress element, reduced-integration
+- `C3D8` 3-D hexahedral solid element
+- `C3D6` 3-D wedge solid element
+- `COH2D4` two-dimensional (2-D) cohesive element
+
+Because CompDam_DGD is a material model, it is expected to be compatible with continuum elements generally. However, users are advised to perform tests with any previously untested element types before proceeding to use CompDam_DGD in larger structural models.
+
+
 ## Model features
 The CompDam_DGD material model implements a variety of features that can be enabled or disabled by the user. An overview of these features is provided in this section. The material properties required for each feature are listed. References are provided to more detailed discussions of the theoretical framework for each feature.
 
-### Fully orthotropic elasticity
-The composite materials modeled with CompDam_DGD can be defined assuming either [transverse isotropy](https://www.efunda.com/formulae/solid_mechanics/mat_mechanics/hooke_iso_transverse.cfm) or [orthotropy](https://www.efunda.com/formulae/solid_mechanics/mat_mechanics/hooke_orthotropic.cfm). For a transversely isotropic material definition, the following properties must be defined: E1, E2, G12, v12, and v23. For an orthotropic material definition, the following additional properties must be defined: E3, G13, G23, and nu13.
+### Elastic response
+The composite materials modeled with CompDam_DGD can be defined assuming either [transverse isotropy](https://www.efunda.com/formulae/solid_mechanics/mat_mechanics/hooke_iso_transverse.cfm) or [orthotropy](https://www.efunda.com/formulae/solid_mechanics/mat_mechanics/hooke_orthotropic.cfm). For a transversely isotropic material definition, the following properties must be defined: E<sub>1</sub>, E<sub>2</sub>, G<sub>12</sub>, $\nu$<sub>12</sub>, and $\nu$<sub>23</sub>. For an orthotropic material definition, the following additional properties must be defined: E<sub>3</sub>, G<sub>13</sub>, G<sub>23</sub>, and $\nu$<sub>13</sub>.
 
 ### Matrix damage
-Tensile and compressive matrix damage is modeled by embedding cohesive laws to represent cracks in the material according to the deformation gradient decomposition method of [Leone (2015)](https://doi.org/10.1016/j.compositesa.2015.06.014). The matrix crack normals can have any orientation in the 2-3 plane, defined by the angle `CDM_alpha`. The mixed-mode behavior of matrix damage initiation and evolution is defined according to the Benzeggagh-Kenane law. The initiation of compressive matrix cracks accounts for friction on the potential crack surface according to the LaRC04 failure criteria. In the notation of the [paper](https://doi.org/10.1016/j.compositesa.2015.06.014), `Q` defines the material direction that is severed by the crack. In this implementation `Q=2` except when `CDM_alpha = 90`.
+Tensile and compressive matrix damage is modeled by embedding cohesive laws to represent cracks in the material according to the deformation gradient decomposition method of [Leone (2015)](https://doi.org/10.1016/j.compositesa.2015.06.014). The matrix crack normals can have any orientation in the 2-3 plane, defined by the angle `CDM_alpha`. The mixed-mode behavior of matrix damage initiation and evolution is defined according to the Benzeggagh-Kenane law. The initiation of compressive matrix cracks accounts for friction on the potential crack surface according to the LaRC04 failure criteria.
 
 The following material properties are required for the prediction of matrix damage: YT, SL, GYT, GSL, eta_BK, YC, and alpha0. The state variables related to matrix damage are `CDM_d2`, `CDM_FIm`, `CDM_B`, `CDM_alpha`, `CDM_Fb1`, `CDM_Fb2`, and `CDM_Fb3`.
 
-### Thermal strains
-The thermal strains are calculated by multiplying the 1-, 2-, and 3-direction coefficients of thermal expansion by the current &Delta;T, as provided by the Abaqus solver. The thermal strains are subtracted from the current total strain.
+### Thermal expansion and residual stress
+The thermal strain is calculated by multiplying the 1-, 2-, and 3-direction coefficients of thermal expansion by the current temperature difference, &Delta;T. The current temperature is provided by the Abaqus solver. A reference stress-free temperature `T_sf` can be defined as a material property input. The mechanical strain is found by subtracting the thermal strain from the total strain.
 
-The required material properties are the coefficients of thermal expansion in the 1 and 2 directions. It is assumed that the 2- and 3-direction coefficients of thermal expansion are equal.
+The required material properties are the coefficients of thermal expansion in the 1 and 2 directions. If the 3-direction coefficient of thermal expansion is not provided, it is assumed that the 2- and 3-direction coefficients of thermal expansion are equal. The stress-free temperature is assumed equal to zero unless provided as an optional input.
 
-Hygroscopic strains are not accounted for. If the effects of hygroscopic expansion are to be modeled, it is recommended to smear the hygroscopic and thermal expansion coefficients to approximate the response using the solver-provided &Delta;T.
+Hygroscopic strains are not accounted for. If the effects of hygroscopic expansion are to be modeled, it is recommended to smear the hygroscopic and thermal expansion coefficients to approximate the response using the solver-provided temperature value.
 
 ### Shear nonlinearity
 Three approaches to modeling the matrix nonlinearity are available: Ramberg-Osgood plasticity, Schapery theory, and Schaefer plasticity. These three methods are mutually exclusive and optional.
@@ -232,7 +243,7 @@ Prior to the initiation of matrix damage (i.e., `CDM_d2 = 0`), the nonlinear she
 The required material inputs are the two parameters in the above equation: *&alpha;*<sub>PL</sub> and *n*<sub>PL</sub>. Note that the same constants are used for the 1-2 and 1-3 planes under the assumption of transverse isotropy (see [Seon et al. (2017)](https://doi.org/10.12783/asc2017/15267)). For the 1-2 plane, the state variables `CDM_Plas12` and `CDM_Inel12` are used to track the current plastic shear strain and the total amount of inelastic plastic shear strain that has occurred through the local deformation history, respectively. For cases of monotonic loading, `CDM_Plas12` and `CDM_Inel12` should have the same magnitude. Likewise, the state variables `CDM_Plas13` and `CDM_Inel13` are utilized for the 1-3 plane. The [feature flags](#controlling-which-features-are-enabled) can be used to enable this Ramberg-Osgood model in the 1-2 plane, 1-3 plane, or both planes.
 
 #### Schapery micro-damage
-Matrix nonlinearity in the 1-2 plane can also be modeled using Schapery theory, in which all pre-peak matrix nonlinearity is attributed to the initiation and development of micro-scale matrix damage. With this approach, the local stress/strain curves will unload to the origin, and not develop plastic strain. A simplified version of the approach of [Pineda and Waas](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20120000914.pdf) is here applied. The micro-damage functions *e<sub>s</sub>* and *g<sub>s</sub>* are limited to third degree polynomials for ease of implementation. As such, four fitting parameters are required for each of *e<sub>s</sub>* and *g<sub>s</sub>* to define the softening of the matrix normal and shear responses to micro-damage development.
+Matrix nonlinearity in the 1-2 plane can also be modeled using Schapery theory, in which all pre-peak matrix nonlinearity is attributed to the initiation and development of micro-scale matrix damage. With this approach, the local stress/strain curves will unload to the origin, and not develop plastic strain. A simplified version of the approach of [Pineda and Waas (2011)](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20120000914.pdf) is here applied. The micro-damage functions *e<sub>s</sub>* and *g<sub>s</sub>* are limited to third degree polynomials for ease of implementation. As such, four fitting parameters are required for each of *e<sub>s</sub>* and *g<sub>s</sub>* to define the softening of the matrix normal and shear responses to micro-damage development.
 
 *e<sub>s</sub>*(*S<sub>r</sub>*) = *e<sub>s0</sub>* + *e<sub>s1</sub>S<sub>r</sub>* + *e<sub>s2</sub>S<sub>r</sub>*<sup>2</sup> + *e<sub>s3</sub>S<sub>r</sub>*<sup>3</sup>
 
@@ -253,7 +264,7 @@ where *a*<sub>6</sub>, *b*<sub>2</sub>, *A* and *n* are material constants neede
 
 The above two equations are used in concert to determine plastic strain through the relationship:
 
-*&epsilon;* <sub>plastic</sub> = *n A f* <sup>*n* - 1</sup> &part;*f* / &part;*S*<sub>*i*</sub> &part;*f* / &part;*S*<sub>j</sub>
+*&epsilon;* <sub>plastic</sub> = *n A f* <sup>*n* - 1</sup> (&part;*f*/&part;*S*<sub>*i*</sub>) (&part;*f*/&part;*S*<sub>j</sub>)
 
 *f* (i.e., schaefer_f) and the tensorial plastic strain determined by the nonlinearity model are stored as state variables (27 through 32 for plastic strain and 33 for *f*)
 
@@ -287,7 +298,7 @@ A fiber failure criterion described in [Bergan and Jackson (2018)](https://doi.o
 
 *&phi;* &ge; *&phi;*<sub>ff,c</sub>
 
-where *&phi;* is the current fiber rotation. Once the fiber failure criterion is satisfied, the plastic shear strain is held constant. The value for *&phi;*<sub>ff,c</sub> is defined as the parameter `fkt_fiber_failure_angle` since it is not a well-defined material property. The fiber failure criterion is disabled when *&phi;*<sub>ff,c</sub> < 0. The same angle is used for in-plane and out-of-plane kinking.
+where *&phi;* is the current fiber rotation. Once the fiber failure criterion is satisfied, the plastic shear strain is held constant. The value for *&phi;*<sub>ff,c</sub> is defined as the [model parameter](#model-parameters) `fkt_fiber_failure_angle` since it is not a well-defined material property. The fiber failure criterion is disabled when *&phi;*<sub>ff,c</sub> < 0. The same angle is used for in-plane and out-of-plane kinking.
 
 The fiber kinking theory model implemented here is preliminary and has some known shortcomings and caveats:
 - The model has only been tested for C3D8R. Limited application with C3D6 demonstrated issues. No testing has been completed for other element types.
@@ -299,16 +310,31 @@ The fiber kinking theory model implemented here is preliminary and has some know
 Relevant single element tests are named starting with `test_C3D8R_fiberCompression_FKT`.
 
 ### Friction
-Friction is modeled on the damaged fraction of the cross-sectional area of DGD cracks using the approach of [Alfano and Sacco (2006)](https://doi.org/10.1002/nme.1728). The coefficient of friction *&mu;* must be defined to account for friction on the failed crack surface.
+Friction is modeled on the damaged fraction of the cross-sectional area of matrix cracks and delaminations using the approach of [Alfano and Sacco (2006)](https://doi.org/10.1002/nme.1728). The coefficient of friction *&mu;* must be defined to account for friction on the failed crack surface.
 
 The amount of sliding which has taken place in the longitudinal and transverse directions are stored in state variables `CDM_slide1` and `CDM_slide2`, respectively.
 
-### Strain definition
+### Fatigue analyses
+The cohesive fatigue constitutive model in CompDam can predict the initiation and the propagation of matrix cracks and delaminations as a function of fatigue cycles. The analyses are conducted such that the applied load (or displacement) corresponds to the maximum load of a fatigue cycle. The intended use is that the maximum load (or displacement) is held constant while fatigue damage develops with increasing step time. The constitutive model uses a specified load ratio *R*<sub>min</sub>/*R*<sub>max</sub>, the solution increment, and an automatically-calculated cycles-per-increment ratio to accumulate the damage due to fatigue loading. The cohesive fatigue model response is based on engineering approximations of the endurance limit as well as the Goodman diagram. This approach can predict the stress-life diagrams for crack initiation, the Paris law regime, as well as the transient effects of crack initiation and stable tearing.
+
+A detailed description of the initial development of the novel cohesive fatigue law is available in a [2018 NASA technical paper by Carlos Dávila](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf). An updated fatigue damage accumulation function is derived in the 2020 NASA technical paper ["Evaluation of Fatigue Damage Accumulation Functions for Delamination Initiation and Propagation" by Dávila et al.](https://www.researchgate.net/profile/Carlos_Davila8/publication/340715727_Evaluation_of_Fatigue_Damage_Accumulation_Functions_for_Delamination_Initiation_and_Propagation/links/5e99b744a6fdcca789204fb9/Evaluation-of-Fatigue-Damage-Accumulation-Functions-for-Delamination-Initiation-and-Propagation.pdf), which is the fatigue damage accumulation function that is applied herein.
+
+#### Usage
+The fatigue capability of CompDam is disabled by default. To run a fatigue analysis, one of the analysis steps must be identified as a fatigue step. A step is identified as a fatigue step by setting the [model parameter](#model-parameters) `fatigue_step` to the target step number, e.g., `fatigue_step = 2` for the second analysis step to be a fatigue step. The first analysis step cannot be a fatigue step, as the model is assumed to be initially unloaded.
+
+The load ratio *R*<sub>min</sub>/*R*<sub>max</sub> has a default value of 0.1, and can be changed using the [model parameter](#model-parameters) `fatigue_R_ratio`.
+
+An example of a double cantilever beam subjected to fatigue under displacement-control is included in the `examples/` directory. The geometry and conditions of this example problem correspond to the results presented in Figure 20 of [Dávila (2018)](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf).
+
+#### Interpreting the results of a fatigue analysis
+Within a fatigue step, each solution increment represents either a number of fatigue cycles or a fractional part of a single fatigue cycle. During the solution, the number of fatigue cycles per solution increment changes based on the maximum amount of energy dissipation in any single element. If the rate of energy dissipation is too high (as defined by the [model parameter](#model-parameters) `fatigue_damage_max_threshold`), the increments-to-cycles ratio is decreased. If the rate of energy dissipation is too low (as defined by the model parameter `fatigue_damage_min_threshold`), the increments-to-cycles ratio is increased. The model parameter `cycles_per_increment_init` defines the initial ratio of fatigue cycles per solution increment. Any changes to increments-to-cycles ratio are logged in an additional output file ending in `_inc2cycles.log`, with columns for the fatigue step solution increment, the updated increments-to-cycles ratio, and the accumulated fatigue cycles.
+
+### Finite stress and strain definitions
 The strain is calculated using the deformation gradient tensor provided by the Abaqus solver. The default strain definition used is the Green-Lagrange strain:
 
-*E* = (*F*<sup>T</sup>*F* - *I*)/2
+***E*** = (***F***<sup>T</sup>***F*** - ***I***)/2
 
-Hooke's law is applied using the Green-Lagrange strain to calculate the 2<sup>nd</sup> Piola-Kirchhoff stress *S*.
+Hooke's law is applied using the Green-Lagrange strain to calculate the 2<sup>nd</sup> Piola-Kirchhoff stress ***S***.
 
 ### Fiber nonlinearity
 Nonlinear elastic behavior in the fiber direction can be introduced with the material property c<sub>*l*</sub>. The expression used follows [Kowalski (1988)](https://doi.org/10.1520/STP26136S):
@@ -316,12 +342,6 @@ Nonlinear elastic behavior in the fiber direction can be introduced with the mat
 *E<sub>1</sub>* = *E<sub>1</sub>*(1 + c<sub>*l*</sub>*&epsilon;*<sub>11</sub>)
 
 By default, fiber nonlinearity is disabled by setting c<sub>*l*</sub> = 0.
-
-
-## Elements
-CompDam_DGD has been developed and tested using the Abaqus three-dimensional, reduced-integration `C3D8R` solid elements. Limited testing has been performed using the `CPS4R` plane stress element, the `SC8R` continuum shell element, the fully-integrated `C3D8` solid element, and the `COH3D8` cohesive element.
-
-Because CompDam_DGD is a material model, it is expected to be compatible with structural elements generally. However, users are advised to perform tests with any previously untested element types before proceeding to use CompDam_DGD in larger structural models.
 
 
 ## Material properties
@@ -353,7 +373,7 @@ Material properties can be defined in the input deck. Any optional material prop
 | 15 | *S<sub>L</sub>*        | SL       | Shear strength                                | F/L<sup>2</sup>                                | 0 < *S<sub>L</sub>* < &infin;            |                 |
 | 16 | *G<sub>Ic</sub>*       | GYT      | Mode I fracture toughness                     | F/L                                            | 0 < *G<sub>Ic</sub>* < &infin;           | ASTM D5528      |
 | 17 | *G<sub>IIc</sub>*      | GSL      | Mode II fracture toughness                    | F/L                                            | 0 < *G<sub>IIc</sub>* < &infin;          | ASTM D7905      |
-| 18 | *&eta;*                | eta_BK   | BK exponent for mode-mixity                   | -                                              | 0 < *&eta;* < &infin;                 |                 |
+| 18 | *&eta;*                | eta_BK   | BK exponent for mode-mixity                   | -                                              | 0 < *&eta;* < &infin;                    |                 |
 | 19 | *Y<sub>C</sub>*        | YC       | Transverse compressive strength               | F/L<sup>2</sup>                                | 0 < *Y<sub>C</sub>* < &infin;            | ASTM D3410      |
 | 20 | *&alpha;<sub>0</sub>*  | alpha0   | Fracture plane angle for pure trans. comp.    | Radians                                        | 0 &le; *&alpha;<sub>0</sub>* &le; &pi;/2 |                 |
 |    | ------                 |          |                                               |                                                |                                          |                 |
@@ -362,8 +382,9 @@ Material properties can be defined in the input deck. Any optional material prop
 | 23 | *G<sub>23</sub>*       | G23      | Shear modulus in 1-2 plane                    | F/L<sup>2</sup>                                | 0 < *G<sub>23</sub>* < &infin;           |                 |
 | 24 | *&nu;<sub>13</sub>*    | nu13     | Poisson's ratio in 2-3 plane                  | -                                              | 0 &le; *&nu;<sub>13</sub>* &le; 1        |                 |
 |    | ------                 |          |                                               |                                                |                                          |                 |
-| 25 | *&alpha;<sub>11</sub>* | alpha11  | Coefficient of long. thermal expansion        | /&deg;                                         | -1 &le; *&alpha;<sub>11</sub>* &le; 1    |                 |
-| 26 | *&alpha;<sub>22</sub>* | alpha22  | Coefficient of tran. thermal expansion        | /&deg;                                         | -1 &le; *&alpha;<sub>22</sub>* &le; 1    |                 |
+| 25 | *&alpha;<sub>11</sub>* | alpha11  | Coefficient of thermal expansion, fiber       | /&deg;                                         | -1 &le; *&alpha;<sub>11</sub>* &le; 1    |                 |
+| 26 | *&alpha;<sub>22</sub>* | alpha22  | Coefficient of thermal expansion, matrix      | /&deg;                                         | -1 &le; *&alpha;<sub>22</sub>* &le; 1    |                 |
+|    | *&alpha;<sub>33</sub>* | alpha33  | Coefficient of thermal expansion, thickness   | /&deg;                                         | -1 &le; *&alpha;<sub>33</sub>* &le; 1    |                 |
 |    | ------                 |          |                                               |                                                |                                          |                 |
 | 27 | *&alpha;<sub>PL</sub>* | alpha_PL | Nonlinear shear parameter                     | (F/L<sup>2</sup>)<sup>1-*n*<sub>PL</sub></sup> | 0 &le; *&alpha;<sub>PL</sub>* < &infin;  |                 |
 | 28 | *n<sub>PL</sub>*       | n_PL     | Nonlinear shear parameter                     | -                                              | 0 &le; *n<sub>PL</sub>* < &infin;        |                 |
@@ -378,8 +399,9 @@ Material properties can be defined in the input deck. Any optional material prop
 | 35 | *G<sub>XC</sub>*       | GXC      | Long. compression fracture toughness          | F/L                                            | 0 < *G<sub>XC</sub>* < &infin;           |                 |
 | 36 | *f<sub>GXC</sub>*      | fGXC     | Long. compression fracture toughness ratio    | -                                              | 0 &le; *f<sub>GXC</sub>* &le; 1          |                 |
 |    | ------                 |          |                                               |                                                |                                          |                 |
-| 37 | *c<sub>l</sub>*        | cl       | Fiber nonlinearity coefficient                | -                                              | 0 &le; *c<sub>l</sub>* 33                |                 |
-| 38 | *w<sub>kb</sub>*       | w_kb     | Width of the kink band                        | L                                              | 0 &le; *w<sub>kb</sub>* &infin;          |                 |
+| 37 | *c<sub>l</sub>*        | cl       | Fiber nonlinearity coefficient                | -                                              | 0 &le; *c<sub>l</sub>* &le; 33           |                 |
+| 38 | *w<sub>kb</sub>*       | w_kb     | Width of the kink band                        | L                                              | 0 &le; *w<sub>kb</sub>* < &infin;        |                 |
+| 39 | *T<sub>sf</sub>*       | T_sf     | Stress-free temperature                       | &deg;                                          | -&infin; < *T<sub>sf</sub>* < &infin;    |                 |
 | 40 | *&mu;*                 | mu       | Coefficient of friction                       | -                                              | 0 &le; *&mu;* &le; 1                     |                 ||
 
 Notes:
@@ -391,33 +413,44 @@ Notes:
   2. *reserved*
   3. [thickness](#definition-of-thickness)
   4. *reserved*
-  5. *reserved*
-  6. *reserved*
-  7. *reserved*
-  8. *reserved*
+  5. [*&gamma;*, number of fatigue cycles to reach endurance](#fatigue-properties)
+  6. [*&epsilon;*, endurance limit](#fatigue-properties)
+  7. [*&eta;*, brittleness](#fatigue-properties)
+  8. [*p*, Paris Law curve-fitting parameter](#fatigue-properties)
 - &infin; is calculated with the Fortran intrinsic `Huge` for double precision
 - In the event that both a `.props` file is found and material properties are specified in the input deck (`nprops > 8`), then the material properties from the input deck are used and a warning is used.
 
-### Required inputs for the `*Material` data lines in the input deck
-The feature flags and thickness are defined in the input deck on the material property data lines. These properties must be defined in the input deck whether the other material properties are defined via the .props file or via the input deck. While feature flags and thickness are not material properties per se, they are used in controlling the behavior of the material model.
+### Inputs that can only be defined on the `*User Material` data lines in the input deck
 
 #### Controlling which features are enabled
+The feature flags are defined in the input deck on the material property data lines. These properties must be defined in the input deck whether the other material properties are defined via the .props file or via the input deck. While the feature flags are not material properties per se, they are used in controlling the behavior of the material model.
+
 Model features can be enabled or disabled by two methods. The first method is specifying only the material properties required for the features you would like to enable. CompDam_DGD disables any feature for which all of the required material properties have not been assigned. If an incomplete set of material properties are defined for a feature, a warning is issued.
 
 The second method is by specifying the status of each feature directly as a material property in the input deck. Each feature of the subroutine is controlled by a position in an integer, where 0 is disabled and 1 is enabled. In cases where mutually exclusive options are available, numbers greater than 1 are used to specify the particular option to use.
 
 The positions correspond to the features as follows:
-- Position 1: Matrix damage (1=intra-laminar cracking in solid elements, 2=interlaminar cracking in cohesive elements)
+- Position 1: Matrix damage (1=intralaminar cracking in solid elements, 2=interlaminar cracking in cohesive elements)
 - Position 2: Shear nonlinearity (1=Ramberg-Osgood 1-2 plane, 2=Schapery, 3=Ramberg-Osgood 3-D, 4=Ramberg-Osgood 1-3 plane, 5=Schaefer || more information [here](#shear-nonlinearity))
 - Position 3: Fiber tensile damage
 - Position 4: Fiber compression damage (1=max strain, 2=N/A, 3=FKT-12, 4=FKT-13, 5=FKT-3D || more information [here](#fiber-compression-damage))
 - Position 5: Energy output contribution (0=all mechanisms, 1=only fracture energy, 2=only plastic energy)
 - Position 6: Friction
 
-For example, `101000` indicates that the model will run with matrix damage and fiber tension damage enabled; `120001` indicates that the model will run with matrix damage, in-plane shear nonlinearity using Schapery theory, and friction; and `200000` indicates that the model is being applied to cohesive elements.
+For example, `101000` indicates that the model will run with matrix damage and fiber tension damage enabled; `120001` indicates that the model will run with matrix damage, in-plane shear nonlinearity using Schapery theory, and friction; and `200000` indicates that the material model is being applied to cohesive elements.
 
 #### Definition of thickness
-Length along the thickness-direction associated with the current integration point.
+Length along the thickness-direction associated with the current integration point. This input is used only for 2-D plane stress elements and does not affect the performance of 3-D solid elements or cohesive elements. The three characteristic element lengths of solid elements are calculated using the VUCHARLENGTH subroutine based on the element nodal coordinates.
+
+#### Fatigue properties
+Material inputs 5 through 8 are related to the cohesive fatigue model. Each of these inputs are optional as they have the default values listed in the below table.
+
+| # | Symbol          | Description                                                           | Default value |
+|---|-----------------|-----------------------------------------------------------------------|---------------|
+| 5 | *&gamma;*       | number of fatigue cycles to reach the endurance limit                 | 10,000,000    |
+| 6 | *&epsilon;*     | endurance limit                                                       | 0.2           |
+| 7 | *&eta;*         | brittleness                                                           | 0.95          |
+| 8 | *p*             | Paris Law curve-fitting parameter                                     | 0.0           |
 
 ## State variables
 The table below lists all of the state variables in the model. The model requires a minimum of 18 state variables. Additional state variables are defined depending on which (if any) shear nonlinearity and fiber compression features are enabled. For fiber compression model 1: nstatev = 19 and for model 3: nstatev = 25. For shear nonlinearity models 3 or 4: nstatev = 21.
@@ -452,7 +485,7 @@ The table below lists all of the state variables in the model. The model require
 | 23| `CDM_gamma_12`   | Current rotation of the fibers due to loading, 1-2 plane (radians)    |
 | 24| `CDM_phi0_13`    | Initial fiber misalignment, 1-3 plane (radians)                       |
 | 25| `CDM_gamma_13`   | Current rotation of the fibers due to loading, 1-3 plane (radians)    |
-| 26| `CDM_reserve`    | Reserved                                                              |
+| 26| `CDM_reserved`   | Reserved                                                              |
 |---|------------------|-----------------------------------------------------------------------|
 | 27| `CDM_Ep1`        | Plastic strain in 11 direction calculated using Schaefer Theory       |
 | 28| `CDM_Ep2`        | Plastic strain in 22 direction calculated using Schaefer Theory       |
@@ -478,7 +511,7 @@ When using the material model with cohesive elements, a different set of state v
 ### Initial conditions
 All state variables should be initialized using the `*Initial conditions` command. As a default, all state variables should be initialized as zero, except `CDM_alpha`, `CDM_STATUS`, `CDM_phi0_12`, and `CDM_phi0_13`.
 
-The initial condition for `CDM_alpha` can be used to specify a predefined angle for the cohesive surface normal. To specify a predefined `CDM_alpha`, set the initial condition for `CDM_alpha` to an integer (degrees). The range of valid values for `CDM_alpha` depends on the aspect ratio of the element, but values in the range of 0 to 90 degrees are always valid. Setting `CDM_alpha` to -999 will make the subroutine evaluate cracks every 10 degrees in the 2-3 plane to find the correct crack initiation angle. Note that `CDM_alpha` is measured from the 2-axis rotating about the 1-direction. The amount by which alpha is incremented when evaluating matrix crack initiation can be changed from the default of 10 degrees by modifying `alpha_inc` in the `CompDam.parameters` file. Note that `CDM_alpha = 90` only occurs when `CDM_alpha` is initialized as 90; when `CDM_alpha` is initialized to -999, the value of 90 is ignored in the search to find the correct initiation angle since it is assumed that delaminations are handled elsewhere in the finite element model (e.g., using cohesive interface elements).
+The initial condition for `CDM_alpha` can be used to specify a predefined angle for the cohesive surface normal. To specify a predefined `CDM_alpha`, set the initial condition for `CDM_alpha` to an integer (degrees). Setting the [model parameter](#model-parameters) `alpha_search` to TRUE makes the subroutine evaluate cracks every 10 degrees (by default) in the 2-3 plane to find the crack angle corresponding to the maximum failure criterion value. Note that `CDM_alpha` is measured from the 2-axis rotating about the 1-direction. The amount by which alpha is incremented when searching is controlled via the model parameter `alpha_inc` in the `CompDam.parameters` file. Note that `CDM_alpha = 90` only occurs when `CDM_alpha` is initialized as 90; the value of 90 is ignored in the search to find the correct initiation angle since it is assumed that delaminations are handled elsewhere in the finite element model (e.g., using cohesive interface elements).
 
 Since `CDM_STATUS` is used for element deletion, always initialize `CDM_STATUS` to 1.
 
@@ -497,103 +530,10 @@ Pre-existing damage can be modeled by creating an element set for the damaged re
               0.d0,  0.d0,  0.d0,  0.d0
 
 
-## Fatigue analyses
-The cohesive fatigue constitutive model in CompDam can predict the initiation and the propagation of matrix cracks and delaminations as a function of fatigue cycles. The analyses are conducted such that the applied load (or displacement) corresponds to the maximum load of a fatigue cycle. The intended use is that the maximum load (or displacement) is held constant while fatigue damage develops with increasing step time. The constitutive model uses a specified load ratio *R*<sub>min</sub>/*R*<sub>max</sub>, the solution increment, and an automatically-calculated cycles-per-increment ratio to accumulate the damage due to fatigue loading. The cohesive fatigue model response is based on engineering approximations of the endurance limit as well as the Goodman diagram. No additional material inputs must be defined or state variables requested beyond those required for a quasi-static analysis step. This approach can predict the stress-life diagrams for crack initiation, the Paris law regime, as well as the transient effects of crack initiation and stable tearing.
+## Model parameters
+A number of model parameters are used in the subroutine that are not directly related to material properties. These parameters are mostly related to internal error tolerances, iteration limits, etc. All parameters have default values and should generally not be modified.
 
-A detailed description of the cohesive fatigue implemented herein is available in a [2018 NASA technical paper by Carlos Dávila](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf).
-
-### Usage
-The fatigue capability of CompDam is disabled by default. To run a fatigue analysis, one of the analysis steps must be identified as a fatigue step. A step is identified as a fatigue step by setting the `fatigue_step` parameter to the target step number, e.g., `fatigue_step = 2` for the second analysis step to be a fatigue step. The first analysis step cannot be a fatigue step, as the model is assumed to be unloaded at that point.
-
-The load ratio *R*<sub>min</sub>/*R*<sub>max</sub> has a default value of 0.1, and can be changed using the parameter `fatigue_R_ratio`.
-
-An example of a double cantilever beam subjected to fatigue under displacement-control is included in the `examples/` directory. The geometry and conditions of this example problem correspond to the results presented in Figure 20 of [Dávila (2018)](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20180004395.pdf).
-
-### Interpreting the results of a fatigue analysis
-Within a fatigue step, each solution increment represents either a number of fatigue cycles or a fractional part of a single fatigue cycle. During the solution, the number of fatigue cycles per solution increment changes based on the maximum amount of energy dissipation in any single element. If the rate of energy dissipation is too high (as defined by the parameter `fatigue_damage_max_threshold`), the increments-to-cycles ratio is decreased. If the rate of energy dissipation is too low (as defined by the parameter `fatigue_damage_min_threshold`), the increments-to-cycles ratio is increased. The parameter `cycles_per_increment_init` defines the initial ratio of fatigue cycles per solution increment. Any changes to increments-to-cycles ratio are logged in an additional output file ending in `_inc2cycles.log`, with columns for the fatigue step solution increment, the updated increments-to-cycles ratio, and the accumulated fatigue cycles.
-
-
-## Implicit solver compatibility
-The repository includes a developmental capability to run the CompDam VUMAT in an Abaqus/Standard analysis using a wrapper, `for/vumatWrapper.for`, which translates between the UMAT and VUMAT user subroutine interfaces. The intended usage is for Abaqus/Standard runs with little or no damage.
-
-### Usage
-To run an analysis with CompDam in Abaqus/Standard, the following input deck template is provided. Note that 9 additional state variables are required.
-
-    *Section controls, name=control_name, hourglass=ENHANCED
-    **
-    *Material, name=IM7-8552
-    *Density
-     1.57e-09,
-    *User material, constants=40
-    ** 1              2  3          4  5  6  7  8
-    ** feature flags,  , thickness, 4, 5, 6, 7, 8
-              100001,  ,       0.1,  ,  ,  ,  ,  ,
-    **
-    **  9         10        11        12        13        14        15        16
-    **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT,
-        171420.0, 9080.0,   5290.0,   0.32,     0.52,     62.3,     92.30,    0.277,
-    **
-    **  17        18        19        20        21        22        23        24
-    **  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
-        0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
-    **
-    **  25        26        27        28        29        30        31        32
-    **  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
-        -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.2,      133.3,    0.5,
-    **
-    **  33        34        35        36        37        38        39        40
-    **  XC,       fXC,      GXC,      fGXC,       cl,     w_kb,     None,     mu
-        1200.1,      ,         ,          ,         ,     0.1,          ,     0.3
-    **
-    *Depvar, delete=11
-      28,
-      1, CDM_d2
-      2, CDM_Fb1
-      3, CDM_Fb2
-      4, CDM_Fb3
-      5, CDM_B
-      6, CDM_Lc1
-      7, CDM_Lc2
-      8, CDM_Lc3
-      9, CDM_FIm
-     10, CDM_alpha
-     11, CDM_STATUS
-     12, CDM_Plas12
-     13, CDM_Inel12
-     14, CDM_FIfT
-     15, CDM_slide1
-     16, CDM_slide2
-     17, CDM_FIfC
-     18, CDM_d1T
-     19, CDM_d1C
-     20, CDM_DIRECT11
-     21, CDM_DIRECT21
-     22, CDM_DIRECT31
-     23, CDM_DIRECT12
-     24, CDM_DIRECT22
-     25, CDM_DIRECT32
-     26, CDM_DIRECT13
-     27, CDM_DIRECT23
-     28, CDM_DIRECT33
-    *User defined field
-    **
-    ** INITIAL CONDITIONS
-    **
-    *Initial Conditions, Type=Solution
-    ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-    0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,  0.d0,
-    0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-    0.d0,  0.d0,  0.d0,  0.d0,  0.d0
-    *Initial Conditions, Type=Field, Variable=1
-    GLOBAL,  0.d0
-    ** GLOBAL is an nset with all nodes attached to CompDam-enabled elements
-    ** In each step, NLGEOM=YES must be used. This is NOT the default setting.
-
-### Current limitations
-As the `vumatWrapper` is a developmental capability, several important limitations exist at present:
-1. The material Jacobian tensor is hard-coded in `for/vumatWrapper.for` for IM7/8552 elastic stiffnesses. A more general Jacobian is needed.
-2. The material response can become inaccurate for large increments in rotations. If large rotations occur, small increments must be used. A cut-back scheme based on rotation increment size is needed.
-3. Testing has been conducted on the C3D8R element type only.
+The model parameters can be changed from their default values by including a file named `CompDam.parameters` in the working directory. An example parameters file is located in the `tests` directory. To create a job-specific parameters file, copy the example parameters file and rename it to `<job-name>.parameters`.
 
 
 ## Example problems
@@ -617,6 +557,8 @@ This command should open the [Visual Studio debugging software](https://msdn.mic
 To stop execution, close the Visual Studio window. Choose stop debugging and do not save your changes.
 
 [More tips on debugging Fortran programs from Intel](https://software.intel.com/en-us/articles/tips-for-debugging-run-time-failures-in-intel-fortran-applications).
+
+In case you must use remote ssh/scp access to run CompDam, a neat trick is to use the `Commands -> Keep Remote Directory up to Date...` option in [WinScp](https://winscp.net/eng/index.php). This feature can be used during development so that the CompDam files are edited locally and then automatically synced on a remote server for testing. The following mask (`Keep Remote Directory up to Date... -> Transfer Settings... -> File mask:`) can be used for syncing the source code: `*.for; *.py; *.inp; *.props; *.inc; Makefile; kind_map | tests/testOutput/; .git/; .vscode/`.
 
 ## Python extension module
 CompDam can be compiled into a [Python extension module](https://docs.python.org/2/extending/extending.html), which allows many of the Fortran subroutines and functions in the `for` directory to be called from Python. The Python package [`f90wrap`](https://github.com/jameskermode/f90wrap) is used to automatically generate the Python extension modules that interface with the Fortran code. This Python extension module functionality is useful for development and debugging.
@@ -684,7 +626,6 @@ This section includes a brief summary of each test implemented in the `tests` fo
 - *error*: Verifies that analyses can cleanly terminate upon encountering an error within the user subroutine.
 - *failureEnvelope_sig11sig22*: A parametric model in which *&sigma;<sub>11</sub>* is swept from *-X<sub>C</sub>* to *X<sub>T</sub>* and *&sigma;<sub>22</sub>* is swept from *-Y<sub>C</sub>* to *Y<sub>T</sub>* in order to re-create the corresponding failure envelope.
 - *failureEnvelope_sig12sig22*: A parametric model in which *&tau;<sub>12</sub>* is swept from *0* to *S<sub>L</sub>* and *&sigma;<sub>22</sub>* is swept from *-Y<sub>C</sub>* to *Y<sub>T</sub>* in order to re-create the corresponding failure envelope.
-- *failureEnvelope_sig12sig23*: A parametric model in which *&tau;<sub>12</sub>* is swept from *0* to *S<sub>L</sub>* and *&tau;<sub>23</sub>* is swept from *0* to *S<sub>T</sub>* in order to re-create the corresponding failure envelope.
 - *fatigue_normal*: Demonstrates the traction-displacement curve of a cohesive law subjected to mode I fatigue loading.
 - *fatigue_shear13*: Demonstrates the traction-displacement curve of a cohesive law subjected to shear fatigue loading in the 1-3 plane.
 - *fiberCompression_BL*: Demonstrates the constitutive response in the 1-direction under prescribed shortening. The 1-direction stress-strain curve has a bilinear softening law. A conventional CDM approach to material degradation is used.

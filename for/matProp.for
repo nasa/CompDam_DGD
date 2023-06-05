@@ -16,18 +16,17 @@ Module matProp_Mod
     ! (Optional inputs)
     Double Precision :: YT, SL, GYT, GSL, eta_BK, YC, alpha0             ! Opt. Matrix failure
     Double Precision :: E3, G13, G23, v13                                ! Opt. Orthotropic. Defaults are calculated based on transverse isotropy
-    Double Precision :: cte(3)                                           ! Opt. CTEs (Required if a temperature change is applied in the analysis). Defaults to zero
+    Double Precision :: cte(3)                                           ! Opt. Coefficients of thermal expansion (defaults to zero; if not provided, assumes cte(3) = cte(2))
+    Double Precision :: T_sf                                             ! Opt. stress free temperature (defaults to zero)
     Double Precision :: aPL, nPL                                         ! Opt. Shear nonlinearity
     Double Precision :: XT, fXT, GXT, fGXT                               ! Opt. Longitudinal tensile damage (max strain failure criterion, bilinear softening)
     Double Precision :: XC, fXC, GXC, fGXC                               ! Opt. Longitudinal compressive damage (max strain failure criterion, bilinear softening)
     Double Precision :: w_kb                                             ! Opt. LaRC15 kink band model (Also requires XC, shear nonlinearity).
-    Double Precision :: cl                                           ! Opt. fiber nonlinearity (defaults to zero, which is no fiber nonlinearity)
+    Double Precision :: cl                                               ! Opt. fiber nonlinearity (defaults to zero, which is no fiber nonlinearity)
     Double Precision :: mu                                               ! Opt. Friction. Defaults to zero
-    Double Precision :: es(4), gs(4)
-    Double Precision :: schaefer_a6
-    Double Precision :: schaefer_b2
-    Double Precision :: schaefer_n
-    Double Precision :: schaefer_A                                       ! Specified parameters for schaefer theory
+    Double Precision :: es(4), gs(4)                                     ! Opt. Schapery theory inputs
+    Double Precision :: schaefer_a6, schaefer_b2, schaefer_n, schaefer_A  ! Opt. Schaefer nonlinearity model inputs
+    Double Precision :: fatigue_gamma, fatigue_epsilon, fatigue_eta, fatigue_p_mod  ! Opt. CF20 fatigue properties
 
     ! min and max values for acceptable range
     Double Precision, private :: modulus_min, modulus_max
@@ -36,6 +35,7 @@ Module matProp_Mod
     Double Precision, private :: toughness_min, toughness_max
     Double Precision, private :: eta_BK_min, eta_BK_max
     Double Precision, private :: cte_min, cte_max
+    Double Precision, private :: T_sf_min, T_sf_max
     Double Precision, private :: aPL_min, aPL_max, nPL_min, nPL_max
     Double Precision, private :: w_kb_min, w_kb_max
     Double Precision, private :: cl_min, cl_max
@@ -43,12 +43,17 @@ Module matProp_Mod
     Double Precision, private :: mu_min, mu_max
     Double Precision, private :: schapery_min, schapery_max
     Double Precision, private :: schaefer_min, schaefer_max
+    Double Precision, private :: fatigue_gamma_min, fatigue_gamma_max
+    Double Precision, private :: fatigue_epsilon_min, fatigue_epsilon_max
+    Double Precision, private :: fatigue_eta_min, fatigue_eta_max
+    Double Precision, private :: fatigue_p_mod_min, fatigue_p_mod_max
 
     ! Flags that indicate if values have been set
     Logical, private :: E1_def, E2_def, G12_def, v12_def, v23_def
     Logical, private :: YT_def, SL_def, GYT_def, GSL_def, eta_BK_def
     Logical, private :: E3_def, G13_def, G23_def, v13_def
     Logical, private :: cte_def(3)
+    Logical, private :: T_sf_def
     Logical, private :: aPL_def, nPL_def
     Logical, private :: XT_def, fXT_def, GXT_def, fGXT_def
     Logical, private :: XC_def, fXC_def, GXC_def, fGXC_def
@@ -60,6 +65,7 @@ Module matProp_Mod
     Logical, private :: schaefer_b2_def
     Logical, private :: schaefer_n_def
     Logical, private :: schaefer_A_def
+    Logical, private :: fatigue_gamma_def, fatigue_epsilon_def, fatigue_eta_def, fatigue_p_mod_def
 
     ! Calculated properties
     Double Precision :: v21, v31, v32
@@ -71,6 +77,7 @@ Module matProp_Mod
     Character(len=6) :: featureFlags
     Logical :: matrixDam
     Logical :: cohesive
+    Logical :: embedded_cohesive
     Logical :: shearNonlinearity12
     Logical :: shearNonlinearity13
     Logical :: schapery
@@ -97,6 +104,7 @@ Module matProp_Mod
   Public :: materialList
   Public :: loadMatProps
   Public :: checkForSnapBack
+  Public :: getMaterialIndex
   Public :: initializePhi0
   Public :: consistencyChecks
   Public :: writeMaterialPropertiesToFile
@@ -118,7 +126,7 @@ Contains
     Character(len=*), intent(IN) :: materialName
     ! Logical, intent(IN) :: issueWarnings
     Integer, intent(IN) :: nprops
-    Double Precision :: props(nprops)
+    Double Precision, intent(IN) :: props(nprops)
 
     ! Locals
     Character(len=256) :: outputDir, jobName, fileName
@@ -133,6 +141,7 @@ Contains
 
     ! Initializations
     Call initializeMinMaxValues()
+    Call initializeFlags()
 
     ! Record material name
     m%name = trim(materialName)
@@ -173,15 +182,15 @@ Contains
 
     ! Feature flags
     If (.NOT. m%friction) m%mu = zero
+    If (m%mu == zero) m%friction = .False.
 
-    ! ! Checks that a consistent set of properties has been defined
-    ! Call consistencyChecks(issueWarnings)
+    ! Checks that a consistent set of properties has been defined
+    Call consistencyChecks(m, issueWarnings=.FALSE.)
 
     ! Calculated properties
     m%v21 = m%E2*m%v12/m%E1
     m%v31 = m%E3*m%v13/m%E1
     m%v32 = m%E3*m%v23/m%E2
-    m%cte(3) = m%cte(2)
 
     ! TODO - additional admissibility checks
 
@@ -200,7 +209,7 @@ Contains
     !Arguments
     Character(len=*), intent(IN) :: fileName
     Integer, intent(IN) :: nprops
-    Double Precision :: props(nprops)
+    Double Precision, intent(IN) :: props(nprops)
 
     ! Locals
     Integer, Parameter :: unit=108
@@ -298,15 +307,18 @@ Contains
           Case ('v13')
             Call verifyAndSaveProperty_str(trim(key), value, m%poissons_min, m%poissons_max, m%v13, m%v13_def)
 
+          ! Coefficients of thermal expansion and stress free temperature
           Case ('alpha11')
             Call verifyAndSaveProperty_str(trim(key), value, m%cte_min, m%cte_max, m%cte(1), m%cte_def(1))
-
           Case ('alpha22')
             Call verifyAndSaveProperty_str(trim(key), value, m%cte_min, m%cte_max, m%cte(2), m%cte_def(2))
+          Case ('alpha33')
+            Call verifyAndSaveProperty_str(trim(key), value, m%cte_min, m%cte_max, m%cte(3), m%cte_def(3))
+          Case ('T_sf')
+            Call verifyAndSaveProperty_str(trim(key), value, m%T_sf_min, m%T_sf_max, m%T_sf, m%T_sf_def)
 
           Case ('alpha_PL')
             Call verifyAndSaveProperty_str(trim(key), value, m%aPL_min, m%aPL_max, m%aPL, m%aPL_def)
-
           Case ('n_PL')
             Call verifyAndSaveProperty_str(trim(key), value, m%nPL_min, m%nPL_max, m%nPL, m%nPL_def)
 
@@ -349,6 +361,7 @@ Contains
           Case ('mu')
             Call verifyAndSaveProperty_str(trim(key), value, m%mu_min, m%mu_max, m%mu, m%mu_def)
 
+          ! Schapery Theory
           Case ('es0')
             Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%es(1), m%es_def(1))
           Case ('es1')
@@ -366,7 +379,8 @@ Contains
             Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(3), m%gs_def(3))
           Case ('gs3')
             Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(4), m%gs_def(4))
-          ! Schaefer Theory
+
+          ! Schaefer nonlinearity model
           Case ('schaefer_a6')
             Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_a6, m%schaefer_a6_def)
           Case ('schaefer_b2')
@@ -375,6 +389,7 @@ Contains
             Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_n, m%schaefer_n_def)
           Case ('schaefer_A')
             Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_A, m%schaefer_A_def)
+
           Case Default
             Call log%error("loadMatProps: Property not recognized: " // trim(key))
         End Select
@@ -384,8 +399,8 @@ Contains
     ! Close the .props file
     Close(unit)
 
-    ! Require at least the first three material properties to be specified in the inp deck
-    If (nprops < 3) Call log%error("loadMatProps: Must define the first three properties in the inp deck")
+    ! Require at least the first material property to be specified in the inp deck
+    If (nprops < 1) Call log%error("loadMatProps: Must define the 1st property (feature flags) in the inp deck")
 
     ! Load material properties from input deck (at most, first 8)
     If (nprops > 8) Then
@@ -403,7 +418,7 @@ Contains
 
     !Arguments
     Integer, intent(IN) :: nprops
-    Double Precision :: props(nprops)
+    Double Precision, intent(IN) :: props(nprops)
 
     ! Locals
     Character(len=30) :: tmp, featureFlags
@@ -484,7 +499,7 @@ Contains
                   m%shearNonlinearity13 = .FALSE.
                   m%schapery = .FALSE.
                   m%schaefer = .TRUE.
-                  Call log%info("loadMatProps: Schaefer non-linearity ENABLED")
+                  Call log%info("loadMatProps: Schaefer nonlinearity ENABLED")
                 Else
                   m%shearNonlinearity12 = .FALSE.
                   m%shearNonlinearity13 = .FALSE.
@@ -564,15 +579,22 @@ Contains
                 Call log%error("loadMatProps: Unknown position found in feature flags")
             End Select
           End Do
-        Case (2)
+        Case (2)  ! Reserved
         Case (3)
           m%thickness = props(i)
-        ! props(4:8) are reserved for use in the future as needed
-        Case (4)
+
+        Case (4)  ! Reserved
         Case (5)
+          Call verifyAndSaveProperty_double('fatigue_gamma', props(i), m%fatigue_gamma_min, m%fatigue_gamma_max, m%fatigue_gamma, m%fatigue_gamma_def)
+
         Case (6)
+          Call verifyAndSaveProperty_double('fatigue_epsilon', props(i), m%fatigue_epsilon_min, m%fatigue_epsilon_max, m%fatigue_epsilon, m%fatigue_epsilon_def)
+
         Case (7)
+          Call verifyAndSaveProperty_double('fatigue_eta', props(i), m%fatigue_eta_min, m%fatigue_eta_max, m%fatigue_eta, m%fatigue_eta_def)
+
         Case (8)
+          Call verifyAndSaveProperty_double('fatigue_p_mod', props(i), m%fatigue_p_mod_min, m%fatigue_p_mod_max, m%fatigue_p_mod, m%fatigue_p_mod_def)
 
         Case (9)
           Call verifyAndSaveProperty_double('E1', props(i), m%modulus_min, m%modulus_max, m%E1, m%E1_def)
@@ -665,7 +687,8 @@ Contains
           Call verifyAndSaveProperty_double('w_kb', props(i), m%w_kb_min, m%w_kb_max, m%w_kb, m%w_kb_def)
 
         Case (39)
-
+          Call verifyAndSaveProperty_double('T_sf', props(i), m%T_sf_min, m%T_sf_max, m%T_sf, m%T_sf_def)
+          
         Case (40)
           Call verifyAndSaveProperty_double('mu', props(i), m%mu_min, m%mu_max, m%mu, m%mu_def)
 
@@ -715,6 +738,9 @@ Contains
 
     m%cte_min = -one
     m%cte_max = one
+    
+    m%T_sf_min = -Huge(zero)
+    m%T_sf_max = Huge(zero)
 
     m%aPL_min = zero
     m%aPL_max = Huge(zero)
@@ -740,8 +766,83 @@ Contains
     m%schaefer_min = -Huge(zero)
     m%schaefer_max = Huge(zero)
 
+    m%fatigue_gamma_min = Tiny(zero)
+    m%fatigue_gamma_max = Huge(zero)
+
+    m%fatigue_epsilon_min = Tiny(zero)
+    m%fatigue_epsilon_max = one
+
+    m%fatigue_eta_min = Tiny(zero)
+    m%fatigue_eta_max = one
+
+    m%fatigue_p_mod_min = -Huge(zero)
+    m%fatigue_p_mod_max = Huge(zero)
+
     Return
   End Subroutine initializeMinMaxValues
+  
+  
+  Subroutine initializeFlags()
+
+    ! -------------------------------------------------------------------- !
+
+    m%E1_def = .FALSE.
+    m%E2_def = .FALSE.
+    m%G12_def = .FALSE.
+    m%v12_def = .FALSE.
+    m%v23_def = .FALSE.
+    
+    m%YT_def = .FALSE.
+    m%SL_def = .FALSE.
+    m%GYT_def = .FALSE.
+    m%GSL_def = .FALSE.
+    m%eta_BK_def = .FALSE.
+    
+    m%E3_def = .FALSE.
+    m%G13_def = .FALSE.
+    m%G23_def = .FALSE.
+    m%v13_def = .FALSE.
+    
+    m%cte_def(:) = .FALSE.
+    m%T_sf_def = .FALSE.
+    
+    m%aPL_def = .FALSE.
+    m%nPL_def = .FALSE.
+    
+    m%XT_def = .FALSE.
+    m%fXT_def = .FALSE.
+    m%GXT_def = .FALSE.
+    m%fGXT_def = .FALSE.
+    m%XC_def = .FALSE.
+    m%fXC_def = .FALSE.
+    
+    m%GXC_def = .FALSE.
+    m%fGXC_def = .FALSE.
+    m%YC_def = .FALSE.
+    
+    m%w_kb_def = .FALSE.
+    
+    m%alpha0_def = .FALSE.
+    
+    m%cl_def = .FALSE.
+    
+    m%mu_def = .FALSE.
+    
+    m%es_def(:) = .FALSE.
+    m%gs_def(:) = .FALSE.
+    
+    m%schaefer_a6_def = .FALSE.
+    m%schaefer_b2_def = .FALSE.
+    m%schaefer_n_def = .FALSE.
+    m%schaefer_A_def = .FALSE.
+    
+    m%fatigue_gamma_def = .FALSE.
+    m%fatigue_epsilon_def = .FALSE.
+    m%fatigue_eta_def = .FALSE.
+    m%fatigue_p_mod_def = .FALSE.
+
+    Return
+  End Subroutine initializeFlags
 
 
   Subroutine verifyAndSaveProperty_str(key, value, min, max, saveTo, flag)
@@ -862,30 +963,42 @@ Contains
         m%v13 = m%v12
         m%G23 = m%E2/two/(one + m%v23)
       End If
-    Else
+
+    Else If (m%cohesive) Then  ! Check if cohesive element properties have been specified
       ! Check for cohesive stiffness material properties
       If (.NOT. m%E3_def) Call log%error('PROPERTY ERROR: Cohesive material laws require a definition for E3.')
+      If (m%G13_def .AND. m%G23_def) Then
+        m%embedded_cohesive = .TRUE.
+        Call log%info('PROPERTY: G13 and G23 are defined for a cohesive element. Assuming finite thickness.')
+      Else
+        m%embedded_cohesive = .FALSE.
+      End If
       ! Check for cohesive strength material properties
       If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YT.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL_def.')
-      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YC.')
-      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for alpha0.')
+      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL.')
+      If (m%YC_def .AND. m%alpha0_def) Then
+        ! Compute these properties for the transverse shear strength
+        m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
+        m%etaT = -one/TAN(two*m%alpha0)
+        m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
+      Else
+        Call log%info('PROPERTY: YC and/or alpha0 not defined. Assuming that S_T = S_L.')
+        m%etaL = zero
+        m%etaT = zero
+        m%ST   = m%SL
+      End If
       ! Check for cohesive fracture toughness material properties
       If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GYT.')
       If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GSL.')
       If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for eta_BK.')
-      ! Compute these properties for the transverse shear strength
-      m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
-      m%etaT = -one/TAN(two*m%alpha0)
-      m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
 
-      Call log%info('PROPERTY: All required cohesive element peroperties are defined.')
+      Call log%info('PROPERTY: All required cohesive element properties are defined.')
     End IF
 
     ! Check if matrix damage properties have been specified
     If (m%matrixDam) Then
       If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for YT.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for SL_def.')
+      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for SL.')
       If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for GYT.')
       If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for GSL.')
       If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for eta_BK.')
@@ -900,39 +1013,36 @@ Contains
       Call log%info('PROPERTY: Matrix damage is disabled')
     End If
 
-    ! Check if cohesive element properties have been specified
-    If (m%cohesive) Then
-      If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YT.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL_def.')
-      If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GYT.')
-      If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GSL.')
-      If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for eta_BK.')
-      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YC.')
-      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for alpha0.')
-      m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
-      m%etaT = -one/TAN(two*m%alpha0)
-      m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
-
-      Call log%info('PROPERTY: Matrix damage is enabled')
-    Else
-      Call log%info('PROPERTY: Matrix damage is disabled')
-    End If
-
     ! Check if CTEs have been defined
-    If (m%cte_def(1) .OR. m%cte_def(2)) Then
+    If (m%cte_def(1) .OR. m%cte_def(2) .OR. m%cte_def(3)) Then
       If (.NOT. m%cte_def(1)) Call log%error('PROPERTY ERROR: Some CTE properties are missing. Must define a value for alpha11.')
       If (.NOT. m%cte_def(2)) Call log%error('PROPERTY ERROR: Some CTE properties are missing. Must define a value for alpha22.')
+      If (.NOT. m%cte_def(3)) Then
+        Call log%info('PROPERTY: Assuming alpha33 = alpha22')
+        m%cte(3) = m%cte(2)
+      End If
       Call log%info('PROPERTY: CTEs have been defined')
     Else
       If (issueWarnings) Call log%warn('PROPERTY: CTEs are being set to zero')
       m%cte(1) = zero
       m%cte(2) = zero
+      m%cte(3) = zero
+    End If
+    
+    ! Check if stress free residual temperature has been defined
+    If (m%T_sf_def) Then
+      Call log%info('PROPERTY: residual stress free temperature has been defined')
+    Else
+      Call log%info('PROPERTY: the residual stress free temperature is being set to zero')
+      m%T_sf = zero
     End If
 
     ! Check if shear nonlinearity properties have been defined
     If (m%shearNonlinearity12 .OR. m%shearNonlinearity13) Then
       If (.NOT. m%aPL_def) Call log%error('PROPERTY ERROR: Some shear-nonlinearity properties are missing. Must define a value for alpha_PL.')
       If (.NOT. m%nPL_def) Call log%error('PROPERTY ERROR: Some shear-nonlinearity properties are missing. Must define a value for n_PL.')
+      If (m%aPL .EQ. zero) Call log%error('PROPERTY ERROR: Shear nonlinearity is enabled, but alpha_PL is zero')
+      If (m%nPL .EQ. zero) Call log%error('PROPERTY ERROR: Shear nonlinearity is enabled, but n_PL is zero')
       Call log%info('PROPERTY: Shear-nonlinearity properties have been defined')
     Else
       Call log%info('PROPERTY: Shear-nonlinearity is disabled')
@@ -951,12 +1061,12 @@ Contains
       m%gs(1) = one
     End If
 
-    ! Check is all the parameters for Schaefer theory have been defined
+    ! Check is all the parameters for Schaefer nonlinearity model have been defined
     If (m%schaefer) Then
-      If (.NOT. m%schaefer_a6_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_a6')
-      If (.NOT. m%schaefer_b2_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_b2')
-      If (.NOT. m%schaefer_n_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_n')
-      If (.NOT. m%schaefer_A_def ) Call log%error('PROPERTY ERROR: Some schaefer theory properties are missing. Must define schaefer_A')
+      If (.NOT. m%schaefer_a6_def ) Call log%error('PROPERTY ERROR: Some Schaefer nonlinearity properties are missing. Must define schaefer_a6')
+      If (.NOT. m%schaefer_b2_def ) Call log%error('PROPERTY ERROR: Some Schaefer nonlinearity properties are missing. Must define schaefer_b2')
+      If (.NOT. m%schaefer_n_def ) Call log%error('PROPERTY ERROR: Some Schaefer nonlinearity properties are missing. Must define schaefer_n')
+      If (.NOT. m%schaefer_A_def ) Call log%error('PROPERTY ERROR: Some Schaefer nonlinearity properties are missing. Must define schaefer_A')
       Call log%info('PROPERTY: Schaefer properties have been defined')
     Else
       Call log%info('PROPERTY: Schaefer is disabled')
@@ -1023,78 +1133,99 @@ Contains
       m%cl = zero
     End If
 
+    ! check if fatigue properties have been defined
+    If (m%fatigue_gamma_def .AND. m%fatigue_epsilon_def .AND. m%fatigue_eta_def .AND. m%fatigue_p_mod_def) Then
+      Call log%info('PROPERTY: cohesive fatigue properties have been defined')
+    Else
+      Call log%info('PROPERTY: cohesive fatigue properties have not been defined. Using default values.')
+      If (.NOT. m%fatigue_gamma_def) m%fatigue_gamma = 1.d7
+      If (.NOT. m%fatigue_epsilon_def) m%fatigue_epsilon = 0.2d0
+      If (.NOT. m%fatigue_eta_def) m%fatigue_eta = 0.95d0
+      If (.NOT. m%fatigue_p_mod_def) m%fatigue_p_mod = zero
+    End If
+
     Return
   End Subroutine consistencyChecks
 
 
-  Subroutine checkForSnapBack(m, Lc, elementNumber)
-    ! Issues a warning if an element greater than the snap back size
+  Subroutine checkForSnapBack(m, Lc, elementNumber, fiber_tension_snapback, fiber_compression_snapback)
+    ! Issues an error if an element has a dimension larger than its snap-back size for active damage modes. For superposed softening
+    ! laws, an attempt is made to switch to a linear softening response to avoid snap-back.
 
     Use forlog_Mod
 
     ! Arguments
-    Type(matProps), intent(IN) :: m
-    Double Precision, intent(IN) :: Lc(3)                    ! Element length
-    Integer, intent(IN) :: elementNumber                     ! Element number
+    Type(matProps), intent(IN) :: m     ! Material properties
+    Double Precision, intent(IN) :: Lc(3)  ! Element length
+    Integer, intent(IN) :: elementNumber   ! Element number
+    Logical, intent(OUT) :: fiber_tension_snapback, fiber_compression_snapback
 
     ! Locals
-    Double Precision :: Lc_fT, Lc_fC, Lc_mT, Lc_SL, Lc_YC    ! Maximum element size for each damage mode
+    Double Precision :: Lc_fT, Lc_fT_A, Lc_fT_B, Lc_fC, Lc_fC_A, Lc_fC_B  ! Maximum element sizes based on fiber properties
+    Double Precision :: Lc_mT, Lc_SL, Lc_YC                               ! Maximum element sizes based on matrix properties
     Double Precision, Parameter :: zero=0.d0, one=1.d0, two=2.d0
     ! -------------------------------------------------------------------- !
+    
+    fiber_tension_snapback = .False.
+    fiber_compression_snapback = .False.
 
     ! Fiber Tension
     If (m%fiberTenDam) Then
-      If (two*m%GXT*m%E1 < Lc(1)*m%XT**2) Then
+      If (m%fXT /= m%fGXT) Then  ! Superposed stress-strain responses
+        Lc_fT_A = two*m%GXT*m%fGXT*m%E1/(m%XT**2*m%fXT)
+        Lc_fT_B = two*m%GXT*(one - m%fGXT)*m%E1/(m%XT**2*(one - m%fXT))
+        If (Lc(1) > Lc_fT_A .OR. Lc(1) > Lc_fT_B) Then
+          Call log%warn("Snap-back in superposed fiber tensile softening laws of element "// trim(str(elementNumber)) //".")
+          fiber_tension_snapback = .True.
+        End If
+      End If
+      
+      If (m%fGXT == m%fXT .OR. fiber_tension_snapback) Then  ! Linear softening response
         Lc_fT = two*m%GXT*m%E1/m%XT**2
-        Call log%warn("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(1))) // " which is > fiber tension snap-back threshold. Set element size < " // trim(str(Lc_fT)))
+        If (Lc(1) > Lc_fT) Then
+          Call log%error("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(1))) // " which is > fiber tension snap-back threshold. Set element size < " // trim(str(Lc_fT)))
+        End If
       End If
 
-      If (two*m%GXT*m%fGXT*m%E1 < Lc(1)*(m%XT*m%fXT)**2) Then
-        Lc_fT = two*m%GXT*m%fGXT*m%E1/(m%XT*m%fXT)**2
-        Call log%warn("Snap-back in 1st part of fiber tensile softening law. Adjust bilinear ratios or decrease the element size.")
-      End If
-
-      If (two*m%GXT*(one - m%fGXT)*m%E1 < Lc(1)*(m%XT*(one - m%fXT))**2) Then
-        Lc_fT = two*m%GXT*(one - m%fGXT)*m%E1/(m%XT*(one - m%fXT))**2
-        Call log%warn("Snap-back in 2nd part of fiber tensile softening law. Adjust bilinear ratios or decrease the element size.")
-      End If
     End If
 
     ! Fiber Compression
     If (m%fiberCompDamBL) Then
-      If (two*m%GXC*m%E1 < Lc(1)*m%XC**2) Then
+      If (m%fXC /= m%fGXC) Then  ! Superposed stress-strain responses
+        Lc_fC_A = two*m%GXC*m%fGXC*m%E1/(m%XC**2*m%fXC)
+        Lc_fC_B = two*m%GXC*(one - m%fGXC)*m%E1/(m%XC**2*(one - m%fXC))
+        If (Lc(1) > Lc_fC_A .OR. Lc(1) > Lc_fC_B) Then
+          Call log%warn("Snap-back in superposed fiber compression softening laws of element "// trim(str(elementNumber)) //".")
+          fiber_compression_snapback = .True.
+        End If
+      End If
+      
+      If (m%fGXC == m%fXC .OR. fiber_compression_snapback) Then  ! Linear softening response
         Lc_fC = two*m%GXC*m%E1/m%XC**2
-        Call log%warn("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(1))) // " which is > fiber compression snap-back threshold 1. Set element size < " // trim(str(Lc_fC)))
+        If (Lc(1) > Lc_fC) Then
+          Call log%error("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(1))) // " which is > fiber compression snap-back threshold 1. Set element size < " // trim(str(Lc_fC)))
+        End If
       End If
 
-      If (two*m%GXC*m%fGXC*m%E1 < Lc(1)*(m%XC*m%fXC)**2) Then
-        Lc_fT = two*m%GXC*m%fGXC*m%E1/(m%XC*m%fXC)**2
-        Call log%warn("Snap-back in 1st part of fiber compression softening law. Adjust bilinear ratios or decrease the element size.")
-      End If
-
-      If (two*m%GXC*(one - m%fGXC)*m%E1 < Lc(1)*(m%XC*(one - m%fXC))**2) Then
-        Lc_fT = two*m%GXC*(one - m%fGXC)*m%E1/(m%XC*(one - m%fXC))**2
-        Call log%warn("Snap-back in 2nd part of fiber compression softening law. Adjust bilinear ratios or decrease the element size.")
-      End If
     End If
 
     If (m%matrixDam) Then
       ! Matrix Tension
-      If (two*m%GYT*m%E2 < Lc(2)*m%YT**2) Then
-        Lc_mT = two*m%GYT*m%E2/m%YT/m%YT
-        Call log%warn("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(2))) // " which is > matrix mode I snap-back threshold. Set element size < " // trim(str(Lc_mT)))
+      Lc_mT = two*m%GYT*m%E2/m%YT/m%YT
+      If (Lc(2) > Lc_mT) Then
+        Call log%error("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(2))) // " which is > matrix mode I snap-back threshold. Set element size < " // trim(str(Lc_mT)))
       End If
 
       ! Matrix Shear
-      If (two*m%GSL*m%G12 < Lc(2)*m%SL**2) Then
-        Lc_SL = two*m%GSL*m%G12/m%SL**2
-        Call log%warn("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(2))) // " which is > matrix mode II snap-back threshold. Set element size < " // trim(str(Lc_SL)))
+      Lc_SL = two*m%GSL*m%G12/m%SL**2
+      If (Lc(2) > Lc_SL) Then
+        Call log%error("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(2))) // " which is > matrix mode II snap-back threshold. Set element size < " // trim(str(Lc_SL)))
       End If
 
       ! Matrix Compression
-      If (two*m%GSL*m%E2 < Lc(2)*m%YC**2*COS(m%alpha0)) Then
-        Lc_YC = two*m%GSL*m%E2/(m%YC**2*COS(m%alpha0))
-        Call log%warn("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(2))) // " which is > matrix compression snap-back threshold. Set element size < " // trim(str(Lc_YC)))
+      Lc_YC = two*m%GSL*m%E2/(m%YC**2*COS(m%alpha0))
+      If (Lc(2) > Lc_YC) Then
+        Call log%error("Element " // trim(str(elementNumber)) // " has size " // trim(str(Lc(2))) // " which is > matrix compression snap-back threshold. Set element size < " // trim(str(Lc_YC)))
       End If
     End If
 
@@ -1307,7 +1438,6 @@ Contains
     Else
       write(fileUnit,"(A)") '    "schaefer": False,'
     End If
-
     If (m%fiberTenDam) Then
       write(fileUnit,"(A)") '    "fiberTenDam": True,'
     Else
@@ -1355,6 +1485,7 @@ Contains
     write(fileUnit, nameValueFmt) '    ', m%v13, ',  # 24: v13'
     write(fileUnit, nameValueFmt) '    ', m%cte(1), ',  # 25: cte11'
     write(fileUnit, nameValueFmt) '    ', m%cte(2), ',  # 26: cte22'
+    write(fileUnit, nameValueFmt) '    ', m%cte(3), ',  #   : cte33'
     write(fileUnit, nameValueFmt) '    ', m%aPL, ',  # 27: aPL'
     write(fileUnit, nameValueFmt) '    ', m%nPL, ',  # 28: nPL'
     write(fileUnit, nameValueFmt) '    ', m%XT, ',  # 29: XT'
@@ -1367,11 +1498,36 @@ Contains
     write(fileUnit, nameValueFmt) '    ', m%fGXC, ',  # 36: fGXC'
     write(fileUnit, nameValueFmt) '    ', m%cl, ',  # 37: cl'
     write(fileUnit, nameValueFmt) '    ', m%w_kb, ',  # 38: w_kb'
-    write(fileUnit, nameValueFmt) '    ', zero, ',  # 39: none'
+    write(fileUnit, nameValueFmt) '    ', m%T_sf, ',  # 39: T_sf'
     write(fileUnit, nameValueFmt) '    ', m%mu, ',  # 40: mu'
     write(fileUnit, "(A)") ']'
 
   End Subroutine writeMaterialPropertiesToFile
+  
+  
+  Function getMaterialIndex(material_list, cmname)
+  
+    Use forlog_Mod
+  
+    ! Arguments
+    Type(materialList), intent(IN) :: material_list  ! List of materials
+    Character(len=80), intent(IN) :: cmname  ! Material name
+    
+    ! Returns
+    Integer :: getMaterialIndex
+    
+    getMaterialIndex = 0
+    
+    Do I = 1, Size(material_list%materials)
+      If (material_list%materials(I)%name == trim(cmname))  getMaterialIndex = I
+    End Do
+    
+    If (getMaterialIndex == 0) Then
+      Call log%error("getMaterialIndex: No material found with name " // trim(cmname) //".")
+    End If
+    
+    Return
+  End Function getMaterialIndex
 
 
 End Module matProp_Mod

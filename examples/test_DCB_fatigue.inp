@@ -20,18 +20,28 @@ HL = XL + crackLength     # Maximum crack length at end of analysis
 ********************************************************************************
 ** Cohesive material parameters
 ********************************************************************************
-** Cohesive law
-YT = 80.1  # Mode I strength
-SL = 97.6  # Mode II strength
-K1 = 2.E5  # Cohesive penalty stiffness (mode I)
-GIc = 0.240  # Mode I fracture toughness
-GIIc = 0.739  # mode II fracture toughness
-**
-YC = 199.8  # compressive matrix strength
-BK_eta = 2.1  # Benzeggagh-Kenane mode mixity exponent
-alpha0 = 0.925  # 2--3 plane crack angle under pure matrix compression [radians]
-**
 density = 1.57e-09  # Density for carbon/epoxy materials
+YC = 199.8  # compressive matrix strength
+alpha0 = 0.925  # 2--3 plane crack angle under pure matrix compression [radians]
+** Initiation cohesive law
+YT_init = 80.0  # Mode I strength
+SL_init = 99.0  # Mode II strength
+K1_init = 2.E5  # Cohesive penalty stiffness (mode I)
+GIc_init = 0.214  # Mode I fracture toughness
+GIIc_init = 0.59  # mode II fracture toughness
+BK_eta_init = 2.1  # Benzeggagh-Kenane mode mixity exponent
+**
+density_init = density/2.0  # Density for carbon/epoxy materials
+********************************************************************************
+** Bridging cohesive law
+YT_brdg = 0.8  # Mode I strength
+SL_brdg = 1.0  # Mode II strength
+K1_brdg = K1_init * YT_brdg / YT_init  # Cohesive penalty stiffness (mode I)
+GIc_brdg = 0.140  # Mode I fracture toughness
+GIIc_brdg = 0.193  # mode II fracture toughness
+BK_eta_brdg = 3.0
+**
+density_brdg = density/2.0  # Density for carbon/epoxy materials
 ********************************************************************************
 ** Loading parameters
 ********************************************************************************
@@ -45,10 +55,10 @@ time_2 = 0.15  # time duration for step 2 (fatigue)
 ** Meshing Parameters
 ********************************************************************************
 NEW=  6    # Number of elements in width direction (y-dir)
-NET=  3    # Number of elements in sublamina (z-dir)
+NET=  6    # Number of elements in sublamina (z-dir)
 NEA= 24    # Number of elements in length direction before Crack, coarse (x-dir)
 NEB= 20    # Number of elements in length direction before Crack, fine (x-dir)
-NEC=200    # Number of elements in length direction after Crack (x-dir)
+NEC=250    # Number of elements in length direction after Crack (x-dir)
 NED= 20    # Number of elements in length direction after cracking (x-dir)
 **
 top_arm_element_thickness = TTL/NET
@@ -64,8 +74,8 @@ bot_arm_element_thickness = TBL/NET
 ********************************************************************************
 *Material, name=cohesive
 *Density
-<density>,
-*Depvar
+<density_init>,
+*Depvar, delete=11
 19,
 1, COH_dmg
 2, COH_delta_s1
@@ -75,14 +85,36 @@ bot_arm_element_thickness = TBL/NET
 9, COH_FI
 11, COH_STATUS
 *User Material, constants=40
-200000, , 0., , , , , ,
-, , , , , <YT>, <SL>, <GIc>,
-<GIIc>, <BK_eta>, <YC>, <alpha0>, <K1>, , , ,
+200000, , 0., , 1.d7, 0.2, 0.95, 0.0,
+, , , , , <YT_init>, <SL_init>, <GIc_init>,
+<GIIc_init>, <BK_eta_init>, <YC>, <alpha0>, <K1_init>, , , ,
+, , , , , , , ,
+, , , , , , , 0.0
+*Material, name=cohesive_bridge
+*Density
+<density_brdg>,
+*Depvar, delete=11
+19,
+1, COH_dmg
+2, COH_delta_s1
+3, COH_delta_n
+4, COH_delta_s2
+5, COH_B
+9, COH_FI
+11, COH_STATUS
+*User Material, constants=40
+200000, , 0., , 1.d7, 0.2, 0.95, 0.0,
+, , , , , <YT_brdg>, <SL_brdg>, <GIc_brdg>,
+<GIIc_brdg>, <BK_eta_brdg>, <YC>, <alpha0>, <K1_brdg>, , , ,
 , , , , , , , ,
 , , , , , , , 0.0
 **
 *Initial Conditions, type=SOLUTION
 COH, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+0.0, 0.0, 0, 1, 0.0, 0.0, 0.0, 0.0,
+0.0, 0.0, 0.0, 0.0
+*Initial Conditions, type=SOLUTION
+COH_bridge, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 0.0, 0.0, 0, 1, 0.0, 0.0, 0.0, 0.0,
 0.0, 0.0, 0.0, 0.0
 ********************************************************************************
@@ -321,6 +353,7 @@ OPEN_TOP_A, OPEN_TOP_B, MIDDLE_TOP, END_TOP,
  <COH_B>, <NED>, 1 , 1 , <NEW>, <NNL>, <NEL>, 1, 50000, 50000
 *Elset, elset=COH
  FRONT_COH, BACK_COH
+*Elcopy, old set=COH, new set=COH_bridge, shift nodes=0, element shift=1000000
 ********************************************************************************
 ** Section definitions
 ********************************************************************************
@@ -334,6 +367,8 @@ OPEN_TOP_A, OPEN_TOP_B, MIDDLE_TOP, END_TOP,
 <top_arm_element_thickness>, 5
 **
 *Cohesive section, elset=COH, response=TRACTION SEPARATION, material=cohesive, thickness=SPECIFIED
+1.0
+*Cohesive section, elset=COH_bridge, response=TRACTION SEPARATION, material=cohesive_bridge, thickness=SPECIFIED
 1.0
 ********************************************************************************
 ** Boundary conditions and constraints
@@ -382,6 +417,8 @@ U,
 S, EMSF
 *Element Output, elset=COH
 SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
+*Element Output, elset=COH_bridge
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
 **
 *End Step
 ********************************************************************************
@@ -398,6 +435,10 @@ SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
 *Output, history, freq=1
 *Energy Output
 ALLSE, ALLPD, ALLKE, ALLVD, ALLWK, ALLMW
+*Energy Output, elset=COH
+ALLPD
+*Energy Output, elset=COH_bridge
+ALLPD
 *Node Output, nset=T_Node
 RF3, U3
 **
@@ -407,6 +448,8 @@ U,
 *Element Output
 S,
 *Element Output, elset=COH
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
+*Element Output, elset=COH_bridge
 SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
 **
 *End Step

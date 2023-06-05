@@ -69,7 +69,7 @@ Contains
     Double Precision, intent(IN) :: d1, d2, d3                       ! Damage state variables
     Double Precision, intent(IN) :: eps(ndir,ndir)                   ! Green-Lagrange strain tensor
     Double Precision, intent(OUT) :: stiff(ndir+nshr,ndir+nshr)      ! Stiffness tensor
-    Double Precision :: sr                                           ! Shapery state variable (no intent is specified so that zero can be used when schapery is N/A)
+    Double Precision :: sr                                           ! Schapery state variable (no intent is specified so that zero can be used when Schapery is N/A)
 
     ! Locals
     Double Precision :: E1
@@ -99,7 +99,7 @@ Contains
       End If
     Else
       ! Fiber nonlinearity
-      E1 = m%E1*(1+m%cl*eps(1,1))
+      E1 = m%E1*(one + m%cl*eps(1,1))
     End If
 
     ! Update stiffness matrix

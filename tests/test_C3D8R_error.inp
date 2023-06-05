@@ -67,7 +67,7 @@
 **
 *Initial Conditions, type=Solution
 SingleElement, 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
+0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,
 0.d0,  0.d0,  0.d0,  0.d0,  0.d0
 *Boundary
 1, 2, 3

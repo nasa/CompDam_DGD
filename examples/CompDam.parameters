@@ -34,8 +34,8 @@ cycles_per_increment_min = 1.d-5 // Default value: 1.d-5
 cycles_per_increment_mod = 0.1d0 // Default value: 0.1d0
 
 // thresholds for fatigue damage progression per solution increment in terms of percent fracture toughness, Double precision
-fatigue_damage_min_threshold = 5.d-6 // Default value: 5.d-6
-fatigue_damage_max_threshold = 1.d-4 // Default value: 1.d-4
+fatigue_damage_min_threshold = 5.d-5 // Default value: 5.d-6
+fatigue_damage_max_threshold = 1.d-3 // Default value: 1.d-4
 
 
 // penalty stiffness multiplier, K/(E/thickness) = penStiffMult, Double precision

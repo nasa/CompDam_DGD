@@ -1,5 +1,5 @@
 *Heading
- Single cohesive element test for mode II response
+ Single cohesive element with transverse shear loading under normal compression
 **
 *Parameter
  length = 0.2
@@ -52,7 +52,7 @@
 **  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
            ,         ,          ,     ,       ,          ,         ,          ,
 **  33        34        35        36        37        38        39        40
-**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     T_sf,     mu
       ,          ,         ,          ,           ,       ,         ,     0.3
 *Depvar
   19,
@@ -92,7 +92,7 @@
  U, RF
 *Output, HISTORY, frequency=1
 *Energy Output
- ALLIE, ALLKE
+ ALLIE, ALLKE, ALLPD, ALLSE
 *Node Output, NSET=Z+
  U, RF
 *Element Output, ELSET=COHESIVE
@@ -114,7 +114,7 @@
  U, RF
 *Output, HISTORY, frequency=1
 *Energy Output
- ALLIE, ALLKE
+ ALLIE, ALLKE, ALLPD, ALLSE
 *Node Output, NSET=Z+
  U, RF
 *Element Output, ELSET=COHESIVE

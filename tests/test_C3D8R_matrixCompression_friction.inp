@@ -1,0 +1,136 @@
+*Heading
+ Single element test for matrix compression with friction
+**
+*Parameter
+l = 0.15
+t = 0.1
+disp = l*0.25
+stepDuration = 0.1
+**
+*Node
+ 1,  <l>, <l>, <t>
+ 2,  <l>,  0., <t>
+ 3,  <l>, <l>,  0.
+ 4,  <l>,  0.,  0.
+ 5,   0., <l>, <t>
+ 6,   0.,  0., <t>
+ 7,   0., <l>,  0.
+ 8,   0.,  0.,  0.
+*Element, type=C3D8R
+ 1, 3, 4, 2, 1, 7, 8, 6, 5
+*Nset, nset=loadApp
+ 7,
+*Nset, nset=loadFollowers
+ 1, 3, 5
+*Nset, nset=top
+ 1, 3, 5, 7
+*Nset, nset=bot
+ 2, 4, 6, 8
+*Nset, nset=X-
+ 5, 6, 7, 8
+*Nset, nset=all, generate
+ 1,  8,  1
+*Elset, elset=all
+ 1,
+*Orientation, name=Ori-1
+ 1., 0., 0., 0., 1., 0.
+ 3, 0.
+** Section: Section-1
+*Solid Section, elset=all, orientation=Ori-1, material=IM7-8552, controls=SectionCtrl-1
+,
+**
+*Equation
+ 2
+ loadFollowers, 2, -1., loadApp, 2, 1.
+**
+*Equation
+ 4
+ 2, 3, 1., 1, 3, -1., 3, 3, 1., 4, 3, -1.
+*Equation
+ 4
+ 6, 3, 1., 5, 3, -1., 7, 3, 1., 8, 3, -1.
+*Equation
+ 2
+ 3, 3, 1.,7, 3, -1.
+*Equation
+ 2
+ 1, 1, 1.0, 2, 1, -1.0
+ 2
+ 2, 1, 1.0, 3, 1, -1.0
+ 2
+ 3, 1, 1.0, 4, 1, -1.0
+**
+*Section controls, name=SectionCtrl-1, distortion control=No, element deletion=Yes
+**
+*Amplitude, name=Amp-1, definition=SMOOTH STEP
+ 0., 0., <stepDuration>, 1.
+**
+*Material, name=IM7-8552
+*Density
+1.57e-09,
+*User material, constants=1
+ 100001,
+*Depvar
+  19,
+  1, CDM_d2
+  2, CDM_Fb1
+  3, CDM_Fb2
+  4, CDM_Fb3
+  5, CDM_B
+  6, CDM_Lc1
+  7, CDM_Lc2
+  8, CDM_Lc3
+  9, CDM_FIm
+ 10, CDM_alpha
+ 11, CDM_STATUS
+ 12, CDM_Plas12
+ 13, CDM_Inel12
+ 14, CDM_FIfT
+ 15, CDM_slide1
+ 16, CDM_slide2
+ 17, CDM_FIfC
+ 18, CDM_d1T
+ 19, CDM_d1C
+*Characteristic Length, definition=USER, components=3
+*Damping, alpha=2.d+6
+**
+** INITIAL CONDITIONS
+**
+*Initial Conditions, Type=Solution
+all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0, 0.d0,  0.d0,
+      0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,
+      0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+**
+** Output filter
+**
+*Filter, name=haltOnFailure, operator=Max, limit=1.0, HALT
+** ----------------------------------------------------------------
+*Step, name=Step-1, nlgeom=YES
+*Dynamic, Explicit
+, <stepDuration>
+**
+*Variable Mass Scaling, type=Below Min, dt=1.d-7, frequency=1
+**
+*Boundary, amplitude=Amp-1
+loadApp, 2, 2, -<disp>
+X-,  1, 1
+bot, 2, 2
+**
+*Output, field, number interval=100
+*Node Output
+ U, RF
+*Element Output
+ S, LE, SDV
+**
+*Output, history, frequency=1, filter=haltOnFailure
+*Element Output, elset=all
+ SDV1
+**
+*Output, history, frequency=1
+*Energy Output
+ ALLIE, ALLSE, ALLKE, ALLPD, ALLVD, ALLAE
+*Node Output, nset=loadApp
+ RF2, U2
+*Element Output, elset=all
+ S22, LE22, SDV
+*End Step

@@ -1,0 +1,134 @@
+*Heading
+ Single-element test demonstrating zero-strain residual thermal stresses
+**
+*Parameter
+ length = 0.05
+ **
+ ** Parametric calculations for demonstration only. See the corresponding .props file for the applied
+ ** T_sf, alpha11, alpha22, and alpha33 values.
+ **
+ T_sf = 150.
+ temperature = 0.
+ deltaT = temperature - T_sf
+**
+** Target residual thermal stresses for elements using the CompDam material model
+ sigma11_residual = -50.
+ sigma22_residual =  50.
+ sigma33_residual =  0.
+ **
+ ** Elastic material properties
+ E1 = 171420.0
+ E2 = 9080.0
+ E3 = E2
+ nu12 = 0.32
+ nu23 = 0.52
+ nu13 = nu12
+**
+** Thermal residual strains corresponding to temperature difference (i.e., strain = compliance:stress)
+ eps11_residual =  sigma11_residual / E1        - sigma22_residual * nu12 / E1 - sigma33_residual * nu13 / E1
+ eps22_residual = -sigma11_residual * nu12 / E1 + sigma22_residual / E2        - sigma33_residual * nu23 / E2
+ eps33_residual = -sigma11_residual * nu13 / E1 - sigma22_residual * nu23 / E2 + sigma33_residual / E3
+**
+** Artificial coefficients of thermal expansion to obtain the target residual thermal stresses for the given deltaT
+ alpha11_eff = -eps11_residual / deltaT
+ alpha22_eff = -eps22_residual / deltaT
+ alpha33_eff = -eps33_residual / deltaT
+**
+** NODES
+**
+*NODE, NSET=GLOBAL
+      1,            0.,            0.,            0.
+      2,      <length>,            0.,            0.
+      3,      <length>,      <length>,            0.
+      4,            0.,      <length>,            0.
+      5,            0.,            0.,      <length>
+      6,      <length>,            0.,      <length>
+      7,      <length>,      <length>,      <length>
+      8,            0.,      <length>,      <length>
+*NSET, NSET=X+
+  2, 3, 6, 7
+*NSET, NSET=X-
+  1, 4, 5, 8
+*NSET, NSET=Y+
+  3, 4, 7, 8
+*NSET, NSET=Y-
+  1, 2, 5, 6
+*NSET, NSET=Z+
+  5, 6, 7, 8
+*NSET, NSET=Z-
+  1, 2, 3, 4
+**
+** ELEMENTS
+**
+*ELEMENT, TYPE=C3D8R, ELSET=ALL_ELEMS
+  1, 1, 2, 3, 4, 5, 6, 7, 8
+**
+** PROPERTIES
+**
+*SOLID SECTION, ELSET=ALL_ELEMS, MATERIAL=IM7-8552
+**
+** MATERIALS
+**
+*Material, name=IM7-8552
+*Density
+ 1.59d-09,
+*User material, constants=1
+** feature flags,
+          100000,
+**
+*Depvar, delete=11
+  19,
+  1, CDM_d2
+  2, CDM_Fb1
+  3, CDM_Fb2
+  4, CDM_Fb3
+  5, CDM_B
+  6, CDM_Lc1
+  7, CDM_Lc2
+  8, CDM_Lc3
+  9, CDM_FIm
+ 10, CDM_alpha
+ 11, CDM_STATUS
+ 12, CDM_Plas12
+ 13, CDM_Inel12
+ 14, CDM_FIfT
+ 15, CDM_slide1
+ 16, CDM_slide2
+ 17, CDM_FIfC
+ 18, CDM_d1T
+ 19, CDM_d1C
+*Characteristic Length, definition=USER, components=3
+**
+** INITIAL CONDITIONS
+**
+*Initial Conditions, Type=Solution
+ ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0,       0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0,       0.d0,  0.d0,  0.d0
+**
+*Boundary
+ X-, 1, 1, 0
+ Y-, 2, 2, 0
+ Z-, 3, 3, 0
+ X+, 1, 1, 0
+ Y+, 2, 2, 0
+ Z+, 3, 3, 0
+**
+*Step, NLGEOM=YES
+*Dynamic, Explicit
+ , 0.0001, ,
+**
+** OUTPUT
+**
+*Output, FIELD
+*Element Output
+ SDV, S, LE
+*Node Output
+ U, RF
+*Output, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE
+*Element Output, ELSET=ALL_ELEMS
+ SDV, S, LE
+**
+*End Step

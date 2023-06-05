@@ -41,8 +41,9 @@ Module forlog_Mod
     Procedure :: debug_str
     Procedure :: debug_int
     Procedure :: debug_dbl
+    Procedure :: debug_vec
     Procedure :: debug_mat
-    Generic :: debug => debug_str, debug_int, debug_dbl, debug_mat  ! level=4, Maximum amount of information
+    Generic :: debug => debug_str, debug_int, debug_dbl, debug_vec, debug_mat  ! level=4, Maximum amount of information
     Procedure :: info                                ! level=3, Verbose logging
     Procedure :: warn                                ! level=2, Log issues that may impact accuracy of results
     Procedure :: error                               ! level=1, Log issues that immediately terminate the analysis
@@ -186,9 +187,7 @@ Contains
     Integer, intent(IN) :: int
 
     If (this%level >= 4) Then
-#ifdef PYEXT
       write(this%fileUnit,*) msg // " = " // str_int(int)
-#endif
     End If
   End Subroutine debug_int
 
@@ -200,26 +199,44 @@ Contains
     Double Precision, intent(IN) :: dbl
 
     If (this%level >= 4) Then
-#ifdef PYEXT
       write(this%fileUnit,*) msg // " = " // str_double(dbl)
-#endif
     End If
   End Subroutine debug_dbl
+
+  Subroutine debug_vec(this, msg, vec)
+
+    ! Arguments
+    Class(forlog), intent(IN) :: this
+    Character*(*), intent(IN) :: msg
+    Double Precision, intent(IN) :: vec(:)
+
+    If (this%level >= 4) Then
+      write(this%fileUnit,*) msg // " = "
+      Do i=1,size(vec)
+        write(this%fileUnit,*) str_double(vec(i))
+      End Do
+    End If
+  End Subroutine debug_vec
 
   Subroutine debug_mat(this, msg, mat)
 
     ! Arguments
     Class(forlog), intent(IN) :: this
     Character*(*), intent(IN) :: msg
-    Double Precision, intent(IN) :: mat(3,3)
+    Double Precision, intent(IN) :: mat(:,:)
+
+    Integer :: mat_shape(2)
 
     If (this%level >= 4) Then
-#ifdef PYEXT
       write(this%fileUnit,*) msg // " = "
-      write(this%fileUnit,*) str_double(mat(1,1)) // ", " // str_double(mat(1,2)) // ", " // str_double(mat(1,3))
-      write(this%fileUnit,*) str_double(mat(2,1)) // ", " // str_double(mat(2,2)) // ", " // str_double(mat(2,3))
-      write(this%fileUnit,*) str_double(mat(3,1)) // ", " // str_double(mat(3,2)) // ", " // str_double(mat(3,3))
-#endif
+      mat_shape = SHAPE(mat)
+      Do i=1,mat_shape(1)
+        If (mat_shape(2) == 2) Then
+          write(this%fileUnit,*) str_double(mat(i,1)) // ", " // str_double(mat(i,2))
+        Else If (mat_shape(2) == 3) Then
+          write(this%fileUnit,*) str_double(mat(i,1)) // ", " // str_double(mat(i,2)) // ", " // str_double(mat(i,3))
+        End If
+      End Do
     End If
   End Subroutine debug_mat
 

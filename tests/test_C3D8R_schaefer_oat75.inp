@@ -102,7 +102,7 @@ _Surf-1_S2, S2
 *Initial Conditions, Type=Solution
 ***     1i,    2i,    3i,    4i,    5i,    6i,    7i,
 SingleElement-1.ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-0.d0, 0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
+0.d0, 0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
 0.d0, 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 0.d0, 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 0.d0, 0.d0

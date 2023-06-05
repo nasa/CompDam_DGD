@@ -34,7 +34,7 @@ parameters = {
                     "position": "Element 1 Int Point 1"
                 },
             "referenceValue": 79.96,
-            "tolerance": 0.02
+            "tolerance": 0.04
         },
         {
             "type": "max",

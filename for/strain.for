@@ -15,7 +15,7 @@ Contains
     ! Arguments
     Type(matProps), intent(IN) :: m
     Double Precision, intent(IN) :: F(3,3)                    ! Deformation gradient
-    Double Precision, intent(IN) :: DT                        ! Coefficients of thermal expansion and temperature change
+    Double Precision, intent(IN) :: DT                        ! Temperature change
     Integer, intent(IN) :: ndir
     Double Precision, intent(OUT) :: eps(ndir,ndir)           ! GL stain tensor, without plasticity
 
@@ -26,10 +26,10 @@ Contains
     ! Initialize strain tensor
     eps = zero
 
-    ! Calculate the Green-Lagrange strain
+    ! Calculate the total Green-Lagrange strain from the deformation gradient tensor
     eps = GLStrain(F,ndir)
 
-    ! Account for thermal strains
+    ! Find the mechanical strain by subtracting the thermal strain from the total strain
     If (DT /= zero) Then
       eps(1,1) = eps(1,1) - m%cte(1)*DT
       eps(2,2) = eps(2,2) - m%cte(2)*DT

@@ -1,5 +1,5 @@
 *Heading
- Single element test for matrix-direction elastic response
+ Single element test for element size calculations in CPS4R element
 **
 *Parameter
  length1 = 0.1
@@ -74,7 +74,7 @@
 **
 *Initial Conditions, Type=Solution
 ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-            0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
+            0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,
             0.d0,  0.d0,  0.d0,  0.d0,  0.d0
 *Boundary
   Y-, 2, 2, 0

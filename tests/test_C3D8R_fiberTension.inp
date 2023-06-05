@@ -4,7 +4,9 @@
 *Parameter
 l = 0.5
 t = 0.5
+applied_strain = 1.
 stepDuration = 1.0
+displacement = l*applied_strain
 **
 ** PARTS
 **
@@ -68,7 +70,7 @@ Part-1-1.loadApp, 1, 1.
 *User material, constants=4
 ** 1              2                  3          4
 ** feature flags, , thickness, 4, 5, 6, 7, 8
-          101000, ,       <t>,  ,  ,  ,  ,  ,
+            1000, ,       <t>,  ,  ,  ,  ,  ,
 *Depvar
   19,
   1, CDM_d2
@@ -96,8 +98,10 @@ Part-1-1.loadApp, 1, 1.
 **
 *Initial Conditions, Type=Solution
 Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-               0.d0,  0.d0,  -999,     1,  0.d0,  0.d0,  0.d0,
+               0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,
                0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+**
+*Filter, name=haltOnFailure, operator=Max, limit=1.0, HALT
 ** ----------------------------------------------------------------
 **
 ** STEP: Step-1
@@ -105,42 +109,34 @@ Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
 *Step, name=Step-1, nlgeom=YES
 *Dynamic, Explicit
 , <stepDuration>
-*Bulk Viscosity
-0.06, 1.2
-** Mass Scaling: Semi-Automatic
-**               Whole Model
 *Fixed Mass Scaling, factor=5000.
 **
 ** BOUNDARY CONDITIONS
 **
 ** Applied displacement end
 *Boundary, amplitude=Amp-1
-Part-1-1.loadApp, 1, 1, 0.3
-Part-1-1.loadApp, 2, 2
-Part-1-1.loadApp, 3, 3
+Part-1-1.loadApp, 1, 1, <displacement>
+Part-1-1.loadApp, 2, 3
 *Boundary, amplitude=Amp-1
 Part-1-1.2, 2, 2
 Part-1-1.3, 3, 3
 ** Fixed end
 *Boundary, amplitude=Amp-1
-Part-1-1.pin, 1, 1
-Part-1-1.pin, 2, 2
-Part-1-1.pin, 3, 3
+Part-1-1.pin, 1, 3
 *Boundary, amplitude=Amp-1
 Part-1-1.pinx, 1, 1
-Part-1-1.7, 3, 3
 Part-1-1.6, 2, 2
+Part-1-1.7, 3, 3
 **
 ** OUTPUT REQUESTS
 **
 *Output, field, number interval=100
 *Node Output
 U, RF
-*Element Output
-1,
+*Element Output, elset=Part-1-1.all
 S, LE, SDV
 **
-** HISTORY OUTPUT: H-Output-1
+** HISTORY OUTPUTS
 **
 *Output, history, frequency=1
 *Energy Output
@@ -149,4 +145,7 @@ S, LE, SDV
 RF1, U1
 *Element Output, elset=Part-1-1.all
 S11, LE11, SDV
+*Output, history, frequency=1, filter=haltOnFailure
+*Element Output, elset=Part-1-1.all
+ SDV18
 *End Step

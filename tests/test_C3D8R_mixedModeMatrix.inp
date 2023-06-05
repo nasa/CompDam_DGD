@@ -60,8 +60,8 @@
     -5.5d-6,  2.58d-5,          ,     ,     2326.2,   0.75,     133.3,    0.375,
 **
 **  33        34        35        36        37        38        39        40
-**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
-    1200.1,      ,         ,          ,     0.2618,   0.1,      0.038,    <friction>
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     T_sf,     mu
+    1200.1,      ,         ,          ,     0.2618,   0.1,      0.0,      <friction>
 **
 *Depvar, delete=11
   19,
