@@ -226,7 +226,7 @@ Contains
     Open(UNIT=unit, FILE=fileName, STATUS='old', ACTION='read', position='rewind', IOSTAT=iostat)
 
     If (iostat /= 0) Call log%error("loadMatProps: Unable to access the .props file")
-    ReadLines: Do
+    ReadLines: Do While (.NOT. EOF(unit))
 
       ! Read the next line in the file
       Read(unit,'(A255)',IOSTAT=iostat) line

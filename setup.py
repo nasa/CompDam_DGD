@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     # Check for git
     try:
-        git_output = subprocess.check_output(["git --version"], shell=True)
+        git_output = subprocess.check_output(["git", "--version"], shell=True)
         print "Found git version: {0}".format(git_output.rstrip())
 
         # Create git hooks
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
         # Try bash (for the python extension module)
         try:
-            bash_output = subprocess.check_output(["bash --version"], shell=True)
+            bash_output = subprocess.check_output(["bash", "--version"], shell=True)
             print "Found bash version: {0}".format(bash_output.split('\n')[0])
             config["bash"] = True
 
