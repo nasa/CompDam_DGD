@@ -180,17 +180,17 @@ Contains
     ! Try to load CompDam parameters from a '.parameters' file
     Open(UNIT=unit, FILE=fileName, STATUS='old', ACTION='read', position='rewind', IOSTAT=iostat)
     If (iostat /= 0) Call log%error("loadParameters: Unable to access the .parameters file")
-    ReadLines: Do
+    ReadLines: Do While (.NOT. EOF(unit))
 
       ! Read the next line in the file
       Read(unit,'(A255)',IOSTAT=iostat) line
 
       If (iostat > 0) Then
         Call log%error("loadParameters: Unknown error reading file")
-        Exit
+        Exit ReadLines
 
       Else If (iostat < 0) Then
-        Exit
+        Exit ReadLines
 
       Else  ! Parse the line in the file
         ! Skip blank lines

@@ -1,4 +1,4 @@
       Module version_Mod
-        Character(len=40), parameter :: hash = "v2.5.0"
-        Character(len=50), parameter :: timestamp = "2019-08-08"
+        Character(len=40), parameter :: hash = "v2.6.1"
+        Character(len=50), parameter :: timestamp = "2023-06-22"
       End Module
