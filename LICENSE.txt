@@ -188,10 +188,9 @@ Government Agency Point of Contact for Original Software: Frank Leone <frank.a.l
     F.	Point of Contact:  Any Recipient contact with Government Agency is to be directed to the designated
         representative as follows:
 
-        Bonnie Lumanog
-        Software Release Authority
-        MS 158, NASA Langley Research Center
+        Maxine Saunders
+        Software Release Manager
+        MS 020, NASA Langley Research Center
         Hampton, VA 23681
-        Fax: 757-864-6500
-        Phone: 757-864-2933
-        Email: b.lumanog@nasa.gov
+        Phone: 757-406-0882
+        Email: maxine.a.saunders@nasa.gov
