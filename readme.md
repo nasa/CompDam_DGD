@@ -1,5 +1,6 @@
-# CompDam - Deformation Gradient Decomposition (DGD)
-This code is a continuum damage mechanics (CDM) material model intended for use with the Abaqus finite element code. This is a research code which aims to provide an accurate representation of mesoscale damage modes in fiber-reinforced polymer composite materials in finite element models in which each ply is discretely represented.
+![CompDam](./readme-banner.svg)
+
+CompDam_DGD code is a continuum damage mechanics (CDM) material model intended for use with the Abaqus finite element code. This is a research code which aims to provide an accurate representation of mesoscale damage modes in fiber-reinforced polymer composite materials in finite element models in which each ply is discretely represented.
 
 The CDM material model is implemented as an Abaqus/Explicit user subroutine (VUMAT) for the simulation of matrix cracks formed under tensile, compressive, and shear loading conditions and fiber fracture under tensile and compressive loading. Within CompDam, the emphasis of many recent developments has been on accurately representing the kinematics of composite damage. The kinematics of matrix cracks are represented by treating them as cohesive surfaces embedded in a deformable bulk material in accordance with the Deformation Gradient Decomposition (DGD) approach. Fiber tensile damage is modeled using conventional CDM strain-softening. This readme document provides an overview of the CompDam software. See the [List of Publications](list-of-publications.md) for references with details on the theory and use-cases.
 
