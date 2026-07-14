@@ -1,0 +1,28 @@
+********************************************************************************
+** Output requests
+********************************************************************************
+*Output, history, freq=1
+*Energy Output
+ALLSE, ALLPD, ALLKE, ALLVD, ALLWK, ALLMW, ALLIE, ETOTAL
+ALLAE, ALLDC
+*Energy Output, ELSET=ARMS
+ALLSE, ALLPD, ALLKE, ALLVD, ALLIE
+*Node Output, nset=T_Node
+RF3, U3
+*Node Output, nset=B_Node
+RF3, U3
+*Incrementation Output, variable=preselect
+*Integrated Output, ELSET=ARMS
+ MASS
+**
+*Output, field, number interval=<number_frames>
+*Node Output
+U, RF
+*Element Output
+S, LE, EMSF, EVOL, ELPD, EDT
+** *Output, field, time points=tp1
+** *Node Output
+** U, RF
+** *Element Output
+** S, LE,
+**

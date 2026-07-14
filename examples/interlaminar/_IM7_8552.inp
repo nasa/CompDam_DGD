@@ -1,0 +1,22 @@
+*Parameter
+** IM7_8552 properties used in tests (see tests/IM7-8552.props)
+** Cohesive interface
+YT    = 62.3    # Mode I strength
+SL    = 92.30   # Mode II strength
+GIc   = 0.277   # Mode I fracture toughness
+GIIc  = 0.788   # mode II fracture toughness
+Pen2    = 2.e5    # Cohesive penalty stiffness (mode I)
+BK    = 1.634   # Benzeggagh-Kenane mode mixity exponent
+YC    = 199.8  # compressive matrix strength
+alpha0 = 0.925  # 2--3 plane crack angle under pure matrix compression [radians]
+** Arm material parameters
+E11 = 171420.0
+E22 = 9080.0
+E33 = E22
+nu12 = 0.32
+nu13 = nu12
+nu23 = 0.525
+G12 = 5290
+G13 = G12
+G23 = E22/2./(1 + nu23)
+density = 1.57e-9

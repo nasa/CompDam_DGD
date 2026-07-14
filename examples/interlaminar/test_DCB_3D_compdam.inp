@@ -1,0 +1,23 @@
+*Heading
+DCB Cohesive Model, 3D, CompDam
+********************************************************************************
+*Include, input=_IM7_8552.inp
+*Parameter
+interface_el_type = 'COH3D8'
+interface_el_thk = 0.0
+sdv_outputs = 'SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11'
+density_arm = density
+** Only used for cases where constitutive thickness is modified from default value of 1
+coh_mass_frac = 0.1
+target_dt = 1.54e-8
+*Include, input=_DCB_3D_parameters.inp
+*Parameter
+constitutive_thk = 1.0
+density_interface = density
+*Include, input=_DCB_3D_geometry+sec.inp
+*Include, input=_interface_COH3D8.inp
+*Include, input=_DCB_3D_exp_step.inp
+*Variable mass scaling, dt=<time_inc>, type=below min, freq=1
+*Include, input=_outputs.inp
+*Include, input=_outputs_compdam.inp
+*End Step

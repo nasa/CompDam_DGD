@@ -1,7 +1,6 @@
-import math
+from utilities import etaL, get_enerElas
 
 applied_compression = 10.0
-coefficient_of_friction = 0.3
 
 SL = 92.3  # longitudinal shear strength
 YC = 199.8  # matrix compressive strength
@@ -9,9 +8,11 @@ GSL = 0.788  # Mode II matrix fracture toughness
 alpha0 = 0.925  # matrix crack orientation due to pure matrix compression failure
 length = 0.2  # element edge length
 
-eta_L = -SL * math.cos(2*alpha0) / (YC * math.cos(alpha0) * math.cos(alpha0))
+eta_L = etaL(SL, YC, alpha0)
+enerElas_dmg_0p5 = get_enerElas(SL, GSL, length**2)
 
 enerFrac = GSL * length * length
+disp_at_zero_tol_pct = 0.001
 
 parameters = {
 	"results": [
@@ -57,7 +58,7 @@ parameters = {
             "window": [0.015, 0.020],
             "zeroTol": 0.005,  # Defines how close to zero the y value needs to be
             "referenceValue": 2. * GSL / (SL - eta_L * -applied_compression),
-            "tolerance": 2. * GSL / (SL - eta_L * -applied_compression) * 0.001  # 0.1% error
+            "tolerance": 2. * GSL / (SL - eta_L * -applied_compression) * disp_at_zero_tol_pct
         },
         {
             "type": "max",
@@ -94,6 +95,12 @@ parameters = {
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
             "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GSL*area
             "tolerance": enerFrac * 0.001  # 0.1% error
+        },
+        {
+            "type": "max",
+            "identifier": "Strain energy: ALLSE for Whole Model",  # Recoverable strain energy
+            "referenceValue": enerElas_dmg_0p5,  # Elastic strain energy * volume
+            "tolerance": enerElas_dmg_0p5 * 0.002
         }
 	]
 }

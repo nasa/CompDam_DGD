@@ -207,8 +207,9 @@ Subroutine vucharlength(  &
       charLength(k,2) = Lc_meshlines_matrix * ABS(DOT_PRODUCT(edges(fiberEdge,:), direct(k,:,1))) / da_avg_matrix  ! Equation 20
 
       ! Thickness-direction characteristic element length
-      If (ndim == 3) charLength(k,3) = ABS(DOT_PRODUCT(edges(thickEdge,:), direct(k,:,3)))
-      
+      If (SIZE(charLength,2) >= 3) Then
+        If (ndim == 3) charLength(k,3) = ABS(DOT_PRODUCT(edges(thickEdge,:), direct(k,:,3)))
+      End If
     End Do Master
 
   End If runOnce

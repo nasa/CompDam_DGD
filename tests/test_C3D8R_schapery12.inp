@@ -5,6 +5,21 @@
  length = 0.2
  shear_displacement = 0.02
  shear_displacement_half = shear_displacement/2.
+** Material definition
+ feature_flags = 120000
+ density = 1.57e-05
+ thickness = 0
+**
+** CompDam parameters
+**
+*PARAMETER TABLE TYPE, NAME=KEY_INT, parameters=2
+STRING
+INTEGER
+*TABLE COLLECTION, NAME=COMPDAM_PARAM
+** CompDam parameters with integer values
+** 0 = False, 1 = True
+*PARAMETER TABLE, type=KEY_INT, label=CDP_INT
+alpha_search, 0
 **
 ** NODES
 **
@@ -43,12 +58,35 @@
 **
 *Material, name=IM7-8552
 *Density
- 1.59d-05,
-*User material, constants=4
-** 1              2                  3          4
-** feature flags, , thickness, 4, 5, 6, 7, 8
-         120000,  ,  <length>,  ,  ,  ,  ,  ,
-*Depvar, delete=11
+ <density>,
+*User material, constants=52
+** feature flags, 2,   thickness, 4, 5, 6, 7, 8
+ <feature_flags>,  , <thickness>,  ,  ,  ,  ,  ,
+**
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+    171420.0, 9080.0,   5290.0,   0.32,     0.52,     62.3,     92.30,    0.277,
+**
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+    0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
+**
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+           ,         ,          ,     ,       ,          ,         ,          ,
+**
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     cl,       w_kb,     T_sf,     mu,
+      ,          ,         ,          ,       ,           ,         ,       ,
+**
+**  41        42        43        44        45        46        47        48
+**                                          es0,      es1,      es2,      es3
+      ,         ,         ,         ,       1.d0,     0.d0,     0.d0,     0.d0,
+**
+**  49        50        51        52
+**  gs0,      gs1,      gs2,      gs3
+    1.33d0,   -1.47d0,  5.05d-1,  -1.18d-2
+*Depvar
  19,
  1, CDM_d2
  2, CDM_Fb1
@@ -75,8 +113,8 @@
 **
 *Initial Conditions, Type=Solution
 ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-            0.d0,  0.d0,     0,     1,  0.d0,  0.d0,  0.d0,
-            0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+0.d0,       0.d0,     0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,       0.d0,  0.d0,  0.d0
 *BOUNDARY
   Y-, 1, 2, 0
   Y+, 1, 2, 0

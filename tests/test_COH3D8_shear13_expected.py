@@ -1,8 +1,14 @@
+from utilities import get_enerElas
+
 SL = 92.3
 GSL = 0.788
 length = 0.2
 
+# Calculate elastic strain energy at area damage variable = 0.5, which is approx max value
+enerElas_dmg_0p5 = get_enerElas(SL, GSL, length**2)
+
 enerFrac = GSL * length * length
+disp_at_zero_tol_pct = 0.001
 
 parameters = {
 	"results": [
@@ -35,7 +41,7 @@ parameters = {
             "window": [0.015, 0.020],
             "zeroTol": 0.005,  # Defines how close to zero the y value needs to be
             "referenceValue": 2. * GSL / SL,  # Cohesive displacement-jump at complete failure
-            "tolerance": 2. * GSL / SL * 0.001  # 0.1% error
+            "tolerance": 2. * GSL / SL * disp_at_zero_tol_pct
         },
         {
             "type": "max",
@@ -70,6 +76,12 @@ parameters = {
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
             "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GSL*area
             "tolerance": enerFrac * 0.001  # 0.1% error
+        },
+        {
+            "type": "max",
+            "identifier": "Strain energy: ALLSE for Whole Model",  # Recoverable strain energy
+            "referenceValue": enerElas_dmg_0p5,  # Elastic strain energy * volume
+            "tolerance": enerElas_dmg_0p5 * 0.005
         }
 	]
 }

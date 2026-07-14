@@ -1,0 +1,60 @@
+********************************************************************************
+** CompDam cohesive elements at interface
+********************************************************************************
+*Element, type=<interface_el_type>
+ <COH_F>, <CM1>, <CM2>, <CM3>, <CM4>, <CM5>, <CM6>, <CM7>, <CM8>
+ <COH_B>, <CN1>, <CN2>, <CN3>, <CN4>, <CN5>, <CN6>, <CN7>, <CN8>
+*Elgen, elset=FRONT_COH
+ <COH_F>, <NEC>, 1 , 1 , <NEW>, <NNL>, <NEL>
+*Elgen, elset=BACK_COH
+ <COH_B>, <NED>, 1 , 1 , <NEW>, <NNL>, <NEL>
+*Elset, elset=COH
+ FRONT_COH, BACK_COH
+*Elset, elset=first_coh_element
+<COH_F>,
+*Nset, nset=COH_PATH_START
+ <CM8>
+*Nset, nset=COH_PATH_END
+ <CNE>
+*Nset, nset=CTOD
+ <CM4>, <CM8>
+*Orientation, name=OID_COH
+ 1., 0., 0., 0, 1., 0
+ 3, <coh_rot_z>
+*Cohesive section, elset=COH, response=TRACTION SEPARATION, material=cohesive, controls=EC-1, orientation=OID_COH
+<constitutive_thk>
+*Section Controls, name=EC-1
+1., 1., 1.
+*Material, name=cohesive
+*Density
+<density_interface>,
+*Depvar
+ 19,
+ 1,  COH_dmg
+ 2,  COH_delta_s1
+ 3,  COH_delta_n
+ 4,  COH_delta_s2
+ 5,  COH_B
+ 9,  COH_FI
+ 11, COH_STATUS
+ 15, COH_slide1
+ 16, COH_slide2
+*User Material, constants=40, effmod
+** feature flags, ,   thickness,          4, 5, 6, 7, 8
+          200000, ,   <constitutive_thk>,  ,  ,  ,  ,  ,
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+      ,         ,          ,          ,         ,     <YT>,    <SL>,    <GIc>,
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+ <GIIc>,      <BK>,    <YC>,    <alpha0>,    <Pen2>,        ,         ,          ,
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+           ,         ,          ,     ,       ,          ,         ,          ,
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
+      ,          ,         ,          ,           ,       ,         ,     0.0
+*Initial Conditions, type=SOLUTION
+ COH,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0, 0.d0,  0.d0,  1.,    0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0, 0.d0,  0.d0,  0.d0

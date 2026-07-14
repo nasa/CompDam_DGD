@@ -7,6 +7,11 @@ t = 0.5
 applied_strain = 1.
 stepDuration = 1.0
 displacement = l*applied_strain
+** Material definition
+ feature_flags = 1000
+ mu = 0
+ density = 1.57e-09
+ thickness = 0
 **
 ** PARTS
 **
@@ -64,42 +69,14 @@ Part-1-1.loadApp, 1, 1.
 **
 ** MATERIALS
 **
-*Material, name=IM7-8552
-*Density
-1.57e-09,
-*User material, constants=4
-** 1              2                  3          4
-** feature flags, , thickness, 4, 5, 6, 7, 8
-            1000, ,       <t>,  ,  ,  ,  ,  ,
-*Depvar
-  19,
-  1, CDM_d2
-  2, CDM_Fb1
-  3, CDM_Fb2
-  4, CDM_Fb3
-  5, CDM_B
-  6, CDM_Lc1
-  7, CDM_Lc2
-  8, CDM_Lc3
-  9, CDM_FIm
- 10, CDM_alpha
- 11, CDM_STATUS
- 12, CDM_Plas12
- 13, CDM_Inel12
- 14, CDM_FIfT
- 15, CDM_slide1
- 16, CDM_slide2
- 17, CDM_FIfC
- 18, CDM_d1T
- 19, CDM_d1C
-*Characteristic Length, definition=USER, components=3
+*Include, input=IM7-8552-C3D.inp
 **
 ** INITIAL CONDITIONS
 **
 *Initial Conditions, Type=Solution
 Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-               0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,
-               0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+0.d0,          0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,          0.d0,  0.d0,  0.d0
 **
 *Filter, name=haltOnFailure, operator=Max, limit=1.0, HALT
 ** ----------------------------------------------------------------
@@ -145,7 +122,7 @@ S, LE, SDV
 RF1, U1
 *Element Output, elset=Part-1-1.all
 S11, LE11, SDV
-*Output, history, frequency=1, filter=haltOnFailure
+*Output, history, frequency=100, filter=haltOnFailure
 *Element Output, elset=Part-1-1.all
  SDV18
 *End Step

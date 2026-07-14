@@ -207,21 +207,21 @@ for match in matches:
     position = m.keywordBlock.sieBlocks.index(match)
     m.keywordBlock.insert(position,
         '*Depvar\n' +
-        ' 26,\n' +
+        ' 25,\n' +
         '  1, CDM_d2\n' +
         '  2, CDM_Fb1\n' +
         '  3, CDM_Fb2\n' +
         '  4, CDM_Fb3\n' +
         '  5, CDM_B\n' +
-        '  6, CDM_Lc\n' +
-        '  7, CDM_FIfT\n' +
-        '  8, CDM_d1\n' +
+        '  6, CDM_Lc1\n' +
+        '  7, CDM_Lc2\n' +
+        '  8, CDM_Lc3\n' +
         '  9, CDM_FIm\n' +
         ' 10, CDM_alpha\n' +
         ' 11, CDM_STATUS\n' +
         ' 12, CDM_Plas12\n' +
         ' 13, CDM_Inel12\n' +
-        ' 14, CDM_eps12\n' +
+        ' 14, CDM_FIfT\n' +
         ' 15, CDM_slide1\n' +
         ' 16, CDM_slide2\n' +
         ' 17, CDM_FIfC\n' +
@@ -229,18 +229,17 @@ for match in matches:
         ' 19, CDM_d1C\n' +
         ' 20, CDM_Plas13\n' +
         ' 21, CDM_Inel13\n' +
-        ' 22, CDM_phi\n' +
-        ' 23, CDM_gamma\n' +
-        ' 24, CDM_Fm1\n' +
-        ' 25, CDM_Fm2\n' +
-        ' 26, CDM_Fm3\n' +
+        ' 22, CDM_phi0_12\n' +
+        ' 23, CDM_gamma_12\n' +
+        ' 24, CDM_phi0_13\n' +
+        ' 25, CDM_gamma_13\n' +
         '*Damping, alpha=1.d+4\n'+
         '*Characteristic Length, definition=USER, components=3\n'+
         '*Initial Conditions, Type=Solution\n'+
         ' orphanMeshPart-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
         ' 0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
         ' 0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,\n'+
-        ' 0.d0,  0.d0,  0.d0')
+        ' 0.d0,  0.d0')
 
 # pattern = re.compile(r'\*Node Output,')
 # matches = [x for x in m.keywordBlock.sieBlocks if pattern.match(x)]

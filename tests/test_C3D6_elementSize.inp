@@ -10,6 +10,11 @@
  length3 = 0.1
  displacement = 0.0
  stepDuration = 5.e-7
+** Material definition
+ feature_flags = 0
+ mu = 0
+ density = 1.57e-09
+ thickness = length3
 **
  fiber_angle = 0.0
  misalignment_angle = 0.0
@@ -17,8 +22,8 @@
 **
 ** Dependent parameters and constants
  Pi = 2.0 * acos(0.0)
- skew_1 = length2 * sin(Pi * skew_angle / 180.0)
- skew_2 = length2 * (1.0 - cos(Pi * skew_angle / 180.0))
+ skew_1 = max(1.e-9, length2 * sin(Pi * skew_angle / 180.0))
+ skew_2 = max(1.e-9, length2 * (1.0 - cos(Pi * skew_angle / 180.0)))
 **
 *Node, nset=AllNodes
       1,            0.,            0.,             0.
@@ -58,39 +63,12 @@
  3, <fiber_angle>
 *Solid Section, elset=SingleElement, orientation=Ori-1, material=IM7-8552
 **
-*Material, name=IM7-8552
-*Density
- 1.57e-09,
-*User material, constants=4
-** feature flags, , thickness, 4, 5, 6, 7, 8
-               0, , <length3>,  ,  ,  ,  ,  ,
-*Depvar, delete=11
-  19,
-  1, CDM_d2
-  2, CDM_Fb1
-  3, CDM_Fb2
-  4, CDM_Fb3
-  5, CDM_B
-  6, CDM_Lc1
-  7, CDM_Lc2
-  8, CDM_Lc3
-  9, CDM_FIm
- 10, CDM_alpha
- 11, CDM_STATUS
- 12, CDM_Plas12
- 13, CDM_Inel12
- 14, CDM_FIfT
- 15, CDM_slide1
- 16, CDM_slide2
- 17, CDM_FIfC
- 18, CDM_d1T
- 19, CDM_d1C
-*Characteristic Length, definition=USER, components=3
+*Include, input=IM7-8552-C3D.inp
 **
 *Initial Conditions, type=Solution
  SingleElement, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0,
-                0.d0, 0.d0, 0.d0,    1, 0.d0, 0.d0, 0.d0,
-                0.d0, 0.d0, 0.d0, 0.d0, 0.d0
+ 0.d0,          0.d0, 0.d0,    1, 0.d0, 0.d0, 0.d0, 0.d0, 
+ 0.d0,          0.d0, 0.d0, 0.d0
 *Boundary
   AllNodes, 1, 3, 0
 **

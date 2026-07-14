@@ -1,0 +1,278 @@
+*Heading
+DCB Cohesive Model, 3D, CompDam
+********************************************************************************
+********************************************************************************
+** Generating Mesh
+********************************************************************************
+*Node
+1,  0.0, 0.0, 0.0
+6, 5.0, 0.0, 0.0
+31, 10.0, 0.0, 0.0
+91, 22.0, 0.0, 0.0
+96, 25.0, 0.0, 0.0
+**
+193,  0.0, 1, 0.0
+198, 5.0, 1, 0.0
+223, 10.0, 1, 0.0
+283, 22.0, 1, 0.0
+288, 25.0, 1, 0.0
+**
+*Ngen, nset=TIP_LINE_AB
+1, 193, 96
+*Ngen, nset=LINE_BB
+6, 198, 96
+*Ngen, nset=CRACK_FRONT_B
+31, 223, 96
+*Ngen, nset=MIDDLE_LINE_B
+91, 283, 96
+*Ngen, nset=END_LINE_B
+96, 288, 96
+**
+*Nfill, nset=OPEN_FRONT_AB
+TIP_LINE_AB, LINE_BB, 5,1
+*Nfill, nset=OPEN_FRONT_BB
+LINE_BB, CRACK_FRONT_B, 25,1
+*Nfill, nset=MIDDEL_BB
+CRACK_FRONT_B, MIDDLE_LINE_B, 60, 1
+*Nfill, nset=END_BB
+MIDDLE_LINE_B, END_LINE_B, 5, 1
+**
+*Ncopy, OLD SET=OPEN_FRONT_AB, change number=864, shift, new set=OPEN_FRONT_AT
+0, 0, 0.19
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=OPEN_FRONT_BB, change number=864, shift, new set=OPEN_FRONT_BT
+0, 0, 0.19
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=MIDDEL_BB, change number=864, shift, new set=MIDDEL_BT
+0, 0, 0.19
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=END_BB, change number=864, shift, new set=END_BT
+0, 0, 0.19
+0, 0, 0, 0, 0, 1, 0
+**
+*Nfill, nset=BOTTOM_LAYER
+OPEN_FRONT_AB, OPEN_FRONT_AT, 3, 288
+OPEN_FRONT_BB, OPEN_FRONT_BT, 3, 288
+MIDDEL_BB, MIDDEL_BT, 3, 288
+END_BB, END_BT, 3, 288
+**
+*Ncopy, OLD SET=BOTTOM_LAYER, change number=1152, shift, new set=TOP_LAYER
+0, 0, 0.21
+0, 0, 0, 0, 0, 1, 0
+**
+*Nset, nset=TIP_LINE_AT, generate
+2017, 2209, 96
+*Nset, nset= END_LINE_T, generate
+960, 1152, 96
+*Nset, nset= END_LINE_M, generate
+384, 576, 96
+672, 864, 96
+********************************************************************************
+** Create Elements
+********************************************************************************
+*Element, type=SC8R
+1, 1, 2, 98, 97, 289, 290, 386, 385
+6, 6, 7, 103, 102, 294, 295, 391, 390
+31, 31, 32, 128, 127, 319, 320, 416, 415
+91, 91, 92, 188, 187, 379, 380, 476, 475
+**
+761, 1153, 1154, 1250, 1249, 1441, 1442, 1538, 1537
+766, 1158, 1159, 1255, 1254, 1446, 1447, 1543, 1542
+791, 1183, 1184, 1280, 1279, 1471, 1472, 1568, 1567
+851 ,1243 ,1244 ,1340 ,1339 ,1531 ,1532 ,1628 ,1627
+**
+*Elgen, elset=OPEN_BOTTOM_A
+1, 5, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=OPEN_BOTTOM_B
+6, 25, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=MIDDLE_BOTTOM
+31, 60, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=END_BOTTOM
+91, 5, 1 , 1 , 2, 96, 95, 3, 288, 190
+**
+*Elset, elset=BOTTOM_LAYER
+OPEN_BOTTOM_A, OPEN_BOTTOM_B, MIDDLE_BOTTOM, END_BOTTOM,
+**
+*Elgen, elset=OPEN_TOP_A
+761, 5, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=OPEN_TOP_B
+766, 25, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=MIDDLE_TOP
+791, 60, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=END_TOP
+851, 5, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elset, ELSET=TOP_LAYER
+OPEN_TOP_A, OPEN_TOP_B, MIDDLE_TOP, END_TOP,
+*Elset, ELSET=ARMS
+BOTTOM_LAYER, TOP_LAYER
+**
+*Node, nset=T_Node
+ 9999998, 0., 0., 0.
+*Node, nset=B_Node
+ 9999999, 0., 0., 0.
+********************************************************************************
+** Arm section definitions
+********************************************************************************
+*Orientation, name=OID_0
+ 1., 0., 0., 0, 1., 0
+ 3, 0.
+**
+*Shell Section, elset=BOTTOM_LAYER, material=arms, orientation=OID_0
+0.06333333333333334, 5
+*Shell Section, elset=TOP_LAYER, material=arms, orientation=OID_0
+0.06333333333333334, 5
+** Replace above section definition with this for solid element arms
+** *Solid Section, elset=BOTTOM_LAYER, material=arms, orientation=OID_0 
+** ,
+** *Solid Section, elset=TOP_LAYER, material=arms, orientation=OID_0 
+** ,
+**
+********************************************************************************
+** Arm material definitions
+********************************************************************************
+*Material, name=arms
+*Elastic, type=ENGINEERING CONSTANTS
+171872.29551451185, 9103.95778364116, 9103.95778364116, 0.32, 0.32, 0.525, 5303.957783641161, 5303.957783641161
+2984.904191357758,
+*Density
+1.57e-09,
+********************************************************************************
+** CompDam cohesive elements at interface
+********************************************************************************
+*Element, type=COH3D8
+ 601, 895, 896, 992, 991, 1183, 1184, 1280, 1279
+ 661, 955, 956, 1052, 1051, 1243, 1244, 1340, 1339
+*Elgen, elset=FRONT_COH
+ 601, 60, 1 , 1 , 2, 96, 95
+*Elgen, elset=BACK_COH
+ 661, 5, 1 , 1 , 2, 96, 95
+*Elset, elset=COH
+ FRONT_COH, BACK_COH
+*Elset, elset=first_coh_element
+601,
+*Nset, nset=COH_PATH_START
+ 1279
+*Nset, nset=COH_PATH_END
+ 1344
+*Nset, nset=CTOD
+ 991, 1279
+*Orientation, name=OID_COH
+ 1., 0., 0., 0, 1., 0
+ 3, 0
+*Cohesive section, elset=COH, response=TRACTION SEPARATION, material=cohesive, controls=EC-1, orientation=OID_COH
+1.0
+*Section Controls, name=EC-1
+1., 1., 1.
+*Material, name=cohesive
+*Density
+3.14e-11,
+*Depvar
+ 19,
+ 1,  COH_dmg
+ 2,  COH_delta_s1
+ 3,  COH_delta_n
+ 4,  COH_delta_s2
+ 5,  COH_B
+ 9,  COH_FI
+ 11, COH_STATUS
+ 15, COH_slide1
+ 16, COH_slide2
+*User Material, constants=40
+** feature flags, ,   thickness,          4, 5, 6, 7, 8
+          200000, ,   1.0,  ,  ,  ,  ,  ,
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+      ,         ,          ,          ,         ,     30.0,    30.0,    0.277,
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+ 0.788,      1.634,    199.8,    0.925, 454000.0, 264500.0, 148852.45901639346,          ,
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+           ,         ,          ,     ,       ,          ,         ,          ,
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
+      ,          ,         ,          ,           ,       ,         ,     0.0
+*Initial Conditions, type=SOLUTION
+ COH,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0, 0.d0,  0.d0,  1.,    0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0, 0.d0,  0.d0,  0.d0
+********************************************************************************
+** Boundary conditions and constraints
+********************************************************************************
+*Equation
+ 2
+ TIP_LINE_AT, 3, 1., T_Node, 3, -1.
+ 2
+ TIP_LINE_AB, 3, 1., B_Node, 3, -1.
+*Boundary
+ TIP_LINE_AT, 1, 2, 0.
+ TIP_LINE_AB, 1, 2, 0.
+ TOP_LAYER, 2, 2, 0.
+ BOTTOM_LAYER, 2, 2, 0.
+********************************************************************************
+** Amplitude functions
+********************************************************************************
+*Amplitude, name=Amp-Load, definition=SMOOTH STEP
+0.0, 0.0, 0.0006, 3529.411764705882
+********************************************************************************
+** Step and load application
+********************************************************************************
+** *Time points, name=tp1, generate
+** 0, 0.002, 0.001
+*Step, name=Load, nlgeom=YES
+*Dynamic, explicit
+, 0.002
+**
+*Boundary, type=VELOCITY, amplitude=Amp-Load
+T_Node, 3, 3, 1.0
+B_Node, 3, 3, 0.
+**
+********************************************************************************
+** Output requests
+********************************************************************************
+*Output, history, freq=1
+*Energy Output
+ALLSE, ALLPD, ALLKE, ALLVD, ALLWK, ALLMW, ALLIE, ETOTAL
+ALLAE, ALLDC
+*Energy Output, ELSET=ARMS
+ALLSE, ALLPD, ALLKE, ALLVD, ALLIE
+*Node Output, nset=T_Node
+RF3, U3
+*Node Output, nset=B_Node
+RF3, U3
+*Incrementation Output, variable=preselect
+*Integrated Output, ELSET=ARMS
+ MASS
+**
+*Output, field, number interval=100
+*Node Output
+U, RF
+*Element Output
+S, LE, EMSF, EVOL, ELPD, EDT
+** *Output, field, time points=tp1
+** *Node Output
+** U, RF
+** *Element Output
+** S, LE,
+**
+*Output, history, freq=1
+*Energy Output, ELSET=COH
+ALLSE, ALLPD, ALLKE, ALLVD, ALLIE
+*Element Output, elset=first_coh_element
+EMSF, S, LE
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11
+*Node Output, nset=CTOD
+U3
+*Integrated Output, ELSET=COH
+ MASS
+**
+*Output, field, number interval=100
+*Element Output, elset=COH
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11
+** *Element Output, elset=COH_INSERT
+** SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11
+** *Output, field, time points=tp1
+** *Element Output, elset=COH
+** SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11
+**
+*End Step

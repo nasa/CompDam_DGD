@@ -1,4 +1,4 @@
-import math
+from utilities import get_ST, get_enerElas
 
 SL = 92.3  # longitudinal shear strength
 GSL = 0.788  # Mode II matrix fracture toughness
@@ -6,7 +6,9 @@ YC = 199.8  # matrix compressive strength
 alpha0 = 0.925  # matrix crack orientation due to pure matrix compression failure
 length = 0.2  # element edge length
 
-ST = YC * math.cos(alpha0) * (math.sin(alpha0) + math.cos(alpha0) / math.tan(2*alpha0))
+ST = get_ST(YC, alpha0)
+enerElas_dmg_0p5 = get_enerElas(SL, GSL, length**2)
+
 enerFrac = GSL * length * length
 
 parameters = {
@@ -78,6 +80,12 @@ parameters = {
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
             "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GSL*area
             "tolerance": enerFrac * 0.001  # 0.1% error
+        },
+        {
+            "type": "max",
+            "identifier": "Strain energy: ALLSE for Whole Model",  # Recoverable strain energy
+            "referenceValue": enerElas_dmg_0p5,  # Elastic strain energy * volume
+            "tolerance": enerElas_dmg_0p5 * 0.005
         }
 	]
 }

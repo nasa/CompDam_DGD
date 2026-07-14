@@ -8,7 +8,7 @@ Module matProp_Mod
   Type matProps
     ! Stores the set of properties
 
-    Character(len=80) :: name ! Material name, required
+    Character(len=80) :: name = "" ! Material name, required
 
     ! Material properties, grouped by feature
     ! (Required inputs)
@@ -29,43 +29,45 @@ Module matProp_Mod
     Double Precision :: fatigue_gamma, fatigue_epsilon, fatigue_eta, fatigue_p_mod  ! Opt. CF20 fatigue properties
 
     ! min and max values for acceptable range
-    Double Precision, private :: modulus_min, modulus_max
-    Double Precision, private :: poissons_min, poissons_max
-    Double Precision, private :: strength_min, strength_max
-    Double Precision, private :: toughness_min, toughness_max
-    Double Precision, private :: eta_BK_min, eta_BK_max
-    Double Precision, private :: cte_min, cte_max
-    Double Precision, private :: T_sf_min, T_sf_max
-    Double Precision, private :: aPL_min, aPL_max, nPL_min, nPL_max
-    Double Precision, private :: w_kb_min, w_kb_max
-    Double Precision, private :: cl_min, cl_max
-    Double Precision, private :: alpha0_min, alpha0_max
-    Double Precision, private :: mu_min, mu_max
-    Double Precision, private :: schapery_min, schapery_max
-    Double Precision, private :: schaefer_min, schaefer_max
-    Double Precision, private :: fatigue_gamma_min, fatigue_gamma_max
-    Double Precision, private :: fatigue_epsilon_min, fatigue_epsilon_max
-    Double Precision, private :: fatigue_eta_min, fatigue_eta_max
-    Double Precision, private :: fatigue_p_mod_min, fatigue_p_mod_max
+    Double Precision, private :: modulus_min = Tiny(0.d0), modulus_max = Huge(0.d0)
+    Double Precision, private :: poissons_min = 0.d0, poissons_max = 1.d0
+    Double Precision, private :: strength_min = Tiny(0.d0), strength_max = Huge(0.d0)
+    Double Precision, private :: toughness_min = Tiny(0.d0), toughness_max = Huge(0.d0)
+    Double Precision, private :: eta_BK_min = Tiny(0.d0), eta_BK_max = Huge(0.d0)
+    Double Precision, private :: cte_min = -1.d0, cte_max = 1.d0
+    Double Precision, private :: T_sf_min = -Huge(0.d0), T_sf_max = Huge(0.d0)
+    Double Precision, private :: aPL_min = 0.d0, aPL_max = Huge(0.d0), nPL_min = 0.d0, nPL_max = Huge(0.d0)
+    Double Precision, private :: w_kb_min = Tiny(0.d0), w_kb_max = Huge(0.d0)
+    Double Precision, private :: cl_min = 0.d0, cl_max = 33.d0  ! max ensures that the tangent stiffness is > 0 up to 1.5% strain in compression
+    Double Precision, private :: alpha0_min = 0.d0, alpha0_max = 1.5707963267949d0  ! 0 to pi/2 radians
+    Double Precision, private :: mu_min = 0.d0, mu_max = 1.d0
+    Double Precision, private :: schapery_min = -Huge(0.d0), schapery_max = Huge(0.d0)
+    Double Precision, private :: schaefer_min = -Huge(0.d0), schaefer_max = Huge(0.d0)
+    Double Precision, private :: fatigue_gamma_min = Tiny(0.d0), fatigue_gamma_max = Huge(0.d0)
+    Double Precision, private :: fatigue_epsilon_min = Tiny(0.d0), fatigue_epsilon_max = 1.d0
+    Double Precision, private :: fatigue_eta_min = Tiny(0.d0), fatigue_eta_max = 1.d0
+    Double Precision, private :: fatigue_p_mod_min = -Huge(0.d0), fatigue_p_mod_max = Huge(0.d0)
 
     ! Flags that indicate if values have been set
-    Logical, private :: E1_def, E2_def, G12_def, v12_def, v23_def
-    Logical, private :: YT_def, SL_def, GYT_def, GSL_def, eta_BK_def
-    Logical, private :: E3_def, G13_def, G23_def, v13_def
-    Logical, private :: cte_def(3)
-    Logical, private :: T_sf_def
-    Logical, private :: aPL_def, nPL_def
-    Logical, private :: XT_def, fXT_def, GXT_def, fGXT_def
-    Logical, private :: XC_def, fXC_def, GXC_def, fGXC_def
-    Logical, private :: YC_def, w_kb_def, alpha0_def
-    Logical, private :: cl_def
-    Logical, private :: mu_def
-    Logical, private :: es_def(4), gs_def(4)
-    Logical, private :: schaefer_a6_def
-    Logical, private :: schaefer_b2_def
-    Logical, private :: schaefer_n_def
-    Logical, private :: schaefer_A_def
-    Logical, private :: fatigue_gamma_def, fatigue_epsilon_def, fatigue_eta_def, fatigue_p_mod_def
+    Logical, private :: E1_def = .FALSE., E2_def = .FALSE., G12_def = .FALSE., v12_def = .FALSE., v23_def = .FALSE.
+    Logical, private :: YT_def = .FALSE., SL_def = .FALSE., GYT_def = .FALSE., GSL_def = .FALSE., eta_BK_def = .FALSE.
+    Logical, private :: E3_def = .FALSE., G13_def = .FALSE., G23_def = .FALSE., v13_def = .FALSE.
+    Logical, private :: cte_def(3) = [.FALSE. ,.FALSE. ,.FALSE.]
+    Logical, private :: T_sf_def = .FALSE.
+    Logical, private :: aPL_def = .FALSE., nPL_def = .FALSE.
+    Logical, private :: XT_def = .FALSE., fXT_def = .FALSE., GXT_def = .FALSE., fGXT_def = .FALSE.
+    Logical, private :: XC_def = .FALSE., fXC_def = .FALSE., GXC_def = .FALSE., fGXC_def = .FALSE.
+    Logical, private :: YC_def = .FALSE., w_kb_def = .FALSE., alpha0_def = .FALSE.
+    Logical, private :: cl_def = .FALSE.
+    Logical, private :: mu_def = .FALSE.
+    Logical, private :: es_def(4) = [.FALSE. ,.FALSE. ,.FALSE. ,.FALSE.]
+    Logical, private :: gs_def(4) = [.FALSE. ,.FALSE. ,.FALSE. ,.FALSE.]
+    Logical, private :: schaefer_a6_def = .FALSE.
+    Logical, private :: schaefer_b2_def = .FALSE.
+    Logical, private :: schaefer_n_def = .FALSE.
+    Logical, private :: schaefer_A_def = .FALSE.
+    Logical, private :: fatigue_gamma_def = .FALSE., fatigue_epsilon_def = .FALSE.
+    Logical, private :: fatigue_eta_def = .FALSE., fatigue_p_mod_def = .FALSE.
 
     ! Calculated properties
     Double Precision :: v21, v31, v32
@@ -92,333 +94,32 @@ Module matProp_Mod
 
   End Type matProps
 
-  Type materialList
-    ! An array of matProps
-
-    Type(matProps), Allocatable :: materials(:)
-
-  End Type materialList
+  Type matNameList
+    ! A list of material names for mapping purposes
+    Character(len=80) :: name = ""
+  End Type matNameList
 
   ! Public interface
   Public :: matProps
-  Public :: materialList
+  Public :: matNameList
   Public :: loadMatProps
   Public :: checkForSnapBack
   Public :: getMaterialIndex
   Public :: initializePhi0
-  Public :: consistencyChecks
   Public :: writeMaterialPropertiesToFile
-
-
-  ! Reference to object for singleton
-  type(matProps) :: m
-  type(materialList), Save :: user
 
 
 Contains
 
-  Type(matProps) Function loadMatProps(materialName, nprops, props)
-    ! Loads material properties into module variable m
-
-    Use forlog_Mod
-
-    ! Arguments
-    Character(len=*), intent(IN) :: materialName
-    ! Logical, intent(IN) :: issueWarnings
-    Integer, intent(IN) :: nprops
-    Double Precision, intent(IN) :: props(nprops)
-
-    ! Locals
-    Character(len=256) :: outputDir, jobName, fileName
-    Integer :: lenOutputDir, lenJobName
-    Logical :: fileExists
-
-    Double Precision :: valueDbl
-
-    Double Precision, Parameter :: zero=0.d0, one=1.d0, two=2.d0
-
-    ! -------------------------------------------------------------------- !
-
-    ! Initializations
-    Call initializeMinMaxValues()
-    Call initializeFlags()
-
-    ! Record material name
-    m%name = trim(materialName)
-
-#ifndef PYEXT
-    ! Get the output directory (location to search for .props file)
-    Call VGETOUTDIR(outputDir, lenOutputDir)
-
-    ! Get the jobname
-    Call VGETJOBNAME(jobName, lenJobName)
-
-    ! Look to see if a material properties file exists
-    ! First look for: jobName_materialName.props
-    fileName = trim(outputDir) // '/' // trim(jobName) // '_' // trim(materialName) // '.props'
-    Inquire(FILE=fileName, EXIST=fileExists)
-    ! Try looking for: materialName.props
-    If (.NOT. fileExists) Then
-      fileName = trim(outputDir) // '/' // trim(materialName) // '.props'
-      Inquire(FILE=fileName, EXIST=fileExists)
-    End If
-#else
-    fileName = trim(materialName) // '.props'
-    Inquire(FILE=fileName, EXIST=fileExists)
-#endif
-
-    ! Handle cases
-    If (fileExists .AND. nprops > 8) Then
-      Call log%warn("loadMatProps: Found material property file " // trim(fileName) // " and properties in input deck; using properties in the input deck.")
-      Call loadPropertiesFromInp(nprops, props)
-    Else If (fileExists) Then
-      Call log%info("loadMatProps: Using material property file " // trim(fileName))
-      Call loadPropertiesFromFile(trim(fileName), nprops, props)
-    Else
-      Call loadPropertiesFromInp(nprops, props)
-      Call log%info("loadMatProps: Material property file not found. Looking for: " // trim(fileName))
-      Call log%info("loadMatProps: Reading material properties from the input deck instead.")
-    End If
-
-    ! Feature flags
-    If (.NOT. m%friction) m%mu = zero
-    If (m%mu == zero) m%friction = .False.
-
-    ! Checks that a consistent set of properties has been defined
-    Call consistencyChecks(m, issueWarnings=.FALSE.)
-
-    ! Calculated properties
-    m%v21 = m%E2*m%v12/m%E1
-    m%v31 = m%E3*m%v13/m%E1
-    m%v32 = m%E3*m%v23/m%E2
-
-    ! TODO - additional admissibility checks
-
-    ! Return a reference to the matProps object
-    loadMatProps = m
-
-    Return
-  End Function loadMatProps
-
-
-  Subroutine loadPropertiesFromFile(fileName, nprops, props)
-    ! Populates m with the material properties in the specified .props file
-
+  Subroutine loadMatProps(m, cmname, nprops, props, first_call)
     Use forlog_Mod
 
     !Arguments
-    Character(len=*), intent(IN) :: fileName
+    Class(matProps), intent(INOUT) :: m
+    Character(len=80), intent(IN) :: cmname
     Integer, intent(IN) :: nprops
     Double Precision, intent(IN) :: props(nprops)
-
-    ! Locals
-    Integer, Parameter :: unit=108
-    Integer :: iostat
-    Character(len=256) :: line, key, value, tmp
-    Character(len=30) :: featureFlags
-    Integer :: commentTokenPos, equalTokenPos
-    Double Precision, Parameter :: zero=0.d0, one=1.d0, two=2.d0
-    ! -------------------------------------------------------------------- !
-
-    Call log%debug("loadMatProps: props file name: " // fileName)
-
-    ! Try to load material properties from a '.props' file
-    Open(UNIT=unit, FILE=fileName, STATUS='old', ACTION='read', position='rewind', IOSTAT=iostat)
-
-    If (iostat /= 0) Call log%error("loadMatProps: Unable to access the .props file")
-    ReadLines: Do While (.NOT. EOF(unit))
-
-      ! Read the next line in the file
-      Read(unit,'(A255)',IOSTAT=iostat) line
-
-      If (iostat > 0) Then
-        Call log%error("loadMatProps: Unknown error reading file")
-        Return
-
-      Else If (iostat < 0) Then
-        Call log%debug("loadMatProps: Reached end of props file")
-        Exit ReadLines
-
-      Else  ! Parse the line in the file
-        ! Skip blank lines
-        If (Len(Trim(line)) == 0) Cycle ReadLines
-
-        ! Ignore comment lines (token: //)
-        commentTokenPos = Index(line, '//')
-        If (commentTokenPos == 1) Then
-          Cycle ReadLines
-
-        Else If (commentTokenPos > 1) Then
-          ! This line has a trailing comment, retain everything before the comment
-          line = line(1:commentTokenPos-1)
-        End If
-
-        ! Split the line into a key and value
-        equalTokenPos = Index(line, '=')
-
-        If (equalTokenPos == 0) Call log%error("loadMatProps: Expected [name] = [value] format not found. Line image: " // trim(line))
-
-        ! Parse key and value from the line
-        key = line(1:equalTokenPos-1)
-        value = line(equalTokenPos+1:)
-
-        ! Check if the key is a known property. If it's a known property, check validity, and store it
-        Select Case (trim(key))
-
-          Case ('E1')
-            Call verifyAndSaveProperty_str(trim(key), value, m%modulus_min, m%modulus_max, m%E1, m%E1_def)
-
-          Case ('E2')
-            Call verifyAndSaveProperty_str(trim(key), value, m%modulus_min, m%modulus_max, m%E2, m%E2_def)
-
-          Case ('G12')
-            Call verifyAndSaveProperty_str(trim(key), value, m%modulus_min, m%modulus_max, m%G12, m%G12_def)
-
-          Case ('v12')
-            Call verifyAndSaveProperty_str(trim(key), value, m%poissons_min, m%poissons_max, m%v12, m%v12_def)
-
-          Case ('v23')
-            Call verifyAndSaveProperty_str(trim(key), value, m%poissons_min, m%poissons_max, m%v23, m%v23_def)
-
-          Case ('YT')
-            Call verifyAndSaveProperty_str(trim(key), value, m%strength_min, m%strength_max, m%YT, m%YT_def)
-
-          Case ('SL')
-            Call verifyAndSaveProperty_str(trim(key), value, m%strength_min, m%strength_max, m%SL, m%SL_def)
-
-          Case ('GYT')
-            Call verifyAndSaveProperty_str(trim(key), value, m%toughness_min, m%toughness_max, m%GYT, m%GYT_def)
-
-          Case ('GSL')
-            Call verifyAndSaveProperty_str(trim(key), value, m%toughness_min, m%toughness_max, m%GSL, m%GSL_def)
-
-          Case ('eta_BK')
-            Call verifyAndSaveProperty_str(trim(key), value, m%eta_BK_min, m%eta_BK_max, m%eta_BK, m%eta_BK_def)
-
-          Case ('E3')
-            Call verifyAndSaveProperty_str(trim(key), value, m%modulus_min, m%modulus_max, m%E3, m%E3_def)
-
-          Case ('G13')
-            Call verifyAndSaveProperty_str(trim(key), value, m%modulus_min, m%modulus_max, m%G13, m%G13_def)
-
-          Case ('G23')
-            Call verifyAndSaveProperty_str(trim(key), value, m%modulus_min, m%modulus_max, m%G23, m%G23_def)
-
-          Case ('v13')
-            Call verifyAndSaveProperty_str(trim(key), value, m%poissons_min, m%poissons_max, m%v13, m%v13_def)
-
-          ! Coefficients of thermal expansion and stress free temperature
-          Case ('alpha11')
-            Call verifyAndSaveProperty_str(trim(key), value, m%cte_min, m%cte_max, m%cte(1), m%cte_def(1))
-          Case ('alpha22')
-            Call verifyAndSaveProperty_str(trim(key), value, m%cte_min, m%cte_max, m%cte(2), m%cte_def(2))
-          Case ('alpha33')
-            Call verifyAndSaveProperty_str(trim(key), value, m%cte_min, m%cte_max, m%cte(3), m%cte_def(3))
-          Case ('T_sf')
-            Call verifyAndSaveProperty_str(trim(key), value, m%T_sf_min, m%T_sf_max, m%T_sf, m%T_sf_def)
-
-          Case ('alpha_PL')
-            Call verifyAndSaveProperty_str(trim(key), value, m%aPL_min, m%aPL_max, m%aPL, m%aPL_def)
-          Case ('n_PL')
-            Call verifyAndSaveProperty_str(trim(key), value, m%nPL_min, m%nPL_max, m%nPL, m%nPL_def)
-
-          Case ('XT')
-            Call verifyAndSaveProperty_str(trim(key), value, m%strength_min, m%strength_max, m%XT, m%XT_def)
-
-          Case ('fXT')
-            Call verifyAndSaveProperty_str(trim(key), value, zero, one, m%fXT, m%fXT_def)
-
-          Case ('GXT')
-            Call verifyAndSaveProperty_str(trim(key), value, m%toughness_min, m%toughness_max, m%GXT, m%GXT_def)
-
-          Case ('fGXT')
-            Call verifyAndSaveProperty_str(trim(key), value, zero, one, m%fGXT, m%fGXT_def)
-
-          Case ('XC')
-            Call verifyAndSaveProperty_str(trim(key), value, m%strength_min, m%strength_max, m%XC, m%XC_def)
-
-          Case ('fXC')
-            Call verifyAndSaveProperty_str(trim(key), value, Tiny(zero), one, m%fXC, m%fXC_def)
-
-          Case ('GXC')
-            Call verifyAndSaveProperty_str(trim(key), value, m%toughness_min, m%toughness_max, m%GXC, m%GXC_def)
-
-          Case ('fGXC')
-            Call verifyAndSaveProperty_str(trim(key), value, zero, one, m%fGXC, m%fGXC_def)
-
-          Case ('YC')
-            Call verifyAndSaveProperty_str(trim(key), value, m%strength_min, m%strength_max, m%YC, m%YC_def)
-
-          Case ('w_kb')
-            Call verifyAndSaveProperty_str(trim(key), value, m%w_kb_min, m%w_kb_max, m%w_kb, m%w_kb_def)
-
-          Case ('cl')
-            Call verifyAndSaveProperty_str(trim(key), value, m%cl_min, m%cl_max, m%cl, m%cl_def)
-
-          Case ('alpha0')
-            Call verifyAndSaveProperty_str(trim(key), value, m%alpha0_min, m%alpha0_max, m%alpha0, m%alpha0_def)
-
-          Case ('mu')
-            Call verifyAndSaveProperty_str(trim(key), value, m%mu_min, m%mu_max, m%mu, m%mu_def)
-
-          ! Schapery Theory
-          Case ('es0')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%es(1), m%es_def(1))
-          Case ('es1')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%es(2), m%es_def(2))
-          Case ('es2')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%es(3), m%es_def(3))
-          Case ('es3')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%es(4), m%es_def(4))
-
-          Case ('gs0')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(1), m%gs_def(1))
-          Case ('gs1')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(2), m%gs_def(2))
-          Case ('gs2')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(3), m%gs_def(3))
-          Case ('gs3')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schapery_min, m%schapery_max, m%gs(4), m%gs_def(4))
-
-          ! Schaefer nonlinearity model
-          Case ('schaefer_a6')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_a6, m%schaefer_a6_def)
-          Case ('schaefer_b2')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_b2, m%schaefer_b2_def)
-          Case ('schaefer_n')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_n, m%schaefer_n_def)
-          Case ('schaefer_A')
-            Call verifyAndSaveProperty_str(trim(key), value, m%schaefer_min, m%schaefer_max, m%schaefer_A, m%schaefer_A_def)
-
-          Case Default
-            Call log%error("loadMatProps: Property not recognized: " // trim(key))
-        End Select
-      End If
-    End Do ReadLines
-
-    ! Close the .props file
-    Close(unit)
-
-    ! Require at least the first material property to be specified in the inp deck
-    If (nprops < 1) Call log%error("loadMatProps: Must define the 1st property (feature flags) in the inp deck")
-
-    ! Load material properties from input deck (at most, first 8)
-    If (nprops > 8) Then
-      Call loadPropertiesFromInp(8, props)
-    Else
-      Call loadPropertiesFromInp(nprops, props)
-    End If
-
-    Return
-  End Subroutine loadPropertiesFromFile
-
-
-  Subroutine loadPropertiesFromInp(nprops, props)
-    Use forlog_Mod
-
-    !Arguments
-    Integer, intent(IN) :: nprops
-    Double Precision, intent(IN) :: props(nprops)
+    Logical, intent(IN) :: first_call
 
     ! Locals
     Character(len=30) :: tmp, featureFlags
@@ -426,10 +127,15 @@ Contains
     Double Precision, Parameter :: zero=0.d0, one=1.d0, two=2.d0
     ! -------------------------------------------------------------------- !
 
+    m%name = trim(cmname)
+
+    If (first_call) Call log%writeToLog("INFO:Start loadMatProps() for "// trim(m%name))
+
     Do i=1, nprops
       Select Case (i)
         Case (1)
           ! Convert to string (remove decimal and trailing zeros)
+          If (first_call) Call log%writeToLog("INFO:  "// trim(m%name) //" featureFlag: " // str(props(i)))
           write (tmp, *) props(i)
           featureFlags = Adjustl(tmp(1:Index(tmp, '.')-1))
           numMissingLeadingZeros = 6 - Len_trim(featureFlags)
@@ -450,7 +156,7 @@ Contains
           ! Position 6: Friction
 
           ! Default friction to enabled
-          If (Len_trim(featureFlags) < 6) Call log%error("loadMatProps: All 6 feature flags must be specified, only found " // trim(str(Len_trim(featureFlags))))
+          If (Len_trim(featureFlags) < 6) Call log%error("loadMatProps:"// trim(m%name) //" All 6 feature flags must be specified, only found " // trim(str(Len_trim(featureFlags))))
 
           ! Set flags
           Do j=1,Len_trim(featureFlags)
@@ -459,15 +165,15 @@ Contains
                 If (featureFlags(j:j) == '1') Then
                   m%matrixDam = .TRUE.
                   m%cohesive = .FALSE.
-                  Call log%info("loadMatProps: Matrix damage ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  Matrix damage ENABLED")
                 Else
                   m%matrixDam = .FALSE.
                   If (featureFlags(j:j) == '2') Then
                     m%cohesive = .TRUE.
-                    Call log%info("loadMatProps: Cohesive mode ENABLED")
+                    If (first_call) Call log%writeToLog("INFO:  Cohesive mode ENABLED")
                   Else
                     m%cohesive = .FALSE.
-                    Call log%info("loadMatProps: Matrix damage DISABLED")
+                    If (first_call) Call log%writeToLog("INFO:  Matrix damage DISABLED")
                   End If
                 End If
 
@@ -477,44 +183,44 @@ Contains
                   m%shearNonlinearity13 = .FALSE.
                   m%schapery = .FALSE.
                   m%schaefer = .FALSE.
-                  Call log%info("loadMatProps: Shear nonlinearity (1-2 plane) ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  Shear nonlinearity (1-2 plane) ENABLED")
                 Else If (featureFlags(j:j) == '2') Then
                   m%shearNonlinearity12 = .FALSE.
                   m%shearNonlinearity13 = .FALSE.
                   m%schapery = .TRUE.
                   m%schaefer = .FALSE.
-                  Call log%info("loadMatProps: Schapery micro-damage ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  Schapery micro-damage ENABLED")
                 Else If (featureFlags(j:j) == '3') Then
                   m%shearNonlinearity12 = .TRUE.
                   m%shearNonlinearity13 = .TRUE.
                   m%schapery = .FALSE.
-                  Call log%info("loadMatProps: Shear nonlinearity (3-D) ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  Shear nonlinearity (3-D) ENABLED")
                 Else If (featureFlags(j:j) == '4') Then
                   m%shearNonlinearity12 = .FALSE.
                   m%shearNonlinearity13 = .TRUE.
                   m%schapery = .FALSE.
-                  Call log%info("loadMatProps: Shear nonlinearity (1-3 plane) ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  Shear nonlinearity (1-3 plane) ENABLED")
                 Else If (featureFlags(j:j) == '5') THEN
                   m%shearNonlinearity12 = .FALSE.
                   m%shearNonlinearity13 = .FALSE.
                   m%schapery = .FALSE.
                   m%schaefer = .TRUE.
-                  Call log%info("loadMatProps: Schaefer nonlinearity ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  Schaefer nonlinearity ENABLED")
                 Else
                   m%shearNonlinearity12 = .FALSE.
                   m%shearNonlinearity13 = .FALSE.
                   m%schapery = .FALSE.
                   m%schaefer = .FALSE.
-                  Call log%info("loadMatProps: pre-peak nonlinearity DISABLED")
+                  If (first_call) Call log%writeToLog("INFO:  pre-peak nonlinearity DISABLED")
                 End If
 
               Case (3)
                 If (featureFlags(j:j) == '1') Then
                   m%fiberTenDam = .TRUE.
-                  Call log%info("loadMatProps: fiber tensile damage ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  fiber tensile damage ENABLED")
                 Else
                   m%fiberTenDam = .FALSE.
-                  Call log%info("loadMatProps: fiber tensile damage DISABLED")
+                  If (first_call) Call log%writeToLog("INFO:  fiber tensile damage DISABLED")
                 End If
 
               Case (4)
@@ -522,61 +228,61 @@ Contains
                   m%fiberCompDamBL = .TRUE.
                   m%fiberCompDamFKT12 = .FALSE.
                   m%fiberCompDamFKT13 = .FALSE.
-                  Call log%info("loadMatProps: fiber comp. damage (CDM) ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  fiber comp. damage (CDM) ENABLED")
                 Else If (featureFlags(j:j) == '2') Then
-                  Call log%error("loadMatProps: fiber comp. model 2 not implemented. TODO")
+                  Call log%error("  fiber comp. model 2 not implemented. TODO")
                 Else If (featureFlags(j:j) == '3') Then
                   m%fiberCompDamBL = .FALSE.
                   m%fiberCompDamFKT12 = .TRUE.
                   m%fiberCompDamFKT13 = .FALSE.
-                  Call log%info("loadMatProps: fiber comp. damage (FKT) in-plane ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  fiber comp. damage (FKT) in-plane ENABLED")
                 Else If (featureFlags(j:j) == '4') Then
                   m%fiberCompDamBL = .FALSE.
                   m%fiberCompDamFKT12 = .FALSE.
                   m%fiberCompDamFKT13 = .TRUE.
-                  Call log%info("loadMatProps: fiber comp. damage (FKT) out-of-plane ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  fiber comp. damage (FKT) out-of-plane ENABLED")
                 Else If (featureFlags(j:j) == '5') Then
                   m%fiberCompDamBL = .FALSE.
                   m%fiberCompDamFKT12 = .TRUE.
                   m%fiberCompDamFKT13 = .TRUE.
-                  Call log%info("loadMatProps: fiber comp. damage (FKT) 3-D ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  fiber comp. damage (FKT) 3-D ENABLED")
                 Else
                   m%fiberCompDamBL = .FALSE.
                   m%fiberCompDamFKT12 = .FALSE.
                   m%fiberCompDamFKT13 = .FALSE.
-                  Call log%info("loadMatProps: fiber comp. damage DISABLED")
+                  If (first_call) Call log%writeToLog("INFO:  fiber comp. damage DISABLED")
                 End If
 
               Case (5)
                 If (featureFlags(j:j) == '0') Then
                   m%accumulateDissipPlasEnergy = .TRUE.
                   m%accumulateDissipFractEnergy = .TRUE.
-                  Call log%info("loadMatProps: dissipated inelastic energy due to plasticity and fracture will be summed")
+                  If (first_call) Call log%writeToLog("INFO:  ALLPD: plasticity and fracture will be summed")
                 Else If (featureFlags(j:j) == '1') Then
                   m%accumulateDissipPlasEnergy = .FALSE.
                   m%accumulateDissipFractEnergy = .TRUE.
-                  Call log%info("loadMatProps: dissipated inelastic energy due to plasticity is being ignored. Only dissipated fracture energy will be recorded")
+                  If (first_call) Call log%writeToLog("INFO:  ALLPD: plasticity is being ignored (only fracture energy)")
                 Else If (featureFlags(j:j) == '2') Then
                   m%accumulateDissipPlasEnergy = .TRUE.
                   m%accumulateDissipFractEnergy = .FALSE.
-                  Call log%info("loadMatProps: dissipated inelastic energy due to fracture is being ignored. Only dissipated plastic energy will be recorded")
+                  If (first_call) Call log%writeToLog("INFO:  ALLPD: fracture is being ignored (only plastic energy)")
                 Else
                   m%accumulateDissipPlasEnergy = .FALSE.
                   m%accumulateDissipFractEnergy = .FALSE.
-                  Call log%info("loadMatProps: all dissipated inelastic energy accumulation DISABLED")
+                  If (first_call) Call log%writeToLog("INFO:  ALLPD: inelastic energy accumulation DISABLED")
                 End If
 
               Case (6)
                 If (featureFlags(j:j) == '1') Then
                   m%friction = .TRUE.
-                  Call log%info("loadMatProps: friction ENABLED")
+                  If (first_call) Call log%writeToLog("INFO:  friction ENABLED")
                 Else
                   m%friction = .FALSE.
-                  Call log%info("loadMatProps: friction DISABLED")
+                  If (first_call) Call log%writeToLog("INFO:  friction DISABLED")
                 End If
 
               Case Default
-                Call log%error("loadMatProps: Unknown position found in feature flags")
+                Call log%error("  Unknown position found in feature flags")
             End Select
           End Do
         Case (2)  ! Reserved
@@ -585,267 +291,183 @@ Contains
 
         Case (4)  ! Reserved
         Case (5)
-          Call verifyAndSaveProperty_double('fatigue_gamma', props(i), m%fatigue_gamma_min, m%fatigue_gamma_max, m%fatigue_gamma, m%fatigue_gamma_def)
+          Call verifyAndSaveProperty_double(m, 'fatigue_gamma', props(i), m%fatigue_gamma_min, m%fatigue_gamma_max, m%fatigue_gamma, m%fatigue_gamma_def)
 
         Case (6)
-          Call verifyAndSaveProperty_double('fatigue_epsilon', props(i), m%fatigue_epsilon_min, m%fatigue_epsilon_max, m%fatigue_epsilon, m%fatigue_epsilon_def)
+          Call verifyAndSaveProperty_double(m, 'fatigue_epsilon', props(i), m%fatigue_epsilon_min, m%fatigue_epsilon_max, m%fatigue_epsilon, m%fatigue_epsilon_def)
 
         Case (7)
-          Call verifyAndSaveProperty_double('fatigue_eta', props(i), m%fatigue_eta_min, m%fatigue_eta_max, m%fatigue_eta, m%fatigue_eta_def)
+          Call verifyAndSaveProperty_double(m, 'fatigue_eta', props(i), m%fatigue_eta_min, m%fatigue_eta_max, m%fatigue_eta, m%fatigue_eta_def)
 
         Case (8)
-          Call verifyAndSaveProperty_double('fatigue_p_mod', props(i), m%fatigue_p_mod_min, m%fatigue_p_mod_max, m%fatigue_p_mod, m%fatigue_p_mod_def)
+          Call verifyAndSaveProperty_double(m, 'fatigue_p_mod', props(i), m%fatigue_p_mod_min, m%fatigue_p_mod_max, m%fatigue_p_mod, m%fatigue_p_mod_def)
 
         Case (9)
-          Call verifyAndSaveProperty_double('E1', props(i), m%modulus_min, m%modulus_max, m%E1, m%E1_def)
+          Call verifyAndSaveProperty_double(m, 'E1', props(i), m%modulus_min, m%modulus_max, m%E1, m%E1_def)
 
         Case (10)
-          Call verifyAndSaveProperty_double('E2', props(i), m%modulus_min, m%modulus_max, m%E2, m%E2_def)
+          Call verifyAndSaveProperty_double(m, 'E2', props(i), m%modulus_min, m%modulus_max, m%E2, m%E2_def)
 
         Case (11)
-          Call verifyAndSaveProperty_double('G12', props(i), m%modulus_min, m%modulus_max, m%G12, m%G12_def)
+          Call verifyAndSaveProperty_double(m, 'G12', props(i), m%modulus_min, m%modulus_max, m%G12, m%G12_def)
 
         Case (12)
-          Call verifyAndSaveProperty_double('v12', props(i), m%poissons_min, m%poissons_max, m%v12, m%v12_def)
+          Call verifyAndSaveProperty_double(m, 'v12', props(i), m%poissons_min, m%poissons_max, m%v12, m%v12_def)
 
         Case (13)
-          Call verifyAndSaveProperty_double('v23', props(i), m%poissons_min, m%poissons_max, m%v23, m%v23_def)
+          Call verifyAndSaveProperty_double(m, 'v23', props(i), m%poissons_min, m%poissons_max, m%v23, m%v23_def)
 
         Case (14)
-          Call verifyAndSaveProperty_double('YT', props(i), m%strength_min, m%strength_max, m%YT, m%YT_def)
+          Call verifyAndSaveProperty_double(m, 'YT', props(i), m%strength_min, m%strength_max, m%YT, m%YT_def)
 
         Case (15)
-          Call verifyAndSaveProperty_double('SL', props(i), m%strength_min, m%strength_max, m%SL, m%SL_def)
+          Call verifyAndSaveProperty_double(m, 'SL', props(i), m%strength_min, m%strength_max, m%SL, m%SL_def)
 
         Case (16)
-          Call verifyAndSaveProperty_double('GYT', props(i), m%toughness_min, m%toughness_max, m%GYT, m%GYT_def)
+          Call verifyAndSaveProperty_double(m, 'GYT', props(i), m%toughness_min, m%toughness_max, m%GYT, m%GYT_def)
 
         Case (17)
-          Call verifyAndSaveProperty_double('GSL', props(i), m%toughness_min, m%toughness_max, m%GSL, m%GSL_def)
+          Call verifyAndSaveProperty_double(m, 'GSL', props(i), m%toughness_min, m%toughness_max, m%GSL, m%GSL_def)
 
         Case (18)
-          Call verifyAndSaveProperty_double('eta_BK', props(i), m%eta_BK_min, m%eta_BK_max, m%eta_BK, m%eta_BK_def)
+          Call verifyAndSaveProperty_double(m, 'eta_BK', props(i), m%eta_BK_min, m%eta_BK_max, m%eta_BK, m%eta_BK_def)
 
         Case (19)
-          Call verifyAndSaveProperty_double('YC', props(i), m%strength_min, m%strength_max, m%YC, m%YC_def)
+          Call verifyAndSaveProperty_double(m, 'YC', props(i), m%strength_min, m%strength_max, m%YC, m%YC_def)
 
         Case (20)
-          Call verifyAndSaveProperty_double('alpha0', props(i), m%alpha0_min, m%alpha0_max, m%alpha0, m%alpha0_def)
+          Call verifyAndSaveProperty_double(m, 'alpha0', props(i), m%alpha0_min, m%alpha0_max, m%alpha0, m%alpha0_def)
 
         Case (21)
-          Call verifyAndSaveProperty_double('E3', props(i), m%modulus_min, m%modulus_max, m%E3, m%E3_def)
+          Call verifyAndSaveProperty_double(m, 'E3', props(i), m%modulus_min, m%modulus_max, m%E3, m%E3_def)
 
         Case (22)
-          Call verifyAndSaveProperty_double('G13', props(i), m%modulus_min, m%modulus_max, m%G13, m%G13_def)
+          Call verifyAndSaveProperty_double(m, 'G13', props(i), m%modulus_min, m%modulus_max, m%G13, m%G13_def)
 
         Case (23)
-          Call verifyAndSaveProperty_double('G23', props(i), m%modulus_min, m%modulus_max, m%G23, m%G23_def)
+          Call verifyAndSaveProperty_double(m, 'G23', props(i), m%modulus_min, m%modulus_max, m%G23, m%G23_def)
 
         Case (24)
-          Call verifyAndSaveProperty_double('v13', props(i), m%poissons_min, m%poissons_max, m%v13, m%v13_def)
+          Call verifyAndSaveProperty_double(m, 'v13', props(i), m%poissons_min, m%poissons_max, m%v13, m%v13_def)
 
         Case (25)
-          Call verifyAndSaveProperty_double('alpha11', props(i), m%cte_min, m%cte_max, m%cte(1), m%cte_def(1))
+          Call verifyAndSaveProperty_double(m, 'alpha11', props(i), m%cte_min, m%cte_max, m%cte(1), m%cte_def(1))
 
         Case (26)
-          Call verifyAndSaveProperty_double('alpha22', props(i), m%cte_min, m%cte_max, m%cte(2), m%cte_def(2))
+          Call verifyAndSaveProperty_double(m, 'alpha22', props(i), m%cte_min, m%cte_max, m%cte(2), m%cte_def(2))
 
         Case (27)
-          Call verifyAndSaveProperty_double('alpha_PL', props(i), m%aPL_min, m%aPL_max, m%aPL, m%aPL_def)
+          Call verifyAndSaveProperty_double(m, 'alpha_PL', props(i), m%aPL_min, m%aPL_max, m%aPL, m%aPL_def)
 
         Case (28)
-          Call verifyAndSaveProperty_double('n_PL', props(i), zero, m%nPL_max, m%nPL, m%nPL_def)
+          Call verifyAndSaveProperty_double(m, 'n_PL', props(i), zero, m%nPL_max, m%nPL, m%nPL_def)
 
         Case (29)
-          Call verifyAndSaveProperty_double('XT', props(i), m%strength_min, m%strength_max, m%XT, m%XT_def)
+          Call verifyAndSaveProperty_double(m, 'XT', props(i), m%strength_min, m%strength_max, m%XT, m%XT_def)
 
         Case (30)
-          Call verifyAndSaveProperty_double('fXT', props(i), zero, one, m%fXT, m%fXT_def)
+          Call verifyAndSaveProperty_double(m, 'fXT', props(i), zero, one, m%fXT, m%fXT_def)
 
         Case (31)
-          Call verifyAndSaveProperty_double('GXT', props(i), m%toughness_min, m%toughness_max, m%GXT, m%GXT_def)
+          Call verifyAndSaveProperty_double(m, 'GXT', props(i), m%toughness_min, m%toughness_max, m%GXT, m%GXT_def)
 
         Case (32)
-          Call verifyAndSaveProperty_double('fGXT', props(i), zero, one, m%fGXT, m%fGXT_def)
+          Call verifyAndSaveProperty_double(m, 'fGXT', props(i), zero, one, m%fGXT, m%fGXT_def)
 
         Case (33)
-          Call verifyAndSaveProperty_double('XC', props(i), m%strength_min, m%strength_max, m%XC, m%XC_def)
+          Call verifyAndSaveProperty_double(m, 'XC', props(i), m%strength_min, m%strength_max, m%XC, m%XC_def)
 
         Case (34)
-          Call verifyAndSaveProperty_double('fXC', props(i), Tiny(zero), one, m%fXC, m%fXC_def)
+          Call verifyAndSaveProperty_double(m, 'fXC', props(i), Tiny(zero), one, m%fXC, m%fXC_def)
 
         Case (35)
-          Call verifyAndSaveProperty_double('GXC', props(i), m%toughness_min, m%toughness_max, m%GXC, m%GXC_def)
+          Call verifyAndSaveProperty_double(m, 'GXC', props(i), m%toughness_min, m%toughness_max, m%GXC, m%GXC_def)
 
         Case (36)
-          Call verifyAndSaveProperty_double('fGXC', props(i), zero, one, m%fGXC, m%fGXC_def)
+          Call verifyAndSaveProperty_double(m, 'fGXC', props(i), zero, one, m%fGXC, m%fGXC_def)
 
         Case (37)
-          Call verifyAndSaveProperty_double('cl', props(i), m%cl_min, m%cl_max, m%cl, m%cl_def)
+          Call verifyAndSaveProperty_double(m, 'cl', props(i), m%cl_min, m%cl_max, m%cl, m%cl_def)
 
         Case (38)
-          Call verifyAndSaveProperty_double('w_kb', props(i), m%w_kb_min, m%w_kb_max, m%w_kb, m%w_kb_def)
+          Call verifyAndSaveProperty_double(m, 'w_kb', props(i), m%w_kb_min, m%w_kb_max, m%w_kb, m%w_kb_def)
 
         Case (39)
-          Call verifyAndSaveProperty_double('T_sf', props(i), m%T_sf_min, m%T_sf_max, m%T_sf, m%T_sf_def)
-          
+          Call verifyAndSaveProperty_double(m, 'T_sf', props(i), m%T_sf_min, m%T_sf_max, m%T_sf, m%T_sf_def)
+
         Case (40)
-          Call verifyAndSaveProperty_double('mu', props(i), m%mu_min, m%mu_max, m%mu, m%mu_def)
+          Call verifyAndSaveProperty_double(m, 'mu', props(i), m%mu_min, m%mu_max, m%mu, m%mu_def)
 
         Case (41)
-          Call verifyAndSaveProperty_double('schaefer_a6', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_a6, m%schaefer_a6_def)
+          Call verifyAndSaveProperty_double(m, 'schaefer_a6', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_a6, m%schaefer_a6_def)
 
         Case (42)
-          Call verifyAndSaveProperty_double('schaefer_b2', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_b2, m%schaefer_b2_def)
+          Call verifyAndSaveProperty_double(m, 'schaefer_b2', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_b2, m%schaefer_b2_def)
 
         Case (43)
-          Call verifyAndSaveProperty_double('schaefer_n', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_n, m%schaefer_n_def)
+          Call verifyAndSaveProperty_double(m, 'schaefer_n', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_n, m%schaefer_n_def)
 
         Case (44)
-          Call verifyAndSaveProperty_double('schaefer_A', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_A, m%schaefer_A_def)
+          Call verifyAndSaveProperty_double(m, 'schaefer_A', props(i), m%schaefer_min, m%schaefer_max, m%schaefer_A, m%schaefer_A_def)
+
+        Case (45)
+          Call verifyAndSaveProperty_double(m, 'es0', props(i), m%schapery_min, m%schapery_max, m%es(1), m%es_def(1))
+
+        Case (46)
+          Call verifyAndSaveProperty_double(m, 'es1', props(i), m%schapery_min, m%schapery_max, m%es(2), m%es_def(2))
+
+        Case (47)
+          Call verifyAndSaveProperty_double(m, 'es2', props(i), m%schapery_min, m%schapery_max, m%es(3), m%es_def(3))
+
+        Case (48)
+          Call verifyAndSaveProperty_double(m, 'es3', props(i), m%schapery_min, m%schapery_max, m%es(4), m%es_def(4))
+
+        Case (49)
+          Call verifyAndSaveProperty_double(m, 'gs0', props(i), m%schapery_min, m%schapery_max, m%gs(1), m%gs_def(1))
+
+        Case (50)
+          Call verifyAndSaveProperty_double(m, 'gs1', props(i), m%schapery_min, m%schapery_max, m%gs(2), m%gs_def(2))
+
+        Case (51)
+          Call verifyAndSaveProperty_double(m, 'gs2', props(i), m%schapery_min, m%schapery_max, m%gs(3), m%gs_def(3))
+
+        Case (52)
+          Call verifyAndSaveProperty_double(m, 'gs3', props(i), m%schapery_min, m%schapery_max, m%gs(4), m%gs_def(4))
+
+        Case (53)
+          Call verifyAndSaveProperty_double(m, 'alpha33', props(i), m%cte_min, m%cte_max, m%cte(3), m%cte_def(3))
 
         Case Default
-          Call log%error("loadMatProps: Unknown property #"//trim(str(i))//" found. Expecting nprops <= 40")
+          Call log%error("loadMatProps:"// trim(m%name) //" Unknown property #"//trim(str(i))//" found. Expecting nprops <= 40")
       End Select
 
     End Do
 
-    Return
-  End Subroutine loadPropertiesFromInp
+    ! Feature flags
+    If (.NOT. m%friction) m%mu = zero
+    If (m%mu == zero) m%friction = .False.
 
+    ! Calculate alpha0
+    If (m%matrixDam) Then
+      m%alpha0_deg = NINT(m%alpha0*45.d0/ATAN(one))
+      m%alpha0 = alpha0_DGD(m)
+    End If
 
-  Subroutine initializeMinMaxValues()
+    ! Checks that a consistent set of properties has been defined
+    Call consistencyChecks(m, first_call)
 
-    ! Locals
-    Double Precision, Parameter :: zero=0.d0, one=1.d0, two=2.d0
-    Double Precision, parameter :: pi = 3.141592653589793239
-    ! -------------------------------------------------------------------- !
+    ! Calculated properties
+    m%v21 = m%E2*m%v12/m%E1
+    m%v31 = m%E3*m%v13/m%E1
+    m%v32 = m%E3*m%v23/m%E2
 
-    m%modulus_min = Tiny(zero)
-    m%modulus_max = Huge(zero)
-
-    m%poissons_min = zero
-    m%poissons_max = one
-
-    m%strength_min = Tiny(zero)
-    m%strength_max = Huge(zero)
-
-    m%toughness_min = Tiny(zero)
-    m%toughness_max = Huge(zero)
-
-    m%eta_BK_min = Tiny(zero)
-    m%eta_BK_max = Huge(zero)
-
-    m%cte_min = -one
-    m%cte_max = one
-    
-    m%T_sf_min = -Huge(zero)
-    m%T_sf_max = Huge(zero)
-
-    m%aPL_min = zero
-    m%aPL_max = Huge(zero)
-
-    m%nPL_min = zero
-    m%nPL_max = Huge(zero)
-
-    m%w_kb_min = Tiny(zero)
-    m%w_kb_max = Huge(zero)
-
-    m%cl_min = zero
-    m%cl_max = 33.d0   ! Ensures that the tangent stiffness is > 0 up to 1.5% strain in compression
-
-    m%alpha0_min = zero
-    m%alpha0_max = pi/two
-
-    m%mu_min = zero
-    m%mu_max = one
-
-    m%schapery_min = -Huge(zero)
-    m%schapery_max = Huge(zero)
-
-    m%schaefer_min = -Huge(zero)
-    m%schaefer_max = Huge(zero)
-
-    m%fatigue_gamma_min = Tiny(zero)
-    m%fatigue_gamma_max = Huge(zero)
-
-    m%fatigue_epsilon_min = Tiny(zero)
-    m%fatigue_epsilon_max = one
-
-    m%fatigue_eta_min = Tiny(zero)
-    m%fatigue_eta_max = one
-
-    m%fatigue_p_mod_min = -Huge(zero)
-    m%fatigue_p_mod_max = Huge(zero)
+    If (first_call) Call log%writeToLog("INFO:End loadMatProps() for "// trim(m%name))
 
     Return
-  End Subroutine initializeMinMaxValues
-  
-  
-  Subroutine initializeFlags()
-
-    ! -------------------------------------------------------------------- !
-
-    m%E1_def = .FALSE.
-    m%E2_def = .FALSE.
-    m%G12_def = .FALSE.
-    m%v12_def = .FALSE.
-    m%v23_def = .FALSE.
-    
-    m%YT_def = .FALSE.
-    m%SL_def = .FALSE.
-    m%GYT_def = .FALSE.
-    m%GSL_def = .FALSE.
-    m%eta_BK_def = .FALSE.
-    
-    m%E3_def = .FALSE.
-    m%G13_def = .FALSE.
-    m%G23_def = .FALSE.
-    m%v13_def = .FALSE.
-    
-    m%cte_def(:) = .FALSE.
-    m%T_sf_def = .FALSE.
-    
-    m%aPL_def = .FALSE.
-    m%nPL_def = .FALSE.
-    
-    m%XT_def = .FALSE.
-    m%fXT_def = .FALSE.
-    m%GXT_def = .FALSE.
-    m%fGXT_def = .FALSE.
-    m%XC_def = .FALSE.
-    m%fXC_def = .FALSE.
-    
-    m%GXC_def = .FALSE.
-    m%fGXC_def = .FALSE.
-    m%YC_def = .FALSE.
-    
-    m%w_kb_def = .FALSE.
-    
-    m%alpha0_def = .FALSE.
-    
-    m%cl_def = .FALSE.
-    
-    m%mu_def = .FALSE.
-    
-    m%es_def(:) = .FALSE.
-    m%gs_def(:) = .FALSE.
-    
-    m%schaefer_a6_def = .FALSE.
-    m%schaefer_b2_def = .FALSE.
-    m%schaefer_n_def = .FALSE.
-    m%schaefer_A_def = .FALSE.
-    
-    m%fatigue_gamma_def = .FALSE.
-    m%fatigue_epsilon_def = .FALSE.
-    m%fatigue_eta_def = .FALSE.
-    m%fatigue_p_mod_def = .FALSE.
-
-    Return
-  End Subroutine initializeFlags
+  End Subroutine loadMatProps
 
 
-  Subroutine verifyAndSaveProperty_str(key, value, min, max, saveTo, flag)
+  Subroutine verifyAndSaveProperty_str(m, key, value, min, max, saveTo, flag)
     ! Checks if the value is within the specified bounds. Prints an error message
     ! which kills the analysis if a value is out of bounds. Otherwise, save the property
     ! and sets the flag to indicate that the property has been read in.
@@ -853,6 +475,7 @@ Contains
     Use forlog_Mod
 
     !Arguments
+    Class(matProps), intent(INOUT) :: m
     Character(len=*), intent(IN) :: key, value
     Double Precision, intent(IN) :: min, max
     Double Precision, intent(OUT) :: saveTo
@@ -867,10 +490,10 @@ Contains
 
     ! Verify that the value is within the specified bounds
     If (valueDbl < min) Then
-      Call log%error(" PROPERTY ERROR " // trim(key) // " cannot be less than " // trim(str(min)) // ". Found value: " // trim(str(valueDbl)))
+      Call log%error(" PROPERTY ERROR " // trim(m%name) // ": " // trim(key) // " cannot be less than " // trim(str(min)) // ". Found value: " // trim(str(valueDbl)))
 
     Else If (valueDbl > max) Then
-      Call log%error(" PROPERTY ERROR " // trim(key) // " cannot be greater than " // trim(str(max)) // ". Found value: " // trim(str(valueDbl)))
+      Call log%error(" PROPERTY ERROR " // trim(m%name) // ": " // trim(key) // " cannot be greater than " // trim(str(max)) // ". Found value: " // trim(str(valueDbl)))
 
     Else
       Call log%debug(" loadMatProps: Loaded " // trim(key) // " = " // trim(str(valueDbl)))
@@ -884,7 +507,7 @@ Contains
   End Subroutine verifyAndSaveProperty_str
 
 
-  Subroutine verifyAndSaveProperty_double(key, value, min, max, saveTo, flag)
+  Subroutine verifyAndSaveProperty_double(m, key, value, min, max, saveTo, flag)
     ! Checks if the value is within the specified bounds. Prints an error message
     ! which kills the analysis if a value is out of bounds. Otherwise, save the property
     ! and sets the flag to indicate that the property has been read in.
@@ -892,6 +515,7 @@ Contains
     Use forlog_Mod
 
     !Arguments
+    Class(matProps), intent(INOUT) :: m
     Character(len=*), intent(IN) :: key
     Double Precision, intent(IN) :: value, min, max
     Double Precision, intent(OUT) :: saveTo
@@ -905,14 +529,13 @@ Contains
     If (value < min) Then
       If (value == zero) Then
         flag = .FALSE.
-        Call log%info(" loadMatProps: assuming " // trim(key) // " is not defined")
         Return
       Else
-        Call log%error(" PROPERTY ERROR " // trim(key) // " cannot be less than " // trim(str(min)) // ". Found value: " // trim(str(value)))
+        Call log%error(" PROPERTY ERROR " // trim(m%name) // ": " // trim(key) // " cannot be less than " // trim(str(min)) // ". Found value: " // trim(str(value)))
       End If
 
     Else If (value > max) Then
-      Call log%error(" PROPERTY ERROR " // trim(key) // " cannot be greater than " // trim(str(max)) // ". Found value: " // trim(str(value)))
+      Call log%error(" PROPERTY ERROR " // trim(m%name) // ": " // trim(key) // " cannot be greater than " // trim(str(max)) // ". Found value: " // trim(str(value)))
 
     Else
       Call log%debug(" loadMatProps: Loaded " // trim(key) // " = " // trim(str(value)))
@@ -926,14 +549,14 @@ Contains
   End Subroutine verifyAndSaveProperty_double
 
 
-  Subroutine consistencyChecks(m, issueWarnings)
+  Subroutine consistencyChecks(m, write_info)
     ! Checks that a consistent set of properties has been defined
 
     Use forlog_Mod
 
     ! Arguments
     Type(matProps), intent(INOUT) :: m
-    Logical, intent(IN) :: issueWarnings
+    Logical, intent(IN) :: write_info
 
     ! Locals
     Double Precision :: eps_0tanstiff, eps_0_fn
@@ -942,22 +565,22 @@ Contains
 
     If (.NOT. m%cohesive) Then
       ! Check that all elastic properties have been defined for transverse isotropy
-      If (.NOT. m%E1_def) Call log%error('PROPERTY ERROR: Must define a value for E1')
-      If (.NOT. m%E2_def) Call log%error('PROPERTY ERROR: Must define a value for E2')
-      If (.NOT. m%G12_def) Call log%error('PROPERTY ERROR: Must define a value for G12')
-      If (.NOT. m%v12_def) Call log%error('PROPERTY ERROR: Must define a value for v12')
-      If (.NOT. m%v23_def) Call log%error('PROPERTY ERROR: Must define a value for v23')
+      If (.NOT. m%E1_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Must define a value for E1')
+      If (.NOT. m%E2_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Must define a value for E2')
+      If (.NOT. m%G12_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Must define a value for G12')
+      If (.NOT. m%v12_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Must define a value for v12')
+      If (.NOT. m%v23_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Must define a value for v23')
 
       ! Check if orthotropic elastic properties have been defined
       If (m%E3_def .OR. m%G13_def .OR. m%G23_def) Then
-        If (.NOT. m%E3_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for E3.')
-        If (.NOT. m%G13_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for G13.')
-        If (.NOT. m%G23_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for G23.')
-        If (.NOT. m%v13_def) Call log%error('PROPERTY ERROR: Some orthotropic elastic properties are missing. Must define a value for v13.')
-        Call log%info('PROPERTY: Orthotropic constants are defined directly')
+        If (.NOT. m%E3_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some orthotropic elastic properties are missing. Must define a value for E3.')
+        If (.NOT. m%G13_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some orthotropic elastic properties are missing. Must define a value for G13.')
+        If (.NOT. m%G23_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some orthotropic elastic properties are missing. Must define a value for G23.')
+        If (.NOT. m%v13_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some orthotropic elastic properties are missing. Must define a value for v13.')
+        If (write_info) Call log%writeToLog('INFO:  Orthotropic constants are defined directly')
       Else
         ! Compute these properties assuming transverse isotropy
-        Call log%info('PROPERTY: Assuming transverse isotropy')
+        If (write_info) Call log%writeToLog('INFO:  Assuming transverse isotropy')
         m%E3  = m%E2
         m%G13 = m%G12
         m%v13 = m%v12
@@ -966,64 +589,71 @@ Contains
 
     Else If (m%cohesive) Then  ! Check if cohesive element properties have been specified
       ! Check for cohesive stiffness material properties
-      If (.NOT. m%E3_def) Call log%error('PROPERTY ERROR: Cohesive material laws require a definition for E3.')
+      If (.NOT. m%E3_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Cohesive material laws require a definition for E3.')
       If (m%G13_def .AND. m%G23_def) Then
         m%embedded_cohesive = .TRUE.
-        Call log%info('PROPERTY: G13 and G23 are defined for a cohesive element. Assuming finite thickness.')
+        If (write_info) Call log%writeToLog('INFO:  G13 and G23 are defined for a cohesive element. Assuming finite thickness.')
       Else
         m%embedded_cohesive = .FALSE.
       End If
       ! Check for cohesive strength material properties
-      If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for YT.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for SL.')
+      If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some cohesive element properties are missing. Must define a value for YT.')
+      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some cohesive element properties are missing. Must define a value for SL.')
       If (m%YC_def .AND. m%alpha0_def) Then
-        ! Compute these properties for the transverse shear strength
-        m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
-        m%etaT = -one/TAN(two*m%alpha0)
-        m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
+        If (m%alpha0 .EQ. zero) Then
+          Call log%warn('PROPERTY: alpha0 = 0, which leads to etaT = inf. Assuming etaL = etaT = zero and S_T = S_L.')
+          m%etaL = zero
+          m%etaT = zero
+          m%ST   = m%SL
+        Else
+          ! Compute these properties for the transverse shear strength
+          m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
+          m%etaT = -one/TAN(two*m%alpha0)
+          m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
+        End If
       Else
-        Call log%info('PROPERTY: YC and/or alpha0 not defined. Assuming that S_T = S_L.')
+        If (write_info) Call log%writeToLog('INFO:  YC and/or alpha0 not defined. Assuming that S_T = S_L.')
         m%etaL = zero
         m%etaT = zero
         m%ST   = m%SL
       End If
       ! Check for cohesive fracture toughness material properties
-      If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GYT.')
-      If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for GSL.')
-      If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some cohesive element properties are missing. Must define a value for eta_BK.')
+      If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some cohesive element properties are missing. Must define a value for GYT.')
+      If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some cohesive element properties are missing. Must define a value for GSL.')
+      If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some cohesive element properties are missing. Must define a value for eta_BK.')
 
-      Call log%info('PROPERTY: All required cohesive element properties are defined.')
+      If (write_info) Call log%writeToLog('INFO:  All required cohesive element properties are defined.')
     End IF
 
     ! Check if matrix damage properties have been specified
     If (m%matrixDam) Then
-      If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for YT.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for SL.')
-      If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for GYT.')
-      If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for GSL.')
-      If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for eta_BK.')
-      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for YC.')
-      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some matrix damage properties are missing. Must define a value for alpha0.')
+      If (.NOT. m%YT_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some matrix damage properties are missing. Must define a value for YT.')
+      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some matrix damage properties are missing. Must define a value for SL.')
+      If (.NOT. m%GYT_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some matrix damage properties are missing. Must define a value for GYT.')
+      If (.NOT. m%GSL_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some matrix damage properties are missing. Must define a value for GSL.')
+      If (.NOT. m%eta_BK_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some matrix damage properties are missing. Must define a value for eta_BK.')
+      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some matrix damage properties are missing. Must define a value for YC.')
+      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some matrix damage properties are missing. Must define a value for alpha0.')
       m%etaL = -m%SL*COS(two*m%alpha0)/(m%YC*COS(m%alpha0)*COS(m%alpha0))
       m%etaT = -one/TAN(two*m%alpha0)
       m%ST   = m%YC*COS(m%alpha0)*(SIN(m%alpha0) + COS(m%alpha0)/TAN(two*m%alpha0))
 
-      Call log%info('PROPERTY: Matrix damage is enabled')
+      If (write_info) Call log%writeToLog('INFO:  Matrix damage is enabled')
     Else
-      Call log%info('PROPERTY: Matrix damage is disabled')
+      If (write_info) Call log%writeToLog('INFO:  Matrix damage is disabled')
     End If
 
     ! Check if CTEs have been defined
     If (m%cte_def(1) .OR. m%cte_def(2) .OR. m%cte_def(3)) Then
-      If (.NOT. m%cte_def(1)) Call log%error('PROPERTY ERROR: Some CTE properties are missing. Must define a value for alpha11.')
-      If (.NOT. m%cte_def(2)) Call log%error('PROPERTY ERROR: Some CTE properties are missing. Must define a value for alpha22.')
+      If (.NOT. m%cte_def(1)) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some CTE properties are missing. Must define a value for alpha11.')
+      If (.NOT. m%cte_def(2)) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some CTE properties are missing. Must define a value for alpha22.')
       If (.NOT. m%cte_def(3)) Then
-        Call log%info('PROPERTY: Assuming alpha33 = alpha22')
+        If (write_info) Call log%writeToLog('INFO:  Assuming alpha33 = alpha22')
         m%cte(3) = m%cte(2)
       End If
-      Call log%info('PROPERTY: CTEs have been defined')
+      If (write_info) Call log%writeToLog('INFO:  CTEs have been defined')
     Else
-      If (issueWarnings) Call log%warn('PROPERTY: CTEs are being set to zero')
+      If (write_info) Call log%writeToLog('INFO:  CTEs are being set to zero')
       m%cte(1) = zero
       m%cte(2) = zero
       m%cte(3) = zero
@@ -1031,29 +661,29 @@ Contains
     
     ! Check if stress free residual temperature has been defined
     If (m%T_sf_def) Then
-      Call log%info('PROPERTY: residual stress free temperature has been defined')
+      If (write_info) Call log%writeToLog('INFO:  residual stress free temperature has been defined')
     Else
-      Call log%info('PROPERTY: the residual stress free temperature is being set to zero')
+      If (write_info) Call log%writeToLog('INFO:  the residual stress free temperature is being set to zero')
       m%T_sf = zero
     End If
 
     ! Check if shear nonlinearity properties have been defined
     If (m%shearNonlinearity12 .OR. m%shearNonlinearity13) Then
-      If (.NOT. m%aPL_def) Call log%error('PROPERTY ERROR: Some shear-nonlinearity properties are missing. Must define a value for alpha_PL.')
-      If (.NOT. m%nPL_def) Call log%error('PROPERTY ERROR: Some shear-nonlinearity properties are missing. Must define a value for n_PL.')
-      If (m%aPL .EQ. zero) Call log%error('PROPERTY ERROR: Shear nonlinearity is enabled, but alpha_PL is zero')
-      If (m%nPL .EQ. zero) Call log%error('PROPERTY ERROR: Shear nonlinearity is enabled, but n_PL is zero')
-      Call log%info('PROPERTY: Shear-nonlinearity properties have been defined')
+      If (.NOT. m%aPL_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some shear-nonlinearity properties are missing. Must define a value for alpha_PL.')
+      If (.NOT. m%nPL_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some shear-nonlinearity properties are missing. Must define a value for n_PL.')
+      If (m%aPL .EQ. zero) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Shear nonlinearity is enabled, but alpha_PL is zero')
+      If (m%nPL .EQ. zero) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Shear nonlinearity is enabled, but n_PL is zero')
+      If (write_info) Call log%writeToLog('INFO:  Shear-nonlinearity properties have been defined')
     Else
-      Call log%info('PROPERTY: Shear-nonlinearity is disabled')
+      If (write_info) Call log%writeToLog('INFO:  Shear-nonlinearity is disabled')
     End If
 
     ! Check if all Schapery micro-damage material properties have been defined
     If (m%schapery) Then
-      If (.NOT. (all(m%es_def) .AND. all(m%gs_def))) Call log%error('PROPERTY ERROR: Some Schapery micro-damage are missing.')
-      Call log%info('PROPERTY: Schapery micro-damage properties have been defined')
+      If (.NOT. (all(m%es_def) .AND. all(m%gs_def))) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some Schapery micro-damage are missing.')
+      If (write_info) Call log%writeToLog('INFO:  Schapery micro-damage properties have been defined')
     Else
-      Call log%info('PROPERTY: Schapery micro-damage is disabled')
+      If (write_info) Call log%writeToLog('INFO:  Schapery micro-damage is disabled')
       ! Default values that will cause no pre-peak nonlinearity
       m%es = zero
       m%es(1) = one
@@ -1063,57 +693,57 @@ Contains
 
     ! Check is all the parameters for Schaefer nonlinearity model have been defined
     If (m%schaefer) Then
-      If (.NOT. m%schaefer_a6_def ) Call log%error('PROPERTY ERROR: Some Schaefer nonlinearity properties are missing. Must define schaefer_a6')
-      If (.NOT. m%schaefer_b2_def ) Call log%error('PROPERTY ERROR: Some Schaefer nonlinearity properties are missing. Must define schaefer_b2')
-      If (.NOT. m%schaefer_n_def ) Call log%error('PROPERTY ERROR: Some Schaefer nonlinearity properties are missing. Must define schaefer_n')
-      If (.NOT. m%schaefer_A_def ) Call log%error('PROPERTY ERROR: Some Schaefer nonlinearity properties are missing. Must define schaefer_A')
-      Call log%info('PROPERTY: Schaefer properties have been defined')
+      If (.NOT. m%schaefer_a6_def ) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some Schaefer nonlinearity properties are missing. Must define schaefer_a6')
+      If (.NOT. m%schaefer_b2_def ) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some Schaefer nonlinearity properties are missing. Must define schaefer_b2')
+      If (.NOT. m%schaefer_n_def ) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some Schaefer nonlinearity properties are missing. Must define schaefer_n')
+      If (.NOT. m%schaefer_A_def ) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some Schaefer nonlinearity properties are missing. Must define schaefer_A')
+      If (write_info) Call log%writeToLog('INFO:  Schaefer properties have been defined')
     Else
-      Call log%info('PROPERTY: Schaefer is disabled')
+      If (write_info) Call log%writeToLog('INFO:  Schaefer is disabled')
       ! Default values that will cause no pre-peak nonlinearity
     End If
 
     ! Check if fiber tensile damage properties have been defined
     If (m%fiberTenDam) Then
-      If (.NOT. m%XT_def) Call log%error('PROPERTY ERROR: Some fiber tensile damage properties are missing. Must define a value for XT.')
-      If (.NOT. m%fXT_def) Call log%error('PROPERTY ERROR: Some fiber tensile damage properties are missing. Must define a value for fXT.')
-      If (.NOT. m%GXT_def) Call log%error('PROPERTY ERROR: Some fiber tensile damage properties are missing. Must define a value for GXT.')
-      If (.NOT. m%fGXT_def) Call log%error('PROPERTY ERROR: Some fiber tensile damage properties are missing. Must define a value for fGXT.')
+      If (.NOT. m%XT_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber tensile damage properties are missing. Must define a value for XT.')
+      If (.NOT. m%fXT_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber tensile damage properties are missing. Must define a value for fXT.')
+      If (.NOT. m%GXT_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber tensile damage properties are missing. Must define a value for GXT.')
+      If (.NOT. m%fGXT_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber tensile damage properties are missing. Must define a value for fGXT.')
 
-      Call log%info('PROPERTY: fiber tensile damage properties have been defined')
+      If (write_info) Call log%writeToLog('INFO:  fiber tensile damage properties have been defined')
     Else
-      Call log%info('PROPERTY: fiber tensile damage is disabled')
+      If (write_info) Call log%writeToLog('INFO:  fiber tensile damage is disabled')
     End If
 
     ! Check if the CDM fiber compression damage properties have been defined
     If (m%fiberCompDamBL) Then
-      If (.NOT. m%XC_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (BL model). Must define a value for XC.')
-      If (.NOT. m%fXC_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (BL model). Must define a value for fXC.')
-      If (.NOT. m%GXC_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (BL model). Must define a value for GXC.')
-      If (.NOT. m%fGXC_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (BL model). Must define a value for fGXC.')
+      If (.NOT. m%XC_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber compression damage properties are missing (BL model). Must define a value for XC.')
+      If (.NOT. m%fXC_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber compression damage properties are missing (BL model). Must define a value for fXC.')
+      If (.NOT. m%GXC_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber compression damage properties are missing (BL model). Must define a value for GXC.')
+      If (.NOT. m%fGXC_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber compression damage properties are missing (BL model). Must define a value for fGXC.')
 
-      Call log%info('PROPERTY: fiber compression damage BL (model 1) properties have been defined')
+      If (write_info) Call log%writeToLog('INFO:  fiber compression damage BL (model 1) properties have been defined')
     Else
-      Call log%info('PROPERTY: fiber compression damage BL (model 1) is disabled')
+      If (write_info) Call log%writeToLog('INFO:  fiber compression damage BL (model 1) is disabled')
     End If
 
     ! Check if the DGD fiber compression damage properties have been defined
     If (m%fiberCompDamFKT12 .OR. m%fiberCompDamFKT13) Then
-      If (.NOT. m%XC_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (FKT model). Must define a value for XC.')
-      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (FKT model). Must define a value for YC.')
-      If (.NOT. m%w_kb_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (FKT model). Must define a value for w_kb.')
-      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (FKT model). Must define a value for alpha0.')
-      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR: Some fiber compression damage properties are missing (FKT model). Must define a value for SL.')
+      If (.NOT. m%XC_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber compression damage properties are missing (FKT model). Must define a value for XC.')
+      If (.NOT. m%YC_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber compression damage properties are missing (FKT model). Must define a value for YC.')
+      If (.NOT. m%w_kb_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber compression damage properties are missing (FKT model). Must define a value for w_kb.')
+      If (.NOT. m%alpha0_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber compression damage properties are missing (FKT model). Must define a value for alpha0.')
+      If (.NOT. m%SL_def) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Some fiber compression damage properties are missing (FKT model). Must define a value for SL.')
 
       ! Make sure shear nonlinearity is enabled
-      If (m%fiberCompDamFKT12 .AND. (.NOT. m%shearNonlinearity12)) Call log%error('PROPERTY ERROR: Shear-nonlinearity 1-2 must be enabled with fiber compression damage FKT 1-2.')
-      If (m%fiberCompDamFKT13 .AND. (.NOT. m%shearNonlinearity13)) Call log%error('PROPERTY ERROR: Shear-nonlinearity 1-3 must be enabled with fiber compression damage FKT 1-3.')
+      If (m%fiberCompDamFKT12 .AND. (.NOT. m%shearNonlinearity12)) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Shear-nonlinearity 1-2 must be enabled with fiber compression damage FKT 1-2.')
+      If (m%fiberCompDamFKT13 .AND. (.NOT. m%shearNonlinearity13)) Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Shear-nonlinearity 1-3 must be enabled with fiber compression damage FKT 1-3.')
 
-      If (m%fiberCompDamFKT12 .AND. m%fiberCompDamFKT13) Call log%info('PROPERTY: fiber compression damage FKT 3-D (model 5) properties have been defined')
-      If (m%fiberCompDamFKT12) Call log%info('PROPERTY: fiber compression damage FKT in-plane (model 3) properties have been defined')
-      If (m%fiberCompDamFKT13) Call log%info('PROPERTY: fiber compression damage FKT out-of-plane (model 4) properties have been defined')
+      If (m%fiberCompDamFKT12 .AND. m%fiberCompDamFKT13 .AND. write_info) Call log%writeToLog('INFO:  fiber compression damage FKT 3-D (model 5) properties have been defined')
+      If (m%fiberCompDamFKT12 .AND. write_info) Call log%writeToLog('INFO:  fiber compression damage FKT in-plane (model 3) properties have been defined')
+      If (m%fiberCompDamFKT13 .AND. write_info) Call log%writeToLog('INFO:  fiber compression damage FKT out-of-plane (model 4) properties have been defined')
     Else
-      Call log%info('PROPERTY: fiber compression damage FKT is disabled')
+      If (write_info) Call log%writeToLog('INFO:  fiber compression damage FKT is disabled')
     End If
 
     ! check if fiber nonlinearity has been defined
@@ -1123,21 +753,21 @@ Contains
         eps_0tanstiff = one/(two*m%cl)
         eps_0_fn = (-m%E1+SQRT(m%E1**two-four*m%E1*m%cl*m%XC))/(two*m%E1*m%cl)  ! Strain at fiber compression failure
         If (eps_0tanstiff < eps_0_fn) Then
-          Call log%error('PROPERTY ERROR: Tangent stiffness goes (eps11 =  ' // trim(str(eps_0tanstiff)) // ')to zero before fiber compression failure strain is reached(eps11 = ' // &
+          Call log%error('PROPERTY ERROR:'// trim(m%name) // ', Tangent stiffness goes (eps11 =  ' // trim(str(eps_0tanstiff)) // ')to zero before fiber compression failure strain is reached(eps11 = ' // &
             trim(str(eps_0_fn)) // '). Adjust cl, E1, and/or XC.')
         End If
       End If
-      Call log%info('PROPERTY: fiber nonlinearity has been defined')
+      If (write_info) Call log%writeToLog('INFO:  fiber nonlinearity has been defined')
     Else
-      Call log%info('PROPERTY: fiber nonlinearity has not been defined. Setting cl = 0')
+      If (write_info) Call log%writeToLog('INFO:  fiber nonlinearity has not been defined. Setting cl = 0')
       m%cl = zero
     End If
 
     ! check if fatigue properties have been defined
     If (m%fatigue_gamma_def .AND. m%fatigue_epsilon_def .AND. m%fatigue_eta_def .AND. m%fatigue_p_mod_def) Then
-      Call log%info('PROPERTY: cohesive fatigue properties have been defined')
+      If (write_info) Call log%writeToLog('INFO:  cohesive fatigue properties have been defined')
     Else
-      Call log%info('PROPERTY: cohesive fatigue properties have not been defined. Using default values.')
+      If (write_info) Call log%writeToLog('INFO:  cohesive fatigue properties have not been defined. Using default values.')
       If (.NOT. m%fatigue_gamma_def) m%fatigue_gamma = 1.d7
       If (.NOT. m%fatigue_epsilon_def) m%fatigue_epsilon = 0.2d0
       If (.NOT. m%fatigue_eta_def) m%fatigue_eta = 0.95d0
@@ -1232,6 +862,117 @@ Contains
     Return
   End Subroutine checkForSnapBack
 
+  Function alpha0_DGD(m)
+    ! Determines the orientation of the angle alpha0 when subject to sigma22 = -Yc
+    !
+    ! The material input alpha0 is the orientation of the crack surface normal in the 2--3 plane
+    ! with respect to the material 2 direction for a crack caused by pure matrix compression.
+    ! alpha0 is the orientation of the resulting crack after the material has been unloaded, as it
+    ! would be measured in a tested specimen. This function calculates the orientation of the
+    ! crack normal defined by alpha0 when damage initiates due to pure compressive matrix loading.
+
+    Use forlog_Mod
+    Use matrixAlgUtil_Mod
+    Use stress_Mod
+
+    ! Arguments
+    Type(matProps), intent(IN) :: m
+
+    ! Locals
+    Double Precision :: E3, G13, v13, G23    ! For transverse isotropy assumption
+    Double Precision :: C(6,6)               ! 3-D Stiffness
+    Double Precision :: F(3)                 ! Represents diagonal of deformation gradient tensor
+    Double Precision :: Residual(3)          ! Residual vector
+    Double Precision :: tolerance
+    Double Precision :: err
+    Double Precision :: Jac(3,3)             ! Jacobian
+    Integer :: counter
+    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
+    ! -------------------------------------------------------------------- !
+
+    Call log%debug('Start of Function alpha0_DGD')
+
+    tolerance = 1.d-4  ! alphaLoop tolerance
+
+    ! Assume transverse isotropy if needed
+    If (m%E3 < one) Then
+      E3 = m%E2
+    Else
+      E3 = m%E3
+    End If
+    If (m%G13 < one) Then
+      G13 = m%G12
+    Else
+      G13 = m%G13
+    End If
+    If (m%v13 == zero) Then
+      v13 = m%v12
+    Else
+      v13 = m%v13
+    End If
+    If (m%G23 < one) Then
+      G23 = m%E2/two/(one + m%v23)
+    Else
+      G23 = m%G23
+    End If
+
+    ! Build the stiffness matrix
+    C = StiffFunc(6, m%E1, m%E2, E3, m%G12, G13, G23, m%v12, v13, m%v23, zero, zero, zero)
+
+    ! Make an initial guess
+    F = (/ one, one, one /)
+
+    ! -------------------------------------------------------------------- !
+    !    alphaLoop Loop and solution controls definition                   !
+    ! -------------------------------------------------------------------- !
+    counter = 0  ! Counter for alphaLoop
+    counter_max = 100
+
+    alphaLoop: Do  ! Loop to determine the F which corresponds to sigma22 = -Yc
+      counter = counter + 1
+      ! -------------------------------------------------------------------- !
+      !    Define the stress residual vector, R. R is equal to the           !
+      !    difference in stress between the cohesive interface and the bulk  !
+      !    stress projected onto the cohesive interface                      !
+      ! -------------------------------------------------------------------- !
+      Residual(1) = (C(1,1)*(F(1)*F(1) - one) + C(1,2)*(F(2)*F(2) - one) + C(1,3)*(F(3)*F(3) - one))/two
+      Residual(2) = (C(2,1)*(F(1)*F(1) - one) + C(2,2)*(F(2)*F(2) - one) + C(2,3)*(F(3)*F(3) - one))/two + m%Yc*F(1)*F(3)/F(2)
+      Residual(3) = (C(3,1)*(F(1)*F(1) - one) + C(3,2)*(F(2)*F(2) - one) + C(3,3)*(F(3)*F(3) - one))/two
+
+      ! Check for convergence
+      err = Length(Residual)
+
+      ! If converged,
+      If (err < tolerance) Then
+        alpha0_DGD = ATAN(F(2)/F(3)*TAN(m%alpha0))
+        EXIT alphaLoop
+      End If
+      IF (counter == counter_max) Call log%error('Function alpha0_DGD failed to converge, material: ' // trim(m%name))
+
+      ! Define the Jacobian matrix, J
+      Jac = zero
+
+      Jac(1,1) = C(1,1)*F(1)
+      Jac(1,2) = C(1,2)*F(2)
+      Jac(1,3) = C(1,3)*F(3)
+
+      Jac(2,1) = C(2,1)*F(1) + two*m%Yc*F(3)/F(2)
+      Jac(2,2) = C(2,2)*F(1) - two*m%Yc*F(3)*F(1)/(F(2)*F(2))
+      Jac(2,3) = C(2,3)*F(1) + two*m%Yc*F(1)/F(2)
+
+      Jac(3,1) = C(3,1)*F(1)
+      Jac(3,2) = C(3,2)*F(2)
+      Jac(3,3) = C(3,3)*F(3)
+
+      ! Calculate the new diagonal deformation gradient
+      F = F - MATMUL(MInverse(Jac), Residual)
+
+    End Do alphaLoop
+
+    Call log%info('alpha0_DGD: ' // trim(str(alpha0_DGD)))
+
+    Return
+  End Function alpha0_DGD
 
   Function applyIdxRangeChecks(index, randomNumbers) result(output)
     ! Adjusts the index so that it is within bounds
@@ -1485,7 +1226,6 @@ Contains
     write(fileUnit, nameValueFmt) '    ', m%v13, ',  # 24: v13'
     write(fileUnit, nameValueFmt) '    ', m%cte(1), ',  # 25: cte11'
     write(fileUnit, nameValueFmt) '    ', m%cte(2), ',  # 26: cte22'
-    write(fileUnit, nameValueFmt) '    ', m%cte(3), ',  #   : cte33'
     write(fileUnit, nameValueFmt) '    ', m%aPL, ',  # 27: aPL'
     write(fileUnit, nameValueFmt) '    ', m%nPL, ',  # 28: nPL'
     write(fileUnit, nameValueFmt) '    ', m%XT, ',  # 29: XT'
@@ -1501,33 +1241,9 @@ Contains
     write(fileUnit, nameValueFmt) '    ', m%T_sf, ',  # 39: T_sf'
     write(fileUnit, nameValueFmt) '    ', m%mu, ',  # 40: mu'
     write(fileUnit, "(A)") ']'
+    ! write(fileUnit, "(A,E22.15E2)") 'cte33 = ', m%cte(3)
 
   End Subroutine writeMaterialPropertiesToFile
-  
-  
-  Function getMaterialIndex(material_list, cmname)
-  
-    Use forlog_Mod
-  
-    ! Arguments
-    Type(materialList), intent(IN) :: material_list  ! List of materials
-    Character(len=80), intent(IN) :: cmname  ! Material name
-    
-    ! Returns
-    Integer :: getMaterialIndex
-    
-    getMaterialIndex = 0
-    
-    Do I = 1, Size(material_list%materials)
-      If (material_list%materials(I)%name == trim(cmname))  getMaterialIndex = I
-    End Do
-    
-    If (getMaterialIndex == 0) Then
-      Call log%error("getMaterialIndex: No material found with name " // trim(cmname) //".")
-    End If
-    
-    Return
-  End Function getMaterialIndex
 
 
 End Module matProp_Mod

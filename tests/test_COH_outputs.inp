@@ -1,0 +1,16 @@
+*Output, FIELD
+*Element Output
+ SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11, SDV15, SDV16, S
+*Node Output
+ U, RF
+*Output, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE, ALLWK, ALLMW, ALLVD
+*Node Output, NSET=<RFU_output_nset>
+ U, RF
+*Element Output, ELSET=COHESIVE
+ SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11, SDV15, SDV16, S
+ LE, EMSF, EDT, EVOL
+*Incrementation Output, variable=preselect
+*Integrated Output, ELSET=COHESIVE
+ MASS

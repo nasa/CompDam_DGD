@@ -1,0 +1,61 @@
+**
+** IM7/8552, 134 g/m^2, 59.1% fiber volume fraction, 33% resin content
+** Hand layup, autoclave cure at 180 C
+** Units: N, mm, s
+** Nominal ply thickness: 0.131 mm (actual may be closer to 0.125 mm)
+**
+** References
+** 1. P. P. Camanho, P. Maimí, C. G. Dávila. Prediction of size effects in notched
+**    laminates using continuum damage mechanics. Compos Sci Technol 2007;
+**    67:2715–27.
+** 2. P. P. Camanho, M. A. Bessa, G. Catalanotti, M. Vogler, R. Rolfes. Modeling the
+**    inelastic deformation and fracture of polymer composites – Part II:
+**    Smeared crack model. Mech Mater 2013;59:36–49.
+** 3. A. Turon, C. G. Dávila, P. P. Camanho, and J. Costa, "An engineering
+**    solution for mesh size effects in the simulation of delamination using
+**    cohesive zone models," Engineering Fracture Mechanics, vol. 74, no. 10,
+**    Art. no. 10, Jul. 2007, doi: 10.1016/j.engfracmech.2006.08.025.
+**
+** Notes
+** a. alpha0 is loosely based on test observations, ref 1.
+** b. Penalty stiffness is set following ref 3, eqn 7.
+**    50*E2/t = 50*9080/0.131 = 3.5e6 N/mm^3, rounded to 1e6 N/mm^3
+**    Values between 1e5 and 1e7 N/mm^3 have been found to give similar results
+**    E3 = E2 is assumed (transverse isotropy)
+**    t = ply thickness, ref 1
+*Material, name=IM7-8552
+*Density
+ 1.57e-09,
+*User material, constants=40 <material_options>
+** feature flags, 2,   thickness,           4, 5, 6, 7, 8
+ <feature_flags>,  ,   <constit_thickness>,  ,  ,  ,  ,  ,
+**
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+**  Ref. 1    Ref. 1    Ref. 1    Ref. 1    Ref. 2    Ref. 1    Ref. 1    Ref. 1
+      ,         ,          ,          ,         ,     62.3,     92.3,     0.277,
+**
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    Pen       G13,      G23,      nu13,
+**  Ref. 1    Ref. 2    Ref. 1    Note a    Note b
+    0.788,    1.634,    199.8,    0.925,    1.e6,        ,         ,          ,
+**
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+           ,         ,          ,     ,       ,          ,         ,          ,
+**
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     cl,       w_kb,     T_sf,     mu
+      ,          ,         ,          ,           ,       ,         ,     0.3
+**
+*Depvar
+  19,
+  1, COH_dmg
+  2, COH_delta_s1
+  3, COH_delta_n
+  4, COH_delta_s2
+  5, COH_B
+  9, COH_FI
+ 11, COH_status
+ 15, COH_slide1
+ 16, COH_slide2

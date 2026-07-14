@@ -1,0 +1,268 @@
+********************************************************************************
+** Generating Mesh
+********************************************************************************
+*Parameter
+NEL=NEA+NEB+NEC+NED    # Element increment low by low (number of elements in x)
+NNL=NEL+1              # Node increment low by low
+HTW=width/2               # Half width
+**
+NSHIFTZ=1+NNL*NEW+NEL     # Node numbering shift in z direction (layer to layer)
+NSHIFTBT=(NET+1)*NSHIFTZ  # Node number shift, bottom arm to top arm
+ESHIFTZ=NEL*NEW           # Element numbering shift in z direction (layer to layer)
+NTNL=NSHIFTZ*NET           # Node number shift, bottom arm from bottom surface to top surface
+**
+** Node index number definition
+A=1             # Node (and element) number at (0,0,0)
+B=1+NEA         # Node (and element) number at (BL,0,0)
+C=B+NEB         # Node (and element) number at (crackLength,0,0)
+D=C+NEC         # Node (and element) number at (DL,0,0)
+E=D+NED         # Node at (TL,0,0)
+F=1+NNL*NEW     # Node at (0,width,0)
+G=F+NEA
+H=G+NEB
+I=H+NEC
+J=I+NED
+**
+AT=1+NET*NSHIFTZ    # Node at (0,0,arm_thk)
+FT=F+NET*NSHIFTZ
+DT=D+NET*NSHIFTZ
+IT=I+NET*NSHIFTZ
+**
+ATT=A+(2*NET+1)*NSHIFTZ
+FTT=F+(2*NET+1)*NSHIFTZ
+EM1=E+NSHIFTZ
+EM2=EM1+NSHIFTZ
+ET=EM2+NSHIFTZ
+JM1=J+NSHIFTZ
+JM2=JM1+NSHIFTZ
+JT=JM2+NSHIFTZ
+**
+A2=2                # Nodes for first element in region A (bottom arm)
+A3=A+2+NEL
+A4=A3-1
+A5=1+NSHIFTZ
+A6=A2+NSHIFTZ
+A7=A3+NSHIFTZ
+A8=A4+NSHIFTZ
+**
+B2=B+1               # Nodes for first element in region B (bottom arm)
+B3=B+2+NEL
+B4=B3-1
+B5=B+NSHIFTZ
+B6=B2+NSHIFTZ
+B7=B3+NSHIFTZ
+B8=B4+NSHIFTZ
+**
+C2=C+1                # Nodes for first element in region C (bottom arm)
+C3=C+2+NEL
+C4=C3-1
+C5=C+NSHIFTZ
+C6=C2+NSHIFTZ
+C7=C3+NSHIFTZ
+C8=C4+NSHIFTZ
+**
+D2=D+1                # Nodes for first element in region D (bottom arm)
+D3=D+2+NEL
+D4=D3-1
+D5=D+NSHIFTZ
+D6=D2+NSHIFTZ
+D7=D3+NSHIFTZ
+D8=D4+NSHIFTZ
+** Repeat for top arm nodes
+K_ELNUM=ESHIFTZ*(NET+1)+1
+K=A+NSHIFTBT
+K2=A2+NSHIFTBT
+K3=A3+NSHIFTBT
+K4=A4+NSHIFTBT
+K5=A5+NSHIFTBT
+K6=A6+NSHIFTBT
+K7=A7+NSHIFTBT
+K8=A8+NSHIFTBT
+**
+L_ELNUM=ESHIFTZ*(NET+1)+B
+L=B+NSHIFTBT
+L2=B2+NSHIFTBT
+L3=B3+NSHIFTBT
+L4=B4+NSHIFTBT
+L5=B5+NSHIFTBT
+L6=B6+NSHIFTBT
+L7=B7+NSHIFTBT
+L8=B8+NSHIFTBT
+**
+M_ELNUM=ESHIFTZ*(NET+1)+C
+M=C+NSHIFTBT
+M2=C2+NSHIFTBT
+M3=C3+NSHIFTBT
+M4=C4+NSHIFTBT
+M5=C5+NSHIFTBT
+M6=C6+NSHIFTBT
+M7=C7+NSHIFTBT
+M8=C8+NSHIFTBT
+**
+N_ELNUM=ESHIFTZ*(NET+1)+D
+N=D+NSHIFTBT
+N2=D2+NSHIFTBT
+N3=D3+NSHIFTBT
+N4=D4+NSHIFTBT
+N5=D5+NSHIFTBT
+N6=D6+NSHIFTBT
+N7=D7+NSHIFTBT
+N8=D8+NSHIFTBT
+** Cohesive elements
+COH_F=ESHIFTZ*NET+C
+COH_B=ESHIFTZ*NET+D
+** Node numbers
+CM1=M-NSHIFTZ
+CM2=M2-NSHIFTZ
+CM3=M3-NSHIFTZ
+CM4=M4-NSHIFTZ
+CM5=M
+CM6=M2
+CM7=M3
+CM8=M4
+**
+CN1=N-NSHIFTZ
+CN2=N2-NSHIFTZ
+CN3=N3-NSHIFTZ
+CN4=N4-NSHIFTZ
+CN5=N
+CN6=N2
+CN7=N3
+CN8=N4
+**
+CNE=CN7+NED-1  # Node for COH_PATH_END
+********************************************************************************
+** Create Nodes
+********************************************************************************
+*Node
+<A>,  0.0, 0.0, 0.0
+<B>, <BL>, 0.0, 0.0
+<C>, <crackLength>, 0.0, 0.0
+<D>, <DL>, 0.0, 0.0
+<E>, <TL>, 0.0, 0.0
+**
+<F>,  0.0, <width>, 0.0
+<G>, <BL>, <width>, 0.0
+<H>, <crackLength>, <width>, 0.0
+<I>, <DL>, <width>, 0.0
+<J>, <TL>, <width>, 0.0
+**
+*Ngen, nset=TIP_LINE_AB
+<A>, <F>, <E>
+*Ngen, nset=LINE_BB
+<B>, <G>, <E>
+*Ngen, nset=CRACK_FRONT_B
+<C>, <H>, <E>
+*Ngen, nset=MIDDLE_LINE_B
+<D>, <I>, <E>
+*Ngen, nset=END_LINE_B
+<E>, <J>, <E>
+**
+*Nfill, nset=OPEN_FRONT_AB
+TIP_LINE_AB, LINE_BB, <NEA>,1
+*Nfill, nset=OPEN_FRONT_BB
+LINE_BB, CRACK_FRONT_B, <NEB>,1
+*Nfill, nset=MIDDEL_BB
+CRACK_FRONT_B, MIDDLE_LINE_B, <NEC>, 1
+*Nfill, nset=END_BB
+MIDDLE_LINE_B, END_LINE_B, <NED>, 1
+**
+*Ncopy, OLD SET=OPEN_FRONT_AB, change number=<NTNL>, shift, new set=OPEN_FRONT_AT
+0, 0, <TBL>
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=OPEN_FRONT_BB, change number=<NTNL>, shift, new set=OPEN_FRONT_BT
+0, 0, <TBL>
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=MIDDEL_BB, change number=<NTNL>, shift, new set=MIDDEL_BT
+0, 0, <TBL>
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=END_BB, change number=<NTNL>, shift, new set=END_BT
+0, 0, <TBL>
+0, 0, 0, 0, 0, 1, 0
+**
+*Nfill, nset=BOTTOM_LAYER
+OPEN_FRONT_AB, OPEN_FRONT_AT, <NET>, <NSHIFTZ>
+OPEN_FRONT_BB, OPEN_FRONT_BT, <NET>, <NSHIFTZ>
+MIDDEL_BB, MIDDEL_BT, <NET>, <NSHIFTZ>
+END_BB, END_BT, <NET>, <NSHIFTZ>
+**
+*Ncopy, OLD SET=BOTTOM_LAYER, change number=<NSHIFTBT>, shift, new set=TOP_LAYER
+0, 0, <TTL>
+0, 0, 0, 0, 0, 1, 0
+**
+*Nset, nset=TIP_LINE_AT, generate
+<ATT>, <FTT>, <E>
+*Nset, nset= END_LINE_T, generate
+<ET>, <JT>, <E>
+*Nset, nset= END_LINE_M, generate
+<EM1>, <JM1>, <E>
+<EM2>, <JM2>, <E>
+********************************************************************************
+** Create Elements
+********************************************************************************
+*Element, type=SC8R
+1, 1, 2, <A3>, <A4>, <A5>, <A6>, <A7>, <A8>
+<B>, <B>, <B2>, <B3>, <B4>, <B5>, <B6>, <B7>, <B8>
+<C>, <C>, <C2>, <C3>, <C4>, <C5>, <C6>, <C7>, <C8>
+<D>, <D>, <D2>, <D3>, <D4>, <D5>, <D6>, <D7>, <D8>
+**
+<K_ELNUM>, <K>, <K2>, <K3>, <K4>, <K5>, <K6>, <K7>, <K8>
+<L_ELNUM>, <L>, <L2>, <L3>, <L4>, <L5>, <L6>, <L7>, <L8>
+<M_ELNUM>, <M>, <M2>, <M3>, <M4>, <M5>, <M6>, <M7>, <M8>
+<N_ELNUM> ,<N> ,<N2> ,<N3> ,<N4> ,<N5> ,<N6> ,<N7> ,<N8>
+**
+*Elgen, elset=OPEN_BOTTOM_A
+1, <NEA>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>, <NSHIFTZ>, <ESHIFTZ>
+*Elgen, elset=OPEN_BOTTOM_B
+<B>, <NEB>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>, <NSHIFTZ>, <ESHIFTZ>
+*Elgen, elset=MIDDLE_BOTTOM
+<C>, <NEC>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>, <NSHIFTZ>, <ESHIFTZ>
+*Elgen, elset=END_BOTTOM
+<D>, <NED>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>, <NSHIFTZ>, <ESHIFTZ>
+**
+*Elset, elset=BOTTOM_LAYER
+OPEN_BOTTOM_A, OPEN_BOTTOM_B, MIDDLE_BOTTOM, END_BOTTOM,
+**
+*Elgen, elset=OPEN_TOP_A
+<K_ELNUM>, <NEA>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>, <NSHIFTZ>, <ESHIFTZ>
+*Elgen, elset=OPEN_TOP_B
+<L_ELNUM>, <NEB>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>, <NSHIFTZ>, <ESHIFTZ>
+*Elgen, elset=MIDDLE_TOP
+<M_ELNUM>, <NEC>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>, <NSHIFTZ>, <ESHIFTZ>
+*Elgen, elset=END_TOP
+<N_ELNUM>, <NED>, 1 , 1 , <NEW>, <NNL>, <NEL>, <NET>, <NSHIFTZ>, <ESHIFTZ>
+*Elset, ELSET=TOP_LAYER
+OPEN_TOP_A, OPEN_TOP_B, MIDDLE_TOP, END_TOP,
+*Elset, ELSET=ARMS
+BOTTOM_LAYER, TOP_LAYER
+**
+*Node, nset=T_Node
+ 9999998, 0., 0., 0.
+*Node, nset=B_Node
+ 9999999, 0., 0., 0.
+********************************************************************************
+** Arm section definitions
+********************************************************************************
+*Orientation, name=OID_0
+ 1., 0., 0., 0, 1., 0
+ 3, 0.
+**
+*Shell Section, elset=BOTTOM_LAYER, material=arms, orientation=OID_0
+<bot_arm_element_thickness>, 5
+*Shell Section, elset=TOP_LAYER, material=arms, orientation=OID_0
+<top_arm_element_thickness>, 5
+** Replace above section definition with this for solid element arms
+** *Solid Section, elset=BOTTOM_LAYER, material=arms, orientation=OID_0 
+** ,
+** *Solid Section, elset=TOP_LAYER, material=arms, orientation=OID_0 
+** ,
+**
+********************************************************************************
+** Arm material definitions
+********************************************************************************
+*Material, name=arms
+*Elastic, type=ENGINEERING CONSTANTS
+<E11>, <E22>, <E33>, <nu12>, <nu13>, <nu23>, <G12>, <G13>
+<G23>,
+*Density
+<density_arm>,

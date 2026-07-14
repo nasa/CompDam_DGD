@@ -1,0 +1,30 @@
+********************************************************************************
+** Boundary conditions and constraints
+********************************************************************************
+*Equation
+ 2
+ TIP_LINE_AT, 3, 1., T_Node, 3, -1.
+ 2
+ TIP_LINE_AB, 3, 1., B_Node, 3, -1.
+*Boundary
+ TIP_LINE_AT, 1, 2, 0.
+ TIP_LINE_AB, 1, 2, 0.
+ TOP_LAYER, 2, 2, 0.
+ BOTTOM_LAYER, 2, 2, 0.
+********************************************************************************
+** Amplitude functions
+********************************************************************************
+*Amplitude, name=Amp-Load, definition=SMOOTH STEP
+0.0, 0.0, <ramp_time>, <applied_velocity>
+********************************************************************************
+** Step and load application
+********************************************************************************
+** *Time points, name=tp1, generate
+** <tp_start>, <tp_end>, <tp_delta>
+*Step, name=Load, nlgeom=YES
+*Dynamic, explicit
+, <step_time>
+**
+*Boundary, type=VELOCITY, amplitude=Amp-Load
+T_Node, 3, 3, 0.5
+B_Node, 3, 3, -0.5

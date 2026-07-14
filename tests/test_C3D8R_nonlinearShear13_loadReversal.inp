@@ -5,6 +5,25 @@
  length = 0.2
  shear_displacement = 0.02
  shear_displacement_half = shear_displacement/2.
+** Material definition
+ feature_flags = 40000
+ cl = 0
+ T_sf = 0
+ mu = 0
+ density = 1.57e-05
+ thickness = 0
+ wkb = 0
+**
+** CompDam parameters
+**
+*PARAMETER TABLE TYPE, NAME=KEY_INT, parameters=2
+STRING
+INTEGER
+*TABLE COLLECTION, NAME=COMPDAM_PARAM
+** CompDam parameters with integer values
+** 0 = False, 1 = True
+*PARAMETER TABLE, type=KEY_INT, label=CDP_INT
+alpha_search, 0
 **
 ** NODES
 **
@@ -41,44 +60,15 @@
 **
 ** MATERIALS
 **
-*Material, name=IM7-8552
-*Density
- 1.59d-05,
-*User material, constants=4
-** 1              2                  3          4
-** feature flags, , thickness, 4, 5, 6, 7, 8
-         040000,  ,  <length>,  ,  ,  ,  ,  ,
-*Depvar, delete=11
- 21,
- 1, CDM_d2
- 2, CDM_Fb1
- 3, CDM_Fb2
- 4, CDM_Fb3
- 5, CDM_B
- 6, CDM_Lc1
- 7, CDM_Lc2
- 8, CDM_Lc3
- 9, CDM_FIm
-10, CDM_alpha
-11, CDM_STATUS
-12, CDM_Plas12
-13, CDM_Inel12
-14, CDM_FIfT
-15, CDM_slide1
-16, CDM_slide2
-17, CDM_FIfC
-18, CDM_d1T
-19, CDM_d1C
-20, CDM_Plas13
-21, CDM_Inel13
-*Characteristic Length, definition=USER, components=3
+*Include, input=IM7-8552-C3D-25sv.inp
 **
 ** INITIAL CONDITIONS
 **
 *Initial Conditions, Type=Solution
 ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-0.d0,       0.d0,  90,     1,  0.d0,  0.d0,  0.d0,  0.d0,  
-0.d0,       0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+0.d0,       0.d0,  90,    1,     0.d0,  0.d0,  0.d0,  0.d0,  
+0.d0,       0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+0.d0,       0.d0
 *BOUNDARY
   Y-, 2, 3, 0
   Z+, 1, 1, 0

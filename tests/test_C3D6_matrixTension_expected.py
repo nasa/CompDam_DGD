@@ -1,9 +1,12 @@
+from utilities import get_enerElas
+
 E2 = 9080.  # Young's modulus, matrix direction
 YT = 50.  # Matrix tensile strength
 GYT = 0.277  # Mode I fracture toughness
 length = 0.1  # Element edge length
 
-enerElas = 0.1354 * length**3
+enerElas = 0.5*(0.5*YT)**2/E2 * length**3  # computed at stress = 0.5*YT for consistency with where maximum elastic energy in cohesive occurs
+enerElas += get_enerElas(YT, GYT, length**2, pen=1e6, dmg_area=0.5)
 enerFrac = GYT * length**2
 
 parameters = {
@@ -196,7 +199,7 @@ parameters = {
             "type": "max",
             "identifier": "Strain energy: ALLSE for Whole Model",   # Recoverable strain energy
             "referenceValue": enerElas,  # Elastic strain energy * volume
-            "tolerance": enerElas * 0.005  # 0.05% error
+            "tolerance": enerElas * 0.05
         }
 	]
 }

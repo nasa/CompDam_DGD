@@ -100,7 +100,7 @@ Contains
         Return
       END IF
 
-      ! get terms of f deriviates wtih respect to S 
+      ! get terms of f deriviates with respect to S
       ! Partial of f with respect to Stress
       dfdS = zero
       dfdS(2) = S22 / (f - schaefer_b2 * S22) + schaefer_b2
@@ -114,7 +114,7 @@ Contains
 
       ! derivative of stress with respect to incremental plastic strain
       ! because S = C: (eps_vec - Eoldp - dEp) and C, eps_vec, Eoldp are constants
-      ! youre left with the negative of the stiffness matrix
+      ! you are left with the negative of the stiffness matrix
       dS22ddEp = -C(2, :)
       dS12ddEp = -C(ndir + 1, :) 
 
@@ -144,7 +144,7 @@ Contains
         df = dfddEp(i)
 
         ! get the the term corresponding to the ith partial derivative of dfdSdfdS
-        ! with respeoct to Epi
+        ! with respect to Epi
         ! this derivative corresponds to the (2, 2) 
         dfdSdfdSd22Ep = (schaefer_b2 + S22 / th) * ( (2 * dS22) / th + (2 * (schaefer_b2 * dS22 -df) * S22) / th2) 
         ! this derivative corresponds to the (2, 4) 

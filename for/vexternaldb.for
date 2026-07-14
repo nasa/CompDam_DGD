@@ -75,9 +75,219 @@ Subroutine lognormal(n, avg, sdv, dist)
 End Subroutine lognormal
 
 
+Subroutine get_compdam_parameters(print_logs, p)
+  ! Populates CompDam parameters with defaults, overwriting with any nondefault parameters
+  ! provided in the input deck.
+
+  Use parameters_Mod
+
+  ! Arguments
+  Logical, intent(IN) :: print_logs
+
+  ! Output
+  Type(parameters), intent(OUT) :: p
+
+  ! Locals
+  Character (len=80), allocatable :: cParams(:)
+  Character (len=80) :: tablelabel
+  Character (len=80) :: tcNames(10)
+  Character (len=80) :: parameterName
+  Double Precision, allocatable :: rParams(:)
+  Double Precision :: parameterRealValue
+  Integer, allocatable :: iParamsDataType(:), iParams(:)
+  Integer :: parameterIntValue
+  Integer :: JERROR, numParams, nRows, numRows
+  Dimension jSize(4)
+
+  Double Precision, parameter :: zero=0.d0, half=0.5d0, one=1.d0, two=2.d0
+  ! -------------------------------------------------------------------- !
+
+  Call queryTableCollectionSize(jSize, jError)
+  If (JERROR /= 0) Then
+    If (print_logs) Print *, "ERROR: Unable to query table collection size, using default parameters"
+    Return
+  End If
+  If (jSize(1) == 0) Then
+    If (print_logs) Print *, "INFO: Using CompDam default solution parameters"
+    Return
+  End If
+  Call queryTableCollectionNames(tcNames, jSize(1))
+  If (ANY(tcNames(1:jSize(1)) == "COMPDAM_PARAM")) Then
+    If (print_logs) Print *, "INFO: COMPDAM_PARAM table collection found, reading parameters"
+    Call setTableCollection("COMPDAM_PARAM", JERROR)
+    If (JERROR /= 0) Then
+      If (print_logs) Print *, "ERROR: setTableCollection() error, using default parameters"
+      Return
+    End If
+    ! Process table CDP_FLOAT
+    tablelabel = "CDP_FLOAT"
+    Call queryParameterTable(tablelabel, numParams, numRows, JERROR)
+    If (JERROR == 0 .AND. numParams == 2) Then
+      Allocate(iParamsDataType(numParams))
+      Allocate(iParams(numParams*numRows))
+      Allocate(rParams(numParams*numRows))
+      Allocate(cParams(numParams*numRows))
+      Call getParameterTable(tablelabel, numParams, iParamsDataType, iParams, rParams, cParams, jError)
+      Do I = 1, numRows
+        parameterName = cParams(2*I-1)
+        parameterRealValue = rParams(2*I)
+        Select Case (trim(parameterName))
+
+          Case ('TOL_DGD_F')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%tol_DGD_f_min, p%tol_DGD_f_max, p%tol_DGD_f, print_logs)
+
+          Case ('DGDGC_MIN')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%dGdGc_min_min, p%dGdGc_min_max, p%dGdGc_min, print_logs)
+
+          Case ('COMPLIMIT')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%compLimit_min, p%compLimit_max, p%compLimit, print_logs)
+
+          Case ('PENSTIFFMULT')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%penStiffMult_min, p%penStiffMult_max, p%penStiffMult, print_logs)
+
+          Case ('CUTBACK_AMOUNT')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%cutback_amount_min, p%cutback_amount_max, p%cutback_amount, print_logs)
+
+          Case ('TOL_DIVERGENCE')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%tol_divergence_min, p%tol_divergence_max, p%tol_divergence, print_logs)
+
+          Case ('GAMMA_MAX')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%gamma_max_min, p%gamma_max_max, p%gamma_max, print_logs)
+
+          Case ('KB_DECOMPOSE_THRES')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%kb_decompose_thres_min, p%kb_decompose_thres_max, p%kb_decompose_thres, print_logs)
+
+          Case ('FKT_FIBER_FAILURE_ANGLE')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%fkt_fiber_failure_angle_min, p%fkt_fiber_failure_angle_max, p%fkt_fiber_failure_angle, print_logs)
+
+          Case ('SCHAEFER_NR_TOLERANCE')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%schaefer_nr_tolerance_min, p%schaefer_nr_tolerance_max, p%schaefer_nr_tolerance, print_logs)
+
+          Case ('DEBUG_KILL_AT_TOTAL_TIME')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%debug_kill_at_total_time_min, p%debug_kill_at_total_time_max, p%debug_kill_at_total_time, print_logs)
+
+          Case ('FKT_INIT_MISALIGNMENT_AZI_MU')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%fkt_init_misalignment_azi_mu_min, p%fkt_init_misalignment_azi_mu_max, p%fkt_init_misalignment_azi_mu, print_logs)
+
+          Case ('FKT_INIT_MISALIGNMENT_AZI_SIGMA')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%fkt_init_misalignment_azi_sigma_min, p%fkt_init_misalignment_azi_sigma_max, p%fkt_init_misalignment_azi_sigma, print_logs)
+
+          Case ('FKT_INIT_MISALIGNMENT_POLAR_SHAPE')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%fkt_init_misalignment_polar_shape_min, p%fkt_init_misalignment_polar_shape_max, p%fkt_init_misalignment_polar_shape, print_logs)
+
+          Case ('FKT_INIT_MISALIGNMENT_POLAR_SCALE')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%fkt_init_misalignment_polar_scale_min, p%fkt_init_misalignment_polar_scale_max, p%fkt_init_misalignment_polar_scale, print_logs)
+
+          Case ('FATIGUE_R_RATIO')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%fatigue_R_ratio_min, p%fatigue_R_ratio_max, p%fatigue_R_ratio, print_logs)
+
+          Case ('CYCLES_PER_INCREMENT_INIT')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%cycles_per_increment_init_min, p%cycles_per_increment_init_max, p%cycles_per_increment_init, print_logs)
+
+          Case ('CYCLES_PER_INCREMENT_MOD')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%cycles_per_increment_mod_min, p%cycles_per_increment_mod_max, p%cycles_per_increment_mod, print_logs)
+
+          Case ('CYCLES_PER_INCREMENT_MAX')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%cycles_per_increment_max_min, p%cycles_per_increment_max_max, p%cycles_per_increment_max, print_logs)
+
+          Case ('CYCLES_PER_INCREMENT_MIN')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%cycles_per_increment_min_min, p%cycles_per_increment_min_max, p%cycles_per_increment_min, print_logs)
+
+          Case ('FATIGUE_DAMAGE_MIN_THRESHOLD')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%fatigue_damage_min_threshold_min, p%fatigue_damage_min_threshold_max, p%fatigue_damage_min_threshold, print_logs)
+
+          Case ('FATIGUE_DAMAGE_MAX_THRESHOLD')
+            Call verifyAndSaveProperty_dbl(trim(parameterName), parameterRealValue, p%fatigue_damage_max_threshold_min, p%fatigue_damage_max_threshold_max, p%fatigue_damage_max_threshold, print_logs)
+
+          Case Default
+            If (print_logs) Print *, "WARN: Parameter not recognized: " // trim(parameterName)
+        End Select
+      End Do
+      Deallocate(iParamsDataType)
+      Deallocate(iParams)
+      Deallocate(rParams)
+      Deallocate(cParams)
+    Else
+      If (print_logs) Print *, "INFO: Missing CDP_FLOAT, using default parameters for floats"
+    End If
+
+    ! Process table CDP_INT
+    tablelabel = "CDP_INT"
+    Call queryParameterTable(tablelabel, numParams, numRows, JERROR)
+    If (JERROR == 0 .AND. numParams == 2) Then
+      Allocate(iParamsDataType(numParams))
+      Allocate(iParams(numParams*numRows))
+      Allocate(rParams(numParams*numRows))
+      Allocate(cParams(numParams*numRows))
+      Call getParameterTable(tablelabel, numParams, iParamsDataType, iParams, rParams, cParams, jError)
+      Do I = 1, numRows
+        parameterName = cParams(2*I-1)
+        parameterIntValue = iParams(2*I)
+        Select Case (trim(parameterName))
+
+          Case ('LOGLEVEL')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%logLevel_min, p%logLevel_max, p%logLevel, print_logs)
+
+          Case ('LOGFORMAT')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%logFormat_min, p%logFormat_max, p%logFormat, print_logs)
+
+          Case ('CUTBACKS_MAX')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%cutbacks_max_min, p%cutbacks_max_max, p%cutbacks_max, print_logs)
+
+          Case ('MD_MAX')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%MD_max_min, p%MD_max_max, p%MD_max, print_logs)
+
+          Case ('EQ_MAX')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%EQ_max_min, p%EQ_max_max, p%EQ_max, print_logs)
+
+          Case ('ALPHA_SEARCH')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%alpha_search_min, p%alpha_search_max, p%alpha_search, print_logs)
+
+          Case ('ALPHA_INC')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%alpha_inc_min, p%alpha_inc_max, p%alpha_inc, print_logs)
+
+          Case ('ALPHA_MAX')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%alpha_max_min, p%alpha_max_max, p%alpha_max, print_logs)
+
+          Case ('SCHAEFER_NR_COUNTER_LIMIT')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%schaefer_nr_counter_limit_min, p%schaefer_nr_counter_limit_max, p%schaefer_nr_counter_limit, print_logs)
+
+          Case ('TERMINATE_ON_NO_CONVERGENCE')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%terminate_on_no_convergence_min, p%terminate_on_no_convergence_max, p%terminate_on_no_convergence, print_logs)
+
+          Case ('FKT_RANDOM_SEED')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%fkt_random_seed_min, p%fkt_random_seed_max, p%fkt_random_seed, print_logs)
+
+          Case ('FATIGUE_STEP')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%fatigue_step_min, p%fatigue_step_max, p%fatigue_step, print_logs)
+
+          Case ('CHECK_FOR_SNAP_BACK')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%check_for_snap_back_min, p%check_for_snap_back_max, p%check_for_snap_back, print_logs)
+
+          Case ('SET_STATUS_0_ON_D2')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%set_status_0_on_d2_min, p%set_status_0_on_d2_max, p%set_status_0_on_d2, print_logs)
+
+          Case ('SET_STATUS_0_ON_D1T')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%set_status_0_on_d1T_min, p%set_status_0_on_d1T_max, p%set_status_0_on_d1T, print_logs)
+
+          Case ('SET_STATUS_0_ON_D1C')
+            Call verifyAndSaveProperty_int(trim(parameterName), parameterIntValue, p%set_status_0_on_d1C_min, p%set_status_0_on_d1C_max, p%set_status_0_on_d1C, print_logs)
+
+          Case Default
+            If (print_logs) Print *, "WARN: Parameter not recognized: " // trim(parameterName)
+        End Select
+      End Do
+    Else
+      If (print_logs) Print *, "INFO: Missing CDP_INT, using default parameters for integers"
+    End If
+  End If
+  Return
+End Subroutine get_compdam_parameters
+
 Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
 
   Use parameters_Mod
+  Use version_Mod
 
   Implicit Double Precision (a-h, o-z)
   Integer, parameter :: j_sys_Dimension = 2, maxblk = 512
@@ -108,7 +318,6 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   Double Precision :: limits(2)
   Integer :: n
   Integer :: values(8)
-  Type(parameters) :: p
   Double Precision, Parameter :: zero=0.d0, one=1.d0
 
   Dimension INTV(1), REALV(1)    ! For Abaqus warning messages
@@ -133,6 +342,12 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   Character(len=256) :: outputDir, jobName, inc2cycles_filename
   Integer :: lenOutputDir, lenJobName
   Integer, parameter :: inc2cycles_file_unit = 15
+
+  ! Parameters storage
+  Type(parameters) :: default_params
+  Type(parameters) :: params               ! Storage for parameters loaded from inp deck
+  Type(parameters) :: p                    ! Parameters for execution
+  Pointer(ptr_params, params)
 
   ! Common
   Common /analysis_termination/ analysis_status
@@ -180,7 +395,31 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
       Integer(kind=4) :: ID   ! Array ID
     End Function SMARealArrayAccess
 
+    FUNCTION SMAStructArrayAccess(ID)
+          INTEGER(KIND=8) :: SMAStructArrayAccess  ! -- Returns an address that can be associated with a Fortran pointer
+          INTEGER(KIND=4) :: ID                    ! Array ID
+    END FUNCTION SMAStructArrayAccess
+
   End Interface
+
+  INTERFACE SMAStructArrayCreate
+
+    ! -- Creates an array with a given ID, length = NUM_ITEMS; no initialization
+    integer(kind=8) FUNCTION SMAStructArrayCreateNoInit(ARRAY_ID, NUM_ITEMS, ITEM_SIZE)
+        INTEGER(KIND=4),INTENT(IN) :: ARRAY_ID   ! arbitrary ID chosen by the user
+        INTEGER(KIND=4),INTENT(IN) :: NUM_ITEMS  ! max value is INT_MAX ( 2,147,483,647 )
+        INTEGER(KIND=8),INTENT(IN) :: ITEM_SIZE  ! size of one struct in bytes as returned by SIZEOF()
+    END FUNCTION SMAStructArrayCreateNoInit
+
+    ! -- Creates an array with a given ID and SIZE; each slot is initialized to INITVAL
+    integer(kind=8) FUNCTION SMAStructArrayCreateInit(ARRAY_ID,NUM_ITEMS,ITEM_SIZE,INITVAL)
+        INTEGER(KIND=4),INTENT(IN) :: ARRAY_ID   ! arbitrary ID chosen by the user
+        INTEGER(KIND=4),INTENT(IN) :: NUM_ITEMS  ! max value is INT_MAX ( 2,147,483,647 )
+        INTEGER(KIND=8),INTENT(IN) :: ITEM_SIZE  ! size of one struct in bytes as returned by SIZEOF()
+        CLASS(*),INTENT(IN)        :: INITVAL    ! a struct used as initializer for each slot of the array
+    END FUNCTION SMAStructArrayCreateInit
+
+  END INTERFACE SMAStructArrayCreate
   ! -------------------------------------------------------------------- !
 
   kStep = i_Array(i_int_kStep)
@@ -189,11 +428,27 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   ! Start of the analysis
   If (lOp == j_int_StartAnalysis) Then
 
+    ptr_params = SMAStructArrayCreate(1000, 1, sizeof(default_params), default_params)
+    p = default_params
+
     ! Initialize common analysis_status variable
     analysis_status = 1
 
-    ! Load the CompDam solution parameters
-    p = loadParameters(.TRUE.)
+    Call VGETRANK(process_rank)
+    If (process_rank == 0) Then
+      print *, '================= CompDam ================='
+      print *, 'Date: ' // trim(timestamp)
+      print *, 'Version: ' // trim(hash)
+      print *, '==========================================='
+
+      ! Load the CompDam solution parameters, with logging
+      Call get_compdam_parameters(.TRUE., p)
+      params = p
+    Else
+      ! Load the CompDam solution parameters, without logging
+      Call get_compdam_parameters(.FALSE., p)
+      params = p
+    End If
 
     ! Global integer array for fatigue parameters
     ptr_fatigue_int = SMAIntArrayCreate(1, 2, 0)  ! create the pointer for fatigue parameters array
@@ -218,7 +473,9 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
   ! Start of a step
   Else If (lOp == j_int_StartStep) Then
 
-    p = loadParameters()  ! Load the CompDam solution parameters
+    ! Load the CompDam solution parameters
+    ptr_params = SMAStructArrayAccess(1000)
+    p = params
     ptr_fatigue_int = SMAIntArrayAccess(1)  ! Access the pointer for fatigue parameters
 
     ! Check to see if this is a fatigue step
@@ -267,7 +524,8 @@ Subroutine vexternaldb(lOp, i_Array, niArray, r_Array, nrArray)
       FatigueParameterUpdate: If (fatigue_parameters(2) == 1) Then
         Continue
       Else FatigueParameterUpdate
-        p = loadParameters()  ! Load the CompDam solution parameters
+        ptr_params = SMAStructArrayAccess(1000)
+        p = params
         update_inc2cycles_log = .FALSE.
         ! If fatigue damage is progressing too slowly...
         If (fatigue_parameters(2) == 0 .AND. cycles_per_increment(1) < p%cycles_per_increment_max) Then

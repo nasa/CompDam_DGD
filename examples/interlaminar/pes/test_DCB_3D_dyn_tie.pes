@@ -1,0 +1,217 @@
+*Heading
+DCB Cohesive Model, 3D, CompDam
+********************************************************************************
+********************************************************************************
+** Generating Mesh
+********************************************************************************
+*Node
+1,  0.0, 0.0, 0.0
+6, 5.0, 0.0, 0.0
+31, 10.0, 0.0, 0.0
+91, 22.0, 0.0, 0.0
+96, 25.0, 0.0, 0.0
+**
+193,  0.0, 1, 0.0
+198, 5.0, 1, 0.0
+223, 10.0, 1, 0.0
+283, 22.0, 1, 0.0
+288, 25.0, 1, 0.0
+**
+*Ngen, nset=TIP_LINE_AB
+1, 193, 96
+*Ngen, nset=LINE_BB
+6, 198, 96
+*Ngen, nset=CRACK_FRONT_B
+31, 223, 96
+*Ngen, nset=MIDDLE_LINE_B
+91, 283, 96
+*Ngen, nset=END_LINE_B
+96, 288, 96
+**
+*Nfill, nset=OPEN_FRONT_AB
+TIP_LINE_AB, LINE_BB, 5,1
+*Nfill, nset=OPEN_FRONT_BB
+LINE_BB, CRACK_FRONT_B, 25,1
+*Nfill, nset=MIDDEL_BB
+CRACK_FRONT_B, MIDDLE_LINE_B, 60, 1
+*Nfill, nset=END_BB
+MIDDLE_LINE_B, END_LINE_B, 5, 1
+**
+*Ncopy, OLD SET=OPEN_FRONT_AB, change number=864, shift, new set=OPEN_FRONT_AT
+0, 0, 0.2
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=OPEN_FRONT_BB, change number=864, shift, new set=OPEN_FRONT_BT
+0, 0, 0.2
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=MIDDEL_BB, change number=864, shift, new set=MIDDEL_BT
+0, 0, 0.2
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=END_BB, change number=864, shift, new set=END_BT
+0, 0, 0.2
+0, 0, 0, 0, 0, 1, 0
+**
+*Nfill, nset=BOTTOM_LAYER
+OPEN_FRONT_AB, OPEN_FRONT_AT, 3, 288
+OPEN_FRONT_BB, OPEN_FRONT_BT, 3, 288
+MIDDEL_BB, MIDDEL_BT, 3, 288
+END_BB, END_BT, 3, 288
+**
+*Ncopy, OLD SET=BOTTOM_LAYER, change number=1152, shift, new set=TOP_LAYER
+0, 0, 0.2
+0, 0, 0, 0, 0, 1, 0
+**
+*Nset, nset=TIP_LINE_AT, generate
+2017, 2209, 96
+*Nset, nset= END_LINE_T, generate
+960, 1152, 96
+*Nset, nset= END_LINE_M, generate
+384, 576, 96
+672, 864, 96
+********************************************************************************
+** Create Elements
+********************************************************************************
+*Element, type=SC8R
+1, 1, 2, 98, 97, 289, 290, 386, 385
+6, 6, 7, 103, 102, 294, 295, 391, 390
+31, 31, 32, 128, 127, 319, 320, 416, 415
+91, 91, 92, 188, 187, 379, 380, 476, 475
+**
+761, 1153, 1154, 1250, 1249, 1441, 1442, 1538, 1537
+766, 1158, 1159, 1255, 1254, 1446, 1447, 1543, 1542
+791, 1183, 1184, 1280, 1279, 1471, 1472, 1568, 1567
+851 ,1243 ,1244 ,1340 ,1339 ,1531 ,1532 ,1628 ,1627
+**
+*Elgen, elset=OPEN_BOTTOM_A
+1, 5, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=OPEN_BOTTOM_B
+6, 25, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=MIDDLE_BOTTOM
+31, 60, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=END_BOTTOM
+91, 5, 1 , 1 , 2, 96, 95, 3, 288, 190
+**
+*Elset, elset=BOTTOM_LAYER
+OPEN_BOTTOM_A, OPEN_BOTTOM_B, MIDDLE_BOTTOM, END_BOTTOM,
+**
+*Elgen, elset=OPEN_TOP_A
+761, 5, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=OPEN_TOP_B
+766, 25, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=MIDDLE_TOP
+791, 60, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elgen, elset=END_TOP
+851, 5, 1 , 1 , 2, 96, 95, 3, 288, 190
+*Elset, ELSET=TOP_LAYER
+OPEN_TOP_A, OPEN_TOP_B, MIDDLE_TOP, END_TOP,
+*Elset, ELSET=ARMS
+BOTTOM_LAYER, TOP_LAYER
+**
+*Node, nset=T_Node
+ 9999998, 0., 0., 0.
+*Node, nset=B_Node
+ 9999999, 0., 0., 0.
+********************************************************************************
+** Arm section definitions
+********************************************************************************
+*Orientation, name=OID_0
+ 1., 0., 0., 0, 1., 0
+ 3, 0.
+**
+*Shell Section, elset=BOTTOM_LAYER, material=arms, orientation=OID_0
+0.06666666666666667, 5
+*Shell Section, elset=TOP_LAYER, material=arms, orientation=OID_0
+0.06666666666666667, 5
+** Replace above section definition with this for solid element arms
+** *Solid Section, elset=BOTTOM_LAYER, material=arms, orientation=OID_0 
+** ,
+** *Solid Section, elset=TOP_LAYER, material=arms, orientation=OID_0 
+** ,
+**
+********************************************************************************
+** Arm material definitions
+********************************************************************************
+*Material, name=arms
+*Elastic, type=ENGINEERING CONSTANTS
+171420.0, 9080.0, 9080.0, 0.32, 0.32, 0.525, 5290, 5290
+2977.049180327869,
+*Density
+1.57e-09,
+********************************************************************************
+** Interface tie
+********************************************************************************
+** NOTE: this only works when the number of elements in the width direction is 2
+*Nset, nset=BOTTOM_LAYER_COH, generate
+895, 960, 1
+991, 1056, 1
+1087, 1152, 1
+*Nset, nset=TOP_LAYER_COH, generate
+50895, 50960, 1
+1279, 51056, 1
+51087, 51152, 1
+*Surface, name=top, type=node
+TOP_LAYER_COH,
+*Surface, name=bottom, type=node
+BOTTOM_LAYER_COH,
+*Tie, name=interface
+bottom, top
+********************************************************************************
+** Boundary conditions and constraints
+********************************************************************************
+*Equation
+ 2
+ TIP_LINE_AT, 3, 1., T_Node, 3, -1.
+ 2
+ TIP_LINE_AB, 3, 1., B_Node, 3, -1.
+*Boundary
+ TIP_LINE_AT, 1, 2, 0.
+ TIP_LINE_AB, 1, 2, 0.
+ TOP_LAYER, 2, 2, 0.
+ BOTTOM_LAYER, 2, 2, 0.
+********************************************************************************
+** Amplitude functions
+********************************************************************************
+*Amplitude, name=Amp-Load, definition=SMOOTH STEP
+0.0, 0.0, 0.0006, 3529.411764705882
+********************************************************************************
+** Step and load application
+********************************************************************************
+** *Time points, name=tp1, generate
+** 0, 0.002, 0.001
+*Step, name=Load, nlgeom=YES
+*Dynamic, explicit
+, 0.002
+**
+*Boundary, type=VELOCITY, amplitude=Amp-Load
+T_Node, 3, 3, 1.0
+B_Node, 3, 3, 0.
+**
+********************************************************************************
+** Output requests
+********************************************************************************
+*Output, history, freq=1
+*Energy Output
+ALLSE, ALLPD, ALLKE, ALLVD, ALLWK, ALLMW, ALLIE, ETOTAL
+ALLAE, ALLDC
+*Energy Output, ELSET=ARMS
+ALLSE, ALLPD, ALLKE, ALLVD, ALLIE
+*Node Output, nset=T_Node
+RF3, U3
+*Node Output, nset=B_Node
+RF3, U3
+*Incrementation Output, variable=preselect
+*Integrated Output, ELSET=ARMS
+ MASS
+**
+*Output, field, number interval=100
+*Node Output
+U, RF
+*Element Output
+S, LE, EMSF, EVOL, ELPD, EDT
+** *Output, field, time points=tp1
+** *Node Output
+** U, RF
+** *Element Output
+** S, LE,
+**
+**
+*End Step

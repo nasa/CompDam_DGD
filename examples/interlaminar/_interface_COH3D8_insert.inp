@@ -1,0 +1,63 @@
+********************************************************************************
+** Interface cohesive elements for insert location
+********************************************************************************
+*Parameter
+CIF1 = AT
+CIF2 = AT+1
+CIF3 = CIF2+NNL
+CIF4 = CIF3-1
+CIF5 = AT+NSHIFTZ
+CIF6 = CIF5+1
+CIF7 = CIF6+NNL
+CIF8 = CIF7-1
+CI_F = ESHIFTZ*NET+1
+CI_NEC = NEA+NEB
+**
+init_dmg = 1.
+init_status = 1.
+**
+YT_insert = YT
+SL_insert = SL
+GIc_insert = GIc
+GIIc_insert = GIIc
+*Element, type=<interface_el_type>
+ <CI_F>, <CIF1>, <CIF2>, <CIF3>, <CIF4>, <CIF5>, <CIF6>, <CIF7>, <CIF8>
+*Elgen, elset=COH_INSERT
+ <CI_F>, <CI_NEC>, 1 , 1 , <NEW>, <NNL>, <NEL>
+*Cohesive section, elset=COH_INSERT, response=TRACTION SEPARATION, material=cohesive_insert, controls=EC-INSERT
+<constitutive_thk>
+*Section Controls, name=EC-INSERT
+1., 1., 1.
+*Material, name=cohesive_insert
+*Density
+<density_interface>,
+*Depvar
+ 19,
+ 1,  COH_dmg
+ 2,  COH_delta_s1
+ 3,  COH_delta_n
+ 4,  COH_delta_s2
+ 5,  COH_B
+ 9,  COH_FI
+ 11, COH_STATUS
+ 15, COH_slide1
+ 16, COH_slide2
+*User Material, constants=40, effmod
+** feature flags, ,   thickness,          4, 5, 6, 7, 8
+          200000, ,   <constitutive_thk>,  ,  ,  ,  ,  ,
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+      ,         ,          ,          ,         ,  <YT_insert>, <SL_insert>, <GIc_insert>,
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+ <GIIc_insert>, <BK>,    <YC>,    <alpha0>,    <Pen2>,        ,         ,          ,
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+           ,         ,          ,     ,       ,          ,         ,          ,
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
+      ,          ,         ,          ,           ,       ,         ,     0.0
+*Initial Conditions, type=SOLUTION
+ COH_INSERT,  <init_dmg>,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0, 0.d0,  0.d0,  <init_status>,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0, 0.d0,  0.d0,  0.d0

@@ -1,0 +1,581 @@
+*Heading
+DCB Cohesive Model, 3D, CompDam
+********************************************************************************
+********************************************************************************
+** Generating Mesh
+********************************************************************************
+*Node
+1,  0.0, 0.0, 0.0
+46, 45.8, 0.0, 0.0
+71, 50.8, 0.0, 0.0
+578, 152.39999999999998, 0.0, 0.0
+585, 160.0, 0.0, 0.0
+**
+23401,  0.0, 20.0, 0.0
+23446, 45.8, 20.0, 0.0
+23471, 50.8, 20.0, 0.0
+23978, 152.39999999999998, 20.0, 0.0
+23985, 160.0, 20.0, 0.0
+**
+*Ngen, nset=TIP_LINE_AB
+1, 23401, 585
+*Ngen, nset=LINE_BB
+46, 23446, 585
+*Ngen, nset=CRACK_FRONT_B
+71, 23471, 585
+*Ngen, nset=MIDDLE_LINE_B
+578, 23978, 585
+*Ngen, nset=END_LINE_B
+585, 23985, 585
+**
+*Nfill, nset=OPEN_FRONT_AB
+TIP_LINE_AB, LINE_BB, 45,1
+*Nfill, nset=OPEN_FRONT_BB
+LINE_BB, CRACK_FRONT_B, 25,1
+*Nfill, nset=MIDDEL_BB
+CRACK_FRONT_B, MIDDLE_LINE_B, 507, 1
+*Nfill, nset=END_BB
+MIDDLE_LINE_B, END_LINE_B, 7, 1
+**
+*Ncopy, OLD SET=OPEN_FRONT_AB, change number=71955, shift, new set=OPEN_FRONT_AT
+0, 0, 3.8000000000000003
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=OPEN_FRONT_BB, change number=71955, shift, new set=OPEN_FRONT_BT
+0, 0, 3.8000000000000003
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=MIDDEL_BB, change number=71955, shift, new set=MIDDEL_BT
+0, 0, 3.8000000000000003
+0, 0, 0, 0, 0, 1, 0
+*Ncopy, OLD SET=END_BB, change number=71955, shift, new set=END_BT
+0, 0, 3.8000000000000003
+0, 0, 0, 0, 0, 1, 0
+**
+*Nfill, nset=BOTTOM_LAYER
+OPEN_FRONT_AB, OPEN_FRONT_AT, 3, 23985
+OPEN_FRONT_BB, OPEN_FRONT_BT, 3, 23985
+MIDDEL_BB, MIDDEL_BT, 3, 23985
+END_BB, END_BT, 3, 23985
+**
+*Ncopy, OLD SET=BOTTOM_LAYER, change number=95940, shift, new set=TOP_LAYER
+0, 0, 3.8000000000000003
+0, 0, 0, 0, 0, 1, 0
+**
+*Nset, nset=TIP_LINE_AT, generate
+167896, 191296, 585
+*Nset, nset= END_LINE_T, generate
+72540, 95940, 585
+*Nset, nset= END_LINE_M, generate
+24570, 47970, 585
+48555, 71955, 585
+********************************************************************************
+** Create Elements
+********************************************************************************
+*Element, type=SC8R
+1, 1, 2, 587, 586, 23986, 23987, 24572, 24571
+46, 46, 47, 632, 631, 24031, 24032, 24617, 24616
+71, 71, 72, 657, 656, 24056, 24057, 24642, 24641
+578, 578, 579, 1164, 1163, 24563, 24564, 25149, 25148
+**
+93441, 95941, 95942, 96527, 96526, 119926, 119927, 120512, 120511
+93486, 95986, 95987, 96572, 96571, 119971, 119972, 120557, 120556
+93511, 96011, 96012, 96597, 96596, 119996, 119997, 120582, 120581
+94018 ,96518 ,96519 ,97104 ,97103 ,120503 ,120504 ,121089 ,121088
+**
+*Elgen, elset=OPEN_BOTTOM_A
+1, 45, 1 , 1 , 40, 585, 584, 3, 23985, 23360
+*Elgen, elset=OPEN_BOTTOM_B
+46, 25, 1 , 1 , 40, 585, 584, 3, 23985, 23360
+*Elgen, elset=MIDDLE_BOTTOM
+71, 507, 1 , 1 , 40, 585, 584, 3, 23985, 23360
+*Elgen, elset=END_BOTTOM
+578, 7, 1 , 1 , 40, 585, 584, 3, 23985, 23360
+**
+*Elset, elset=BOTTOM_LAYER
+OPEN_BOTTOM_A, OPEN_BOTTOM_B, MIDDLE_BOTTOM, END_BOTTOM,
+**
+*Elgen, elset=OPEN_TOP_A
+93441, 45, 1 , 1 , 40, 585, 584, 3, 23985, 23360
+*Elgen, elset=OPEN_TOP_B
+93486, 25, 1 , 1 , 40, 585, 584, 3, 23985, 23360
+*Elgen, elset=MIDDLE_TOP
+93511, 507, 1 , 1 , 40, 585, 584, 3, 23985, 23360
+*Elgen, elset=END_TOP
+94018, 7, 1 , 1 , 40, 585, 584, 3, 23985, 23360
+*Elset, ELSET=TOP_LAYER
+OPEN_TOP_A, OPEN_TOP_B, MIDDLE_TOP, END_TOP,
+*Elset, ELSET=ARMS
+BOTTOM_LAYER, TOP_LAYER
+**
+*Node, nset=T_Node
+ 9999998, 0., 0., 0.
+*Node, nset=B_Node
+ 9999999, 0., 0., 0.
+********************************************************************************
+** Arm section definitions
+********************************************************************************
+*Orientation, name=OID_0
+ 1., 0., 0., 0, 1., 0
+ 3, 0.
+**
+*Shell Section, elset=BOTTOM_LAYER, material=arms, orientation=OID_0
+1.2666666666666668, 5
+*Shell Section, elset=TOP_LAYER, material=arms, orientation=OID_0
+1.2666666666666668, 5
+** Replace above section definition with this for solid element arms
+** *Solid Section, elset=BOTTOM_LAYER, material=arms, orientation=OID_0 
+** ,
+** *Solid Section, elset=TOP_LAYER, material=arms, orientation=OID_0 
+** ,
+**
+********************************************************************************
+** Arm material definitions
+********************************************************************************
+*Material, name=arms
+*Elastic, type=ENGINEERING CONSTANTS
+171420.0, 9080.0, 9080.0, 0.32, 0.32, 0.525, 5290, 5290
+2977.049180327869,
+*Density
+1.57e-09,
+********************************************************************************
+** Interface cohesive elements
+********************************************************************************
+*Element, type=COH3D8
+ 70151, 72026, 72027, 72612, 72611, 96011, 96012, 96597, 96596
+ 70658, 72533, 72534, 73119, 73118, 96518, 96519, 97104, 97103
+*Elgen, elset=FRONT_COH
+ 70151, 507, 1 , 1 , 40, 585, 584
+*Elgen, elset=BACK_COH
+ 70658, 7, 1 , 1 , 40, 585, 584
+*Elset, elset=COH
+ FRONT_COH, BACK_COH
+*Elset, elset=CMM_Z1, generate
+ 70151, 70277
+ 70735, 70861
+ 71319, 71445
+ 71903, 72029
+ 72487, 72613
+ 73071, 73197
+ 73655, 73781
+ 74239, 74365
+ 74823, 74949
+ 75407, 75533
+ 75991, 76117
+ 76575, 76701
+ 77159, 77285
+ 77743, 77869
+ 78327, 78453
+ 78911, 79037
+ 79495, 79621
+ 80079, 80205
+ 80663, 80789
+ 81247, 81373
+ 81831, 81957
+ 82415, 82541
+ 82999, 83125
+ 83583, 83709
+ 84167, 84293
+ 84751, 84877
+ 85335, 85461
+ 85919, 86045
+ 86503, 86629
+ 87087, 87213
+ 87671, 87797
+ 88255, 88381
+ 88839, 88965
+ 89423, 89549
+ 90007, 90133
+ 90591, 90717
+ 91175, 91301
+ 91759, 91885
+ 92343, 92469
+ 92927, 93053
+*Elset, elset=CMM_Z2, generate
+ 70278, 70403
+ 70862, 70987
+ 71446, 71571
+ 72030, 72155
+ 72614, 72739
+ 73198, 73323
+ 73782, 73907
+ 74366, 74491
+ 74950, 75075
+ 75534, 75659
+ 76118, 76243
+ 76702, 76827
+ 77286, 77411
+ 77870, 77995
+ 78454, 78579
+ 79038, 79163
+ 79622, 79747
+ 80206, 80331
+ 80790, 80915
+ 81374, 81499
+ 81958, 82083
+ 82542, 82667
+ 83126, 83251
+ 83710, 83835
+ 84294, 84419
+ 84878, 85003
+ 85462, 85587
+ 86046, 86171
+ 86630, 86755
+ 87214, 87339
+ 87798, 87923
+ 88382, 88507
+ 88966, 89091
+ 89550, 89675
+ 90134, 90259
+ 90718, 90843
+ 91302, 91427
+ 91886, 92011
+ 92470, 92595
+ 93054, 93179
+*Elset, elset=CMM_Z3, generate
+ 70404, 70529
+ 70988, 71113
+ 71572, 71697
+ 72156, 72281
+ 72740, 72865
+ 73324, 73449
+ 73908, 74033
+ 74492, 74617
+ 75076, 75201
+ 75660, 75785
+ 76244, 76369
+ 76828, 76953
+ 77412, 77537
+ 77996, 78121
+ 78580, 78705
+ 79164, 79289
+ 79748, 79873
+ 80332, 80457
+ 80916, 81041
+ 81500, 81625
+ 82084, 82209
+ 82668, 82793
+ 83252, 83377
+ 83836, 83961
+ 84420, 84545
+ 85004, 85129
+ 85588, 85713
+ 86172, 86297
+ 86756, 86881
+ 87340, 87465
+ 87924, 88049
+ 88508, 88633
+ 89092, 89217
+ 89676, 89801
+ 90260, 90385
+ 90844, 90969
+ 91428, 91553
+ 92012, 92137
+ 92596, 92721
+ 93180, 93305
+*Elset, elset=CMM_Z4, generate
+ 70530, 70657
+ 71114, 71241
+ 71698, 71825
+ 72282, 72409
+ 72866, 72993
+ 73450, 73577
+ 74034, 74161
+ 74618, 74745
+ 75202, 75329
+ 75786, 75913
+ 76370, 76497
+ 76954, 77081
+ 77538, 77665
+ 78122, 78249
+ 78706, 78833
+ 79290, 79417
+ 79874, 80001
+ 80458, 80585
+ 81042, 81169
+ 81626, 81753
+ 82210, 82337
+ 82794, 82921
+ 83378, 83505
+ 83962, 84089
+ 84546, 84673
+ 85130, 85257
+ 85714, 85841
+ 86298, 86425
+ 86882, 87009
+ 87466, 87593
+ 88050, 88177
+ 88634, 88761
+ 89218, 89345
+ 89802, 89929
+ 90386, 90513
+ 90970, 91097
+ 91554, 91681
+ 92138, 92265
+ 92722, 92849
+ 93306, 93433
+*Elset, elset=first_coh_element
+70151,
+*Nset, nset=COH_PATH_START
+ 96596
+*Nset, nset=COH_PATH_END
+ 97110
+*Nset, nset=CTOD
+ 72611, 96596
+*Orientation, name=OID_COH
+ 1., 0., 0., 0, 1., 0
+ 3, 0
+*Cohesive section, elset=CMM_Z1, response=TRACTION SEPARATION, material=cohesive, controls=EC-1, orientation=OID_COH
+1.0
+*Section Controls, name=EC-1, ELEMENT DELETION=NO 
+1., 1., 1.
+*Material, name=cohesive
+*Density
+1.57e-09,
+*Depvar
+ 19,
+ 1,  COH_dmg
+ 2,  COH_delta_s1
+ 3,  COH_delta_n
+ 4,  COH_delta_s2
+ 5,  COH_B
+ 9,  COH_FI
+ 11, COH_STATUS
+ 15, COH_slide1
+ 16, COH_slide2
+*User Material, constants=40, effmod
+** feature flags, ,   thickness,          4, 5, 6, 7, 8
+          200000, ,   1.0,  ,  ,  ,  ,  ,
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+      ,         ,          ,          ,         ,     62.3,    92.3,    0.277,
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+ 0.788,      1.634,    199.8,    0.925,    200000.0,        ,         ,          ,
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+           ,         ,          ,     ,       ,          ,         ,          ,
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
+      ,          ,         ,          ,           ,       ,         ,     0.0
+*Initial Conditions, type=SOLUTION
+ COH,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0, 0.d0,  0.d0,  1.,    0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0, 0.d0,  0.d0,  0.d0
+*Cohesive section, elset=CMM_Z2, response=TRACTION SEPARATION, material=CMM_Z2, controls=EC-1, orientation=OID_COH
+1.0
+*Material, name=CMM_Z2
+*Density
+1.57e-09,
+*Depvar
+19,
+1,  COH_dmg
+2,  COH_delta_s1
+3,  COH_delta_n
+4,  COH_delta_s2
+5,  COH_B
+9,  COH_FI
+11, COH_STATUS
+15, COH_slide1
+16, COH_slide2
+*User Material, constants=40, effmod
+** feature flags, ,   thickness,          4, 5, 6, 7, 8
+        200000, ,   1.0,  ,  ,  ,  ,  ,
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+    ,         ,          ,          ,         ,     63.50,    93.50,    0.40,
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+1.13,      1.634,    199.8,    0.925,    200000.0,        ,         ,          ,
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+        ,         ,          ,     ,       ,          ,         ,          ,
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
+    ,          ,         ,          ,           ,       ,         ,     0.0
+*Cohesive section, elset=CMM_Z3, response=TRACTION SEPARATION, material=CMM_Z3, controls=EC-1, orientation=OID_COH
+1.0
+*Material, name=CMM_Z3
+*Density
+1.57e-09,
+*Depvar
+19,
+1,  COH_dmg
+2,  COH_delta_s1
+3,  COH_delta_n
+4,  COH_delta_s2
+5,  COH_B
+9,  COH_FI
+11, COH_STATUS
+15, COH_slide1
+16, COH_slide2
+*User Material, constants=40, effmod
+** feature flags, ,   thickness,          4, 5, 6, 7, 8
+        200000, ,   1.0,  ,  ,  ,  ,  ,
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+    ,         ,          ,          ,         ,     63.60,    93.60,    0.47,
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+1.33,      1.634,    199.8,    0.925,    200000.0,        ,         ,          ,
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+        ,         ,          ,     ,       ,          ,         ,          ,
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
+    ,          ,         ,          ,           ,       ,         ,     0.0
+*Cohesive section, elset=CMM_Z4, response=TRACTION SEPARATION, material=CMM_Z4, controls=EC-1, orientation=OID_COH
+1.0
+*Material, name=CMM_Z4
+*Density
+1.57e-09,
+*Depvar
+19,
+1,  COH_dmg
+2,  COH_delta_s1
+3,  COH_delta_n
+4,  COH_delta_s2
+5,  COH_B
+9,  COH_FI
+11, COH_STATUS
+15, COH_slide1
+16, COH_slide2
+*User Material, constants=40, effmod
+** feature flags, ,   thickness,          4, 5, 6, 7, 8
+        200000, ,   1.0,  ,  ,  ,  ,  ,
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+    ,         ,          ,          ,         ,     63.70,    93.70,    0.54,
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+1.54,      1.634,    199.8,    0.925,    200000.0,        ,         ,          ,
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+        ,         ,          ,     ,       ,          ,         ,          ,
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
+    ,          ,         ,          ,           ,       ,         ,     0.0
+            *Cohesive section, elset=BACK_COH, response=TRACTION SEPARATION, material=cohesive, controls=EC-1, orientation=OID_COH
+            1.0
+********************************************************************************
+** Interface cohesive elements for insert location
+********************************************************************************
+*Element, type=COH3D8
+ 70081, 71956, 71957, 72542, 72541, 95941, 95942, 96527, 96526
+*Elgen, elset=COH_INSERT
+ 70081, 70, 1 , 1 , 40, 585, 584, 1, 50000, 50000
+*Cohesive section, elset=COH_INSERT, response=TRACTION SEPARATION, material=cohesive_insert, controls=EC-INSERT
+1.0
+*Section Controls, name=EC-INSERT, ELEMENT DELETION=NO 
+1., 1., 1.
+*Material, name=cohesive_insert
+*Density
+1.57e-09,
+*Depvar
+ 19,
+ 1,  COH_dmg
+ 2,  COH_delta_s1
+ 3,  COH_delta_n
+ 4,  COH_delta_s2
+ 5,  COH_B
+ 9,  COH_FI
+ 11, COH_STATUS
+ 15, COH_slide1
+ 16, COH_slide2
+*User Material, constants=40, effmod
+** feature flags, ,   thickness,          4, 5, 6, 7, 8
+          200000, ,   1.0,  ,  ,  ,  ,  ,
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+      ,         ,          ,          ,         ,  62.3, 92.3, 0.277,
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+ 0.788, 1.634,    199.8,    0.925,    200000.0,        ,         ,          ,
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+           ,         ,          ,     ,       ,          ,         ,          ,
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     phi0,     mu
+      ,          ,         ,          ,           ,       ,         ,     0.0
+*Initial Conditions, type=SOLUTION
+ COH_INSERT,  1.0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0, 0.d0,  0.d0,  1.0,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0, 0.d0,  0.d0,  0.d0
+********************************************************************************
+** Boundary conditions and constraints
+********************************************************************************
+*Equation
+ 2
+ TIP_LINE_AT, 3, 1., T_Node, 3, -1.
+ 2
+ TIP_LINE_AB, 3, 1., B_Node, 3, -1.
+*Boundary
+ TIP_LINE_AT, 1, 2, 0.
+ TIP_LINE_AB, 1, 2, 0.
+ B_NODE, 2, 2, 0.
+** BOTTOM_LAYER, 2, 2, 0.
+********************************************************************************
+** Amplitude functions
+********************************************************************************
+*Amplitude, name=Amp-Load, definition=SMOOTH STEP
+0.0, 0.0, 0.1, 7.894736842105264
+********************************************************************************
+** Step and load application
+********************************************************************************
+** *Time points, name=tp1, generate
+** 0, 1, 0.5
+*Step, name=Load, nlgeom=YES
+*Dynamic, explicit
+, 1
+**
+*Boundary, type=VELOCITY, amplitude=Amp-Load
+T_Node, 3, 3, 0.5
+B_Node, 3, 3, -0.5
+*Variable mass scaling, dt=1e-06, type=below min, freq=1
+********************************************************************************
+** Output requests
+********************************************************************************
+*Output, history, freq=1
+*Energy Output
+ALLSE, ALLPD, ALLKE, ALLVD, ALLWK, ALLMW, ALLIE, ETOTAL
+ALLAE, ALLDC
+*Energy Output, ELSET=ARMS
+ALLSE, ALLPD, ALLKE, ALLVD, ALLIE
+*Node Output, nset=T_Node
+RF3, U3
+*Node Output, nset=B_Node
+RF3, U3
+*Incrementation Output, variable=preselect
+*Integrated Output, ELSET=ARMS
+ MASS
+**
+*Output, field, number interval=50
+*Node Output
+U, RF
+*Element Output
+S, LE, EMSF, EVOL, ELPD, EDT
+** *Output, field, time points=tp1
+** *Node Output
+** U, RF
+** *Element Output
+** S, LE,
+**
+*Output, history, freq=1
+*Energy Output, ELSET=COH
+ALLSE, ALLPD, ALLKE, ALLVD, ALLIE
+*Element Output, elset=first_coh_element
+EMSF, S, LE
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11
+*Node Output, nset=CTOD
+U3
+*Integrated Output, ELSET=COH
+ MASS
+**
+*Output, field, number interval=50
+*Element Output, elset=COH
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11
+*Element Output, elset=COH_INSERT
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11
+** *Output, field, time points=tp1
+** *Element Output, elset=COH
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11
+**
+*End Step

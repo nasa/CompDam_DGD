@@ -6,8 +6,15 @@ l = 0.2
 w = 0.2
 t = 0.15
 wkbToTotal = 0.6
-wkb = wkbToTotal*l
 stepDuration = 0.1
+** Material definition
+ feature_flags = 11301
+ cl = 0
+ wkb = wkbToTotal*l
+ T_sf = 0
+ mu = 0
+ density = 1.57e-09
+ thickness = 0
 **
 ** PARTS
 **
@@ -125,8 +132,8 @@ stepDuration = 0.1
 **
 *Initial Conditions, Type=Solution
   Part-1-1.all,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-  0.d0,  0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
-  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+  0.d0,          0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+  0.d0,          0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0
 ** ----------------------------------------------------------------
 **
 ** STEP: Step-1

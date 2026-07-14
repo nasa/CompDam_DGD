@@ -6,10 +6,18 @@
  thickness = 0.02
  displacement = 0.06
  stepDuration = 0.1
+** Material definition
+ feature_flags = 200000
+ E2 = 9080.
+ G12 = 5290.
+ G13 = 2987.
 **
- penalty_normal = 9080./thickness
- penalty_longitudinal = 5290./thickness
- penalty_transverse = 2987./thickness
+** Stiffness in normal direction
+ pen_n = E2/thickness
+** Stiffness in shear longitudinal direction
+ pen_l = G12/thickness
+** Stiffness in shear transverse direction
+ pen_t = G13/thickness
 **
 *Node, nset=Nodes
       1,            0.,            0.,            0.
@@ -43,20 +51,25 @@
 *Density
  1.57e-09,
 *User material, constants=40
-** feature flags, ,   thickness, 4, 5, 6, 7, 8
-          200000, , <thickness>,  ,  ,  ,  ,  ,
+** feature flags, 2,   thickness, 4, 5, 6, 7, 8
+ <feature_flags>,  ,            ,  ,  ,  ,  ,  ,
+**
 **  9         10        11        12        13        14        15        16
 **  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
       ,         ,          ,          ,         ,     62.3,     92.3,     0.277,
+**
 **  17        18        19        20        21        22        23        24
-**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
-    0.788,    1.634,    199.8,    0.925,    <penalty_normal>, <penalty_longitudinal>, <penalty_transverse>, ,
+**  GSL,      eta_BK,   YC,       alpha0    Pen,      G13,      G23,      nu13,
+    0.788,    1.634,    199.8,    0.925,    <pen_n>,  <pen_l>,  <pen_t>,      ,
+**
 **  25        26        27        28        29        30        31        32
 **  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
            ,         ,          ,     ,       ,          ,         ,          ,
+**
 **  33        34        35        36        37        38        39        40
-**  XC,       fXC,      GXC,      fGXC,     phi_ff,   w_kb,     T_sf,     mu
-      ,          ,         ,          ,           ,       ,         ,     0.3
+**  XC,       fXC,      GXC,      fGXC,     cl,       w_kb,     T_sf,     mu
+      ,          ,         ,          ,           ,       ,         ,
+**
 *Depvar
   19,
   1, COH_dmg
@@ -67,12 +80,11 @@
   9, COH_FI
  15, COH_slide1
  16, COH_slide2
-** *Characteristic Length, definition=USER, components=3
 **
 *Initial Conditions, Type=Solution
  COHESIVE,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-            0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
-            0.d0,  0.d0,  0.d0,  0.d0,  0.d0
+ 0.d0,      0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0,      0.d0,  0.d0,  0.d0
 *Boundary
   Z+, 1, 1, 0
   Z+, 3, 3, 0
@@ -89,17 +101,8 @@
 *Boundary, AMPLITUDE=LoadUp
  Z+, 2, 2, <displacement>
 **
-*Output, FIELD
-*Element Output
- SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV15, SDV16, S
-*Node Output
- U, RF
-*Output, HISTORY, frequency=1
-*Energy Output
- ALLIE, ALLKE, ALLPD, ALLSE
-*Node Output, NSET=Z+
- U, RF
-*Element Output, ELSET=COHESIVE
- SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV15, SDV16, S
+*Parameter
+ RFU_output_nset='Z+'
+*Include, input=test_COH_outputs.inp
 **
 *End Step

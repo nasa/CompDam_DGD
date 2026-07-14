@@ -54,9 +54,11 @@ parameters = {
             "identifier":
                 {
                     "symbol": "SDV_CDM_alpha",
+                    "label": "alpha",
                     "elset": "ALL",
                     "position": "Element 1 Int Point 1"
                 },
+            "evalStatement": "abs(d['alpha'])",
             "referenceValue": 53.0,
             "tolerance": 0.4
         },

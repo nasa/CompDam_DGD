@@ -56,59 +56,6 @@ Contains
   End Function StiffFunc
 
 
-  Subroutine StiffFuncNL(m, ndir, nshr, d1, d2, d3, eps, stiff, sr)
-    ! Constructs the damaged orthotropic stiffness tensor accounting for damage state variables and recoverable 
-    ! pre-peak nonlinearities including Schapery and elastic fiber nonlinearity
-
-    Use matProp_Mod
-    Use schapery_mod
-
-    ! Arguments
-    Type(matProps), intent(IN) :: m
-    Integer, intent(IN) :: ndir, nshr
-    Double Precision, intent(IN) :: d1, d2, d3                       ! Damage state variables
-    Double Precision, intent(IN) :: eps(ndir,ndir)                   ! Green-Lagrange strain tensor
-    Double Precision, intent(OUT) :: stiff(ndir+nshr,ndir+nshr)      ! Stiffness tensor
-    Double Precision :: sr                                           ! Schapery state variable (no intent is specified so that zero can be used when Schapery is N/A)
-
-    ! Locals
-    Double Precision :: E1
-    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0, four=4.d0
-    ! -------------------------------------------------------------------- !
-
-    If (m%Schapery) Then
-      sr = Schapery_damage(m, eps, sr)
-    Else
-      sr = zero
-    End If
-
-    ! Elastic fiber nonlinearity
-    If (d1 > 0) Then
-      ! Use secant stiffness when fiber nonlinearity is enabled for traditional fiber CDM model
-      ! This is necessary since once damage occurs, the strains become large
-      If (m%cl > 0) Then
-        If (eps(1,1) < 0) Then
-          eps_0 = -(-m%E1+SQRT(m%E1**two-four*m%E1*m%cl*m%XC))/(two*m%E1*m%cl)
-          E1 = m%XC/eps_0
-        Else
-          eps_0 = (-m%E1+SQRT(m%E1**two+four*m%E1*m%cl*m%XT))/(two*m%E1*m%cl)
-          E1 = m%XT/eps_0
-        End If
-      Else
-        E1 = m%E1
-      End If
-    Else
-      ! Fiber nonlinearity
-      E1 = m%E1*(one + m%cl*eps(1,1))
-    End If
-
-    ! Update stiffness matrix
-    stiff = StiffFunc(ndir+nshr, E1, m%E2*Schapery_reduction(sr, m%es), m%E3, m%G12*Schapery_reduction(sr, m%gs), m%G13, m%G23, m%v12, m%v13, m%v23, d1, d2, d3)
-
-    Return
-  End Subroutine StiffFuncNL
-
-
   Function StiffRot(C, NTENS, theta) result(StiffOut)
     ! Rotates the stiffness matrix by the specified angle (radians)
 

@@ -240,11 +240,11 @@ Contains
   End Function cohesive_traction
   
   
-  Pure Function interface_displacement_jumps(delta, penalty, damage, penalty_interace, normal) result(delta_interface)
+  Pure Function interface_displacement_jumps(delta, penalty, damage, penalty_interface, normal) result(delta_interface)
     
     ! Arguments
     Double Precision, intent(IN) :: delta
-    Double Precision, intent(IN) :: penalty, penalty_interace
+    Double Precision, intent(IN) :: penalty, penalty_interface
     Double Precision, intent(IN) :: damage
     Logical, intent(IN) :: normal
     
@@ -255,9 +255,9 @@ Contains
     Double Precision, parameter :: zero=0.d0, one=1.d0
     ! -------------------------------------------------------------------- !
     If (normal .AND. delta < zero) Then
-      delta_interface = delta * penalty / (penalty + penalty_interace)
+      delta_interface = delta * penalty / (penalty + penalty_interface)
     Else
-      delta_interface = delta * penalty / (penalty + penalty_interace*(one - damage))
+      delta_interface = delta * penalty / (penalty + penalty_interface*(one - damage))
     End If
       
     Return

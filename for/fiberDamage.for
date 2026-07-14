@@ -3,7 +3,7 @@ Module CDM_fiber_mod
 
 Contains
 
-  Subroutine FiberTenDmg(eps, ndir, E1, XT, GXT, n, m, Lc, cl, rfT, d1T, d1C, STATUS)
+  Subroutine FiberTenDmg(eps, ndir, E1, XT, GXT, n, m, Lc, cl, rfT, d1T, d1C)
     ! The purpose of this subroutine is to evaluate fiber damage.
     ! This subroutine is for tension-only fiber damage.
 
@@ -20,7 +20,6 @@ Contains
 
     Double Precision, intent(INOUT) :: rfT                    ! Fiber tension damage threshold, state variable (CDM_FIfT)
     Double Precision, intent(INOUT) :: d1T                    ! Fiber direction damage variables for tension
-    Integer, intent(INOUT) :: STATUS                            ! Element deletion
 
     ! Locals
     Double Precision :: FIfT                        ! Fiber direction failure index
@@ -45,7 +44,7 @@ Contains
     If (cl > 0) Then  ! Account for fiber nonlinearity
       If (d1T > 0) Then   ! Use secant stiffness
         E1_temp = E1_secant
-      Else  ! Use tangent stiffmess
+      Else  ! Use tangent stiffness
         E1_temp = E1*(1+cl*eps(1,1))
       End If
     Else
@@ -90,10 +89,8 @@ Contains
       ! Prevent healing; if the current damage is less than previous damage, use previous damage
       If (d1T < d1T_temp) d1T = d1T_temp
 
-      ! Delete element when it becomes fully damaged
       If (d1T >= d1MAX) Then
         d1T = d1MAX
-        ! STATUS = 0
       End If
 
     Else
@@ -107,7 +104,7 @@ Contains
   End Subroutine FiberTenDmg
 
 
-  Pure Subroutine FiberCompDmg(eps, ndir, E1, XC, GXC, n, m, Lc, cl, rfT, rfC, d1T, d1C, STATUS)
+  Pure Subroutine FiberCompDmg(eps, ndir, E1, XC, GXC, n, m, Lc, cl, rfT, rfC, d1T, d1C)
     ! The purpose of this subroutine is to evaluate fiber damage.
     ! This subroutine is for compression-only fiber damage.
 
@@ -125,7 +122,6 @@ Contains
     Double Precision, intent(INOUT) :: rfT                      ! Fiber tension damage threshold, state variable
     Double Precision, intent(INOUT) :: d1C                      ! Fiber direction damage variables for compression
     Double Precision, intent(INOUT) :: d1T                      ! Fiber direction damage variables for tension
-    Integer, intent(INOUT) :: STATUS                              ! Element deletion
 
     ! Locals
     Double Precision :: FIfC                        ! Fiber direction failure index
@@ -149,7 +145,7 @@ Contains
     If (cl > 0) Then  ! Account for fiber nonlinearity
       If (d1C > 0) Then  ! Use secant stiffness
         E1_temp = E1_secant
-      Else  ! Use tangent stiffmess
+      Else  ! Use tangent stiffness
         E1_temp = E1*(1+cl*eps(1,1))
       End If
     Else
@@ -194,10 +190,8 @@ Contains
       ! Prevent healing; If the current damage is less than previous damage, use previous damage
       If (d1C < d1C_temp) d1C = d1C_temp
 
-      ! Delete element when it becomes fully damaged
       If (d1C >= d1MAX) Then
         d1C = d1MAX
-        ! STATUS = 0
       End If
 
     Else

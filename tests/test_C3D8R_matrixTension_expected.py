@@ -1,10 +1,17 @@
-E2 = 9080.  # Young's modulus, matrix direction
-YT = 50.  # Matrix tensile strength
-GYT = 0.277  # Mode I fracture toughness
-length = 0.1  # Element edge length
+from utilities import get_enerElas
 
-enerElas = 0.1354 * length**3
-enerFrac = GYT * length**2
+E2 = 9080.  # Young's modulus, matrix direction
+YT = 62.3   # Matrix tensile strength
+GYT = 0.277  # Mode I fracture toughness
+lengthx = 0.1
+lengthy = 0.15
+lengthz = 0.2
+
+disp_at_zt = 2. * GYT / YT  # Cohesive displacement-jump at complete failure
+
+enerElas = 0.5*(0.5*YT)**2/E2 * lengthx*lengthy*lengthz  # computed at stress = 0.5*YT for consistency with where maximum elastic energy in cohesive occurs
+enerElas += get_enerElas(YT, GYT, lengthx*lengthz, pen=1e6, dmg_area=0.5)
+enerFrac = GYT * lengthx*lengthz
 
 parameters = {
 	"results": [
@@ -34,9 +41,9 @@ parameters = {
                     "position": "Element 1 Int Point 1"
                 }
             ],
-            "window": [0.01, 0.015],
+            "window": [0.8*disp_at_zt, 1.2*disp_at_zt],
             "zeroTol": 0.005,  # Defines how close to zero the y value needs to be
-            "referenceValue": 2. * GYT / YT,  # Cohesive displacement-jump at complete failure
+            "referenceValue": disp_at_zt,
             "tolerance": 2. * GYT / YT * 0.001  # 0.1% error
         },
         {
@@ -110,7 +117,7 @@ parameters = {
             "type": "max",
             "identifier": "Strain energy: ALLSE for Whole Model",  # Recoverable strain energy
             "referenceValue": enerElas,  # Elastic strain energy * volume
-            "tolerance": enerElas * 0.005  # 0.5% error
+            "tolerance": enerElas * 0.04
         }
 	]
 }

@@ -22,12 +22,12 @@ def loaddebugpy(filename='', jobname='', suffix=''):
 
     # Material properties
     first_line = [int(debugpy.featureFlags['integer']), 2., debugpy.thickness, 0., 0., 0., 0., 0., ]
-    m = CompDam_DGD.matprop_mod.loadmatprops('IM7-8552', 40, first_line + debugpy.m)
-    CompDam_DGD.matprop_mod.consistencychecks(m, issuewarnings=False)
+    m = CompDam_DGD.matprop_mod.matProps()
+    CompDam_DGD.matprop_mod.loadmatprops(m, 'IM7-8552', 40, first_line + debugpy.m, False)
 
     # Parameters
     p = debugpy.p
-    default_parameters = CompDam_DGD.parameters_mod.loadparameters()
+    default_parameters = CompDam_DGD.parameters_mod.parameters()
     for k, v in p.items():
         setattr(default_parameters, k.lower(), v)
     p = default_parameters

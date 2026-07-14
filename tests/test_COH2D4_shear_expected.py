@@ -1,8 +1,13 @@
+from utilities import get_enerElas
+
 SL = 92.3
 GSL = 0.788
 length = 0.2
+out_of_plane_thk = 0.5
 
-enerFrac = GSL * length * 1.0
+enerElas_dmg_0p5 = get_enerElas(SL, GSL, length*out_of_plane_thk)
+
+enerFrac = GSL * length * out_of_plane_thk
 
 parameters = {
 	"results": [
@@ -70,6 +75,12 @@ parameters = {
             "identifier": "Plastic dissipation: ALLPD for Whole Model",
             "referenceValue": enerFrac,  # Unrecoverable energy dissipation from fracture * fracture area: GSL*area
             "tolerance": enerFrac * 0.001  # 0.1% error
+        },
+        {
+            "type": "max",
+            "identifier": "Strain energy: ALLSE for Whole Model",  # Recoverable strain energy
+            "referenceValue": enerElas_dmg_0p5,  # Elastic strain energy * volume
+            "tolerance": enerElas_dmg_0p5 * 0.002
         }
 	]
 }

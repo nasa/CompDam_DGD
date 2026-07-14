@@ -14,6 +14,7 @@ Module vumatArg_Mod
     ! Double Precision :: enerInternOld(nblock)
     ! Double Precision :: enerInelasOld(nblock)
     Integer :: nElement, nMatPoint, nLayer, nSecPoint
+    Character(len=80) :: cmname
   Contains
     procedure :: init => vumatArg_init
     procedure :: update
@@ -22,12 +23,13 @@ Module vumatArg_Mod
 
 Contains
 
-  Pure Subroutine vumatArg_init(a, nblock, ndir, nshr, nstatev, stepTime, totalTime, dt)
+  Pure Subroutine vumatArg_init(a, nblock, ndir, nshr, nstatev, stepTime, totalTime, dt, cmname)
 
     ! Arguments
     Class(vumatArg), intent(INOUT) :: a
     Integer, intent(IN) :: nblock, ndir, nshr, nstatev
     Double Precision, intent(IN) :: stepTime, totalTime, dt
+    Character(len=80), intent(IN) :: cmname
 
     a%nblock = nblock
     a%ndir = ndir
@@ -36,6 +38,7 @@ Contains
     a%stepTime = stepTime
     a%totalTime = totalTime
     a%dt = dt
+    a%cmname = cmname
 
   End Subroutine vumatArg_init
 

@@ -1,0 +1,20 @@
+*Output, history, freq=1
+*Energy Output, ELSET=COH
+ALLSE, ALLPD, ALLKE, ALLVD, ALLIE
+*Element Output, elset=first_coh_element
+EMSF, S, LE
+<sdv_outputs>
+*Node Output, nset=CTOD
+U3
+*Integrated Output, ELSET=COH
+ MASS
+**
+*Output, field, number interval=<number_frames>
+*Element Output, elset=COH
+<sdv_outputs>
+** *Element Output, elset=COH_INSERT
+** <sdv_outputs>
+** *Output, field, time points=tp1
+** *Element Output, elset=COH
+** <sdv_outputs>
+**

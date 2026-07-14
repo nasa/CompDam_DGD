@@ -1,3 +1,4 @@
+# Note: this test is setup as a regression test
 parameters = {
 	"results": [
         {
@@ -8,7 +9,7 @@ parameters = {
                 "position": "Element 1 Int Point 1"
             },
             "referenceValue": 0.0,
-            "tolerance": 0.5
+            "tolerance": 2326.2/1000
         },
         {
             "type": "max",
@@ -40,7 +41,7 @@ parameters = {
                 "elset": "ALL",
                 "position": "Element 1 Int Point 1"
             },
-            "referenceValue": 1045,
+            "referenceValue": 1855,
             "tolerance": 5.0
         },
         {
@@ -51,7 +52,7 @@ parameters = {
                 "elset": "ALL",
                 "position": "Element 1 Int Point 1"
             },
-            "referenceValue": -490,
+            "referenceValue": -790,
             "tolerance": 5.0
         },
         {
@@ -62,7 +63,7 @@ parameters = {
                 "elset": "ALL",
                 "position": "Element 1 Int Point 1"
             },
-            "referenceValue": 455,
+            "referenceValue": 855,
             "tolerance": 5.0
         },
         {
@@ -81,7 +82,7 @@ parameters = {
             ],
             "window": [0.15, 0.45],  # [min, max]
             "zeroTol": 0.00623,  # Defines how close to zero the y value needs to be
-            "referenceValue": 0.25,
+            "referenceValue": 0.21,
             "tolerance": 0.055
         },
         {

@@ -3,10 +3,13 @@
 **
 *Parameter
  length = 0.05
- **
- ** Parametric calculations for demonstration only. See the corresponding .props file for the applied
- ** T_sf, alpha11, alpha22, and alpha33 values.
- **
+** Material definition
+ density = 1.59e-09
+ feature_flags = 100000
+ thickness = 0
+**
+** Parametric calculations for demonstration only.
+**
  T_sf = 150.
  temperature = 0.
  deltaT = temperature - T_sf
@@ -15,8 +18,8 @@
  sigma11_residual = -50.
  sigma22_residual =  50.
  sigma33_residual =  0.
- **
- ** Elastic material properties
+**
+** Elastic material properties
  E1 = 171420.0
  E2 = 9080.0
  E3 = E2
@@ -71,12 +74,33 @@
 **
 *Material, name=IM7-8552
 *Density
- 1.59d-09,
-*User material, constants=1
-** feature flags,
-          100000,
+ <density>,
+*User material, constants=53
+** feature flags, 2,   thickness, 4, 5, 6, 7, 8
+ <feature_flags>,  , <thickness>,  ,  ,  ,  ,  ,
 **
-*Depvar, delete=11
+**  9              10             11          12        13        14        15        16
+**  E1,            E2,            G12,        nu12,     nu23,     YT,       SL        GYT
+    <E1>,          <E2>,          5290.0,     <nu12>,   <nu23>,   62.3,     92.30,    0.277,
+**
+**  17             18             19          20        21        22        23        24
+**  GSL,           eta_BK,        YC,         alpha0    E3,       G13,      G23,      nu13,
+    0.788,         1.634,         199.8,      0.925,      ,          ,         ,          ,
+**
+**  25             26             27          28         29       30        31        32
+**  alpha11,       alpha22,       alpha_PL,   n_PL,      XT,      fXT,      GXT,      fGXT,
+    <alpha11_eff>, <alpha22_eff>,         ,       ,        ,        ,          ,          ,
+**
+**  33             34             35          36        37        38        39        40
+**  XC,            fXC,           GXC,        fGXC,     cl,       w_kb,     T_sf,     mu
+      ,               ,              ,            ,       ,           ,   <T_sf>,       ,
+**
+**  41             42             43          44        45        46        47        48
+      ,              ,              ,           ,         ,         ,         ,         ,
+**
+**  49             50             51          52        53
+      ,              ,              ,           ,       <alpha33_eff>
+*Depvar
   19,
   1, CDM_d2
   2, CDM_Fb1

@@ -1,0 +1,69 @@
+*Parameter
+********************************************************************************
+** Geometry parameters
+********************************************************************************
+TL = 120.0          # Total length of specimen
+crackLength = 50.8  # Length of Crack
+FM_before = 5.0         # Length of fine mesh region before init crack tip (must be < CL)
+FM_after = 65.0         # Length of fine mesh region after init crack tip (must be < TL-CL)
+width = 1           # Width of DCB specimen
+ply_thk = 0.2
+arm_num_plies = 19
+arm_thk = ply_thk*arm_num_plies - 0.5*interface_el_thk
+TBL = arm_thk       # Thickness of bottom arm
+Top_arm_thk = arm_thk   # Thickness of top arm
+TTL = Top_arm_thk + interface_el_thk
+**
+BL = crackLength - FM_before  # Length of coarse mesh in precracked area
+DL = crackLength + FM_after   # Maximum crack length at end of analysis
+********************************************************************************
+** Loading parameters
+********************************************************************************
+disp = 4.5  # Applied displacement
+step_time = 1
+ramp_time_frac = 0.1
+ramp_time = step_time*ramp_time_frac
+applied_velocity = disp/(step_time-0.5*ramp_time)
+**
+time_inc = 1.e-06  # target delta-time for mass scaling
+**
+number_frames = 50
+tp_start = 0 # Start of time points (extra output frames)
+tp_end = step_time # End of time points
+number_tp_frames = 2
+tp_delta = (tp_end - tp_start)/number_tp_frames
+**
+time_1 = 0.12  # time duration for step 1 (load)
+time_2 = 0.15  # time duration for step 2 (fatigue)
+********************************************************************************
+** Meshing Parameters
+********************************************************************************
+mesh_size_coarse = 1.0
+mesh_size_fine = 0.2
+** Number of elements
+NEW = 2    # In width direction (y-dir)
+NET = 3    # Through thickness of arms (z-dir)
+** x-dir
+NEA = max(5, int(BL/mesh_size_coarse))       # Between loading application and start of fine mesh
+NEB = max(5, int(FM_before/mesh_size_fine))  # In fine mesh before init crack tip
+NEC = max(5, int(FM_after/mesh_size_fine))  # In fine mesh after init crack tip
+NED = max(5, int((TL-DL)/mesh_size_coarse))  # After cracking, far RHS
+**
+top_arm_element_thickness = Top_arm_thk/NET
+bot_arm_element_thickness = TBL/NET
+**
+coh_rot_z = 0
+********************************************************************************
+** Modified constitutive thickness and density
+** (only used in selected dynamic DCB analyses)
+********************************************************************************
+coh_area = mesh_size_fine*mesh_size_fine
+target_mass = coh_mass_frac*coh_area*mesh_size_fine*density
+ST = YC*cos(alpha0)*(sin(alpha0) + cos(alpha0)/tan(2*alpha0))
+Pen1 = Pen2*GIc*SL**2/(GIIc*YT**2)
+Pen3 = Pen2*GIc*ST**2/(GIIc*YT**2)
+E = (Pen1+Pen3)*0.5 + Pen2*0.75
+**
+calc_rho = (target_mass/(coh_area*target_dt))**2/E
+calc_ct = coh_area*target_dt**2*E/target_mass
+**

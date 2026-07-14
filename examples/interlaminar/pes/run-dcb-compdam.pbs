@@ -1,0 +1,58 @@
+#!/bin/tcsh
+
+#
+# The following is a sample pbs script for job submission on the NASA LaRC K cluster.
+# This script is configured for the PBSPro queuing system. It likely will not work on
+# other queuing systems without modification.
+#
+set username = 'YOUR_USERNAME'         # Set once
+set input_deck_name = 'test_DCB_3D_compdam'  # Do not include the `.inp`
+set job_name = $input_deck_name''      # Add additional text to the job name if desired, e.g. `test_DCB_3D_compdam_v1`
+set abaqus_version = 'ABAQUS/2024'     # Set the Abaqus version to use. Ensure that subroutines are compiled for this version.
+set cpus = 20                          # Number of CPUs to use.
+set wall_time = 59                     # Time in minutes to allow the job to run [max = 4320, email help@k.larc.nasa.gov for more]
+set follow_job = ''                    # [Optional] PBS job id to queue up after. Use an empty string to submit immediately.
+#### The following are additional options that rarely need to be modified.
+set gpus = 0                           # Use `K3-K40` for gpus = 1, use `K3-V100` for gpus > 1
+set que = 'K4-route'                   # General purpose `K4-route`
+set ppn = 40                           # May need to be updated for other queues
+set vvv = 1                            # Set equal to 3 for debugging purposes
+
+
+# -------------------------------------
+# The following should not need to be modified for most jobs. Modify at your own risk.
+
+
+# Set the working directory
+setenv PBS_O_WORKDIR /hpnobackup2/$username/
+echo Working directory is $PBS_O_WORKDIR
+
+# Copy the input deck to the working directory
+cp $input_deck_name'.inp' $PBS_O_WORKDIR$input_deck_name'.inp'
+
+echo Copied input deck to working directory
+
+# Copy the environment file and any other files needed to run the job (e.g. abaqus_v6.env)
+cp 'abaqus_v6.env' ${PBS_O_WORKDIR}'abaqus_v6.env'
+
+# Change directories
+cd $PBS_O_WORKDIR
+echo "Running on host `hostname`"
+echo "Directory is `pwd`"
+
+# [Optional] Set env variable pointing to files that need to be moved to the job directoroy
+# Separate multiple files with |
+# Files should exist in the working directory
+#setenv ABA_INPUTFILES_EXTRA 'additional_files.txt|more_files.txt'
+
+# Load abaqus
+module purge
+module add $abaqus_version
+
+if($follow_job !~ '') then
+    set follow_job = ':job'${follow_job}
+else
+    set follow_job = ''
+endif
+echo "Submitting the abaqus job"
+abaqus inp=$input_deck_name job=$job_name cpus=$cpus gpus=$gpus queue=${que}:ppn${ppn}:wall${wall_time}${follow_job} double=both verbose=$vvv

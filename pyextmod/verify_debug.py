@@ -23,10 +23,11 @@ def _main_entry(args):
 
     # For debugging
     with open(os.path.join(os.path.dirname(debug_file_abspath), jobName+'_python.log'), 'w') as log:
+        log.write('Debug file path: ' + args.debugfile + '\n')
         log.write('Debug file name: ' + debug_file_name + '\n')
 
         # logging
-        pyextmod_log_file_name = jobName+'_fortran.log'
+        pyextmod_log_file_name = os.path.join(os.path.dirname(debug_file_abspath), jobName+'_fortran.log')
         CompDam_DGD.dgd_mod.log_init(level=4, filename=pyextmod_log_file_name, totaltime=0.081)
 
         # Load the debug file
@@ -48,7 +49,6 @@ def _main_entry(args):
 
         # Move the pyextmod log file to the testoutput directory
         CompDam_DGD.dgd_mod.log_close()
-        os.rename(os.path.abspath(pyextmod_log_file_name), os.path.abspath(os.path.join(os.pardir, 'tests', 'testOutput', pyextmod_log_file_name)))
 
         ## GOAL is to compare state variables --> if state variables are computed correctly, assume the debug.py file logic works
         sv_comparison = {}

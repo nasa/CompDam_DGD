@@ -1,0 +1,28 @@
+
+********************************************************************************
+** Interface tie
+********************************************************************************
+** NOTE: this only works when the number of elements in the width direction is 2
+*Parameter
+CM9=CM1+50000
+CM10=JT+50000
+CM11=CM4+NNL
+CM12=ET+NNL
+CM13=ET+NNL+NNL
+CM14=ET+50000
+CM15=CM11+50000
+CM16=CM14+NNL
+*Nset, nset=BOTTOM_LAYER_COH, generate
+<CM1>, <ET>, 1
+<CM4>, <CM12>, 1
+<CM11>, <CM13>, 1
+*Nset, nset=TOP_LAYER_COH, generate
+<CM9>, <CM14>, 1
+<M4>, <CM16>, 1
+<CM15>, <CM10>, 1
+*Surface, name=top, type=node
+TOP_LAYER_COH,
+*Surface, name=bottom, type=node
+BOTTOM_LAYER_COH,
+*Tie, name=interface
+bottom, top

@@ -16,7 +16,7 @@ CompDam_DGD.matprop_mod.consistencychecks(m, True)
 
 
 # Load parameters from the 'CompDam.parameters' file
-p = CompDam_DGD.parameters_mod.loadparameters()
+p = CompDam_DGD.parameters_mod.parameters()
 
 # State variables
 svarray = [

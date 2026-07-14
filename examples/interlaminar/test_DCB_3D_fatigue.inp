@@ -1,0 +1,254 @@
+*Heading
+DCB parametric fatigue
+**
+** This model is designed to reproduce the results presented in Figure 14 of
+** NASA/TP-2018-219838 by Carlos Dávila.
+**
+*Parameter
+********************************************************************************
+** Geometry parameters
+********************************************************************************
+crackLength = 50.8  # Length of Crack
+XL = 7.5         # Length of refined mesh for crack extension
+width = 1.0      # Width of DCB specimen
+TBL = 2.25       # Thickness of bottom arm
+TTL = 2.25       # Thickness of top arm
+**
+TL = crackLength + 3.0*TBL + XL  # Total length
+BL = 0.93*crackLength     # Coarse length of precracked area
+DL = XL + crackLength     # Maximum crack length at end of analysis
+********************************************************************************
+** Cohesive material parameters
+********************************************************************************
+density = 1.57e-09  # Density for carbon/epoxy materials
+YC = 199.8  # compressive matrix strength
+alpha0 = 0.925  # 2--3 plane crack angle under pure matrix compression [radians]
+** Initiation cohesive law
+YT_init = 80.0  # Mode I strength
+SL_init = 99.0  # Mode II strength
+K1_init = 2.E5  # Cohesive penalty stiffness (mode I)
+GIc_init = 0.214  # Mode I fracture toughness
+GIIc_init = 0.59  # mode II fracture toughness
+BK_eta_init = 2.1  # Benzeggagh-Kenane mode mixity exponent
+**
+density_init = density/2.0  # Density for carbon/epoxy materials
+********************************************************************************
+** Bridging cohesive law
+YT_brdg = 0.8  # Mode I strength
+SL_brdg = 1.0  # Mode II strength
+K1_brdg = K1_init * YT_brdg / YT_init  # Cohesive penalty stiffness (mode I)
+GIc_brdg = 0.140  # Mode I fracture toughness
+GIIc_brdg = 0.193  # mode II fracture toughness
+BK_eta_brdg = 3.0
+**
+density_brdg = density/2.0  # Density for carbon/epoxy materials
+********************************************************************************
+** Arm material parameters
+********************************************************************************
+E11 = 146671.  # Longitudinal modulus
+E22 = 8703.    # Transverse modulus
+E33 = E22
+G12 = 5164.   # In-plane shear modulus
+G13 = G12
+G23 = 3001.   # Out-of-plane shear modulus
+nu12 = 0.32    # Major Poisson's ratio
+nu13 = nu12
+nu23 = E22/(2*G23)-1
+density_arm = density
+********************************************************************************
+** Loading parameters
+********************************************************************************
+disp = 1.92  # Applied displacement
+**
+time_inc = 1.e-07  # target delta-time for mass scaling
+**
+time_1 = 0.05  # time duration for step 1 (load)
+time_2 = 0.15  # time duration for step 2 (fatigue)
+********************************************************************************
+** Meshing Parameters
+********************************************************************************
+NEW=  6    # Number of elements in width direction (y-dir)
+NET=  6    # Number of elements in sublamina (z-dir)
+NEA= 24    # Number of elements in length direction before Crack, coarse (x-dir)
+NEB= 20    # Number of elements in length direction before Crack, fine (x-dir)
+NEC=250    # Number of elements in length direction after Crack (x-dir)
+NED= 20    # Number of elements in length direction after cracking (x-dir)
+**
+top_arm_element_thickness = TTL/NET
+bot_arm_element_thickness = TBL/NET
+********************************************************************************
+** Material definitions
+********************************************************************************
+**
+** CompDam parameters
+**
+*PARAMETER TABLE TYPE, NAME=KEY_FLOAT, parameters=2
+STRING
+FLOAT
+*PARAMETER TABLE TYPE, NAME=KEY_INT, parameters=2
+STRING
+INTEGER
+*TABLE COLLECTION, NAME=COMPDAM_PARAM
+** CompDam parameters with float values
+*PARAMETER TABLE, type=KEY_FLOAT, label=CDP_FLOAT
+** R ratio for cohesive fatigue model, sigma_min / sigma_max
+fatigue_R_ratio, 0.1d0
+**
+** Fatigue cycles per solution increment
+cycles_per_increment_init, 1.d-5
+**
+** Percent change to fatigue cycles per solution increment when rate of energy dissipation is out-of-range
+cycles_per_increment_mod, 0.1d0
+**
+** thresholds for fatigue damage progression per solution increment in terms of percent fracture toughness
+fatigue_damage_min_threshold, 5.d-5
+fatigue_damage_max_threshold, 1.d-3
+**
+** CompDam parameters with integer values
+*PARAMETER TABLE, type=KEY_INT, label=CDP_INT
+fatigue_step, 2
+**
+*Material, name=cohesive
+*Density
+<density_init>,
+*Depvar
+19,
+1, COH_dmg
+2, COH_delta_s1
+3, COH_delta_n
+4, COH_delta_s2
+5, COH_B
+9, COH_FI
+11, COH_STATUS
+*User Material, constants=40
+200000, , 0., , 1.d7, 0.2, 0.95, 0.0,
+, , , , , <YT_init>, <SL_init>, <GIc_init>,
+<GIIc_init>, <BK_eta_init>, <YC>, <alpha0>, <K1_init>, , , ,
+, , , , , , , ,
+, , , , , , , 0.0
+*Material, name=cohesive_bridge
+*Density
+<density_brdg>,
+*Depvar
+19,
+1, COH_dmg
+2, COH_delta_s1
+3, COH_delta_n
+4, COH_delta_s2
+5, COH_B
+9, COH_FI
+11, COH_STATUS
+*User Material, constants=40
+200000, , 0., , 1.d7, 0.2, 0.95, 0.0,
+, , , , , <YT_brdg>, <SL_brdg>, <GIc_brdg>,
+<GIIc_brdg>, <BK_eta_brdg>, <YC>, <alpha0>, <K1_brdg>, , , ,
+, , , , , , , ,
+, , , , , , , 0.0
+**
+*Initial Conditions, type=SOLUTION
+COH, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+0.0, 0.0, 0.0,   1, 0.0, 0.0, 0.0, 0.0,
+0.0, 0.0, 0.0, 0.0
+*Initial Conditions, type=SOLUTION
+COH_bridge, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+0.0,        0.0, 0.0,   1, 0.0, 0.0, 0.0, 0.0,
+0.0,        0.0, 0.0, 0.0
+********************************************************************************
+*Include, input=_DCB_3D_geometry+sec.inp
+********************************************************************************
+** Cohesive elements
+********************************************************************************
+*Element, type=COH3D8
+ <COH_F>, <CM1>, <CM2>, <CM3>, <CM4>, <CM5>, <CM6>, <CM7>, <CM8>
+ <COH_B>, <CN1>, <CN2>, <CN3>, <CN4>, <CN5>, <CN6>, <CN7>, <CN8>
+*Elgen, elset=FRONT_COH
+ <COH_F>, <NEC>, 1 , 1 , <NEW>, <NNL>, <NEL>, 1, 50000, 50000
+*Elgen, elset=BACK_COH
+ <COH_B>, <NED>, 1 , 1 , <NEW>, <NNL>, <NEL>, 1, 50000, 50000
+*Elset, elset=COH
+ FRONT_COH, BACK_COH
+*Elcopy, old set=COH, new set=COH_bridge, shift nodes=0, element shift=1000000
+**
+*Cohesive section, elset=COH, response=TRACTION SEPARATION, material=cohesive, thickness=SPECIFIED
+1.0
+*Cohesive section, elset=COH_bridge, response=TRACTION SEPARATION, material=cohesive_bridge, thickness=SPECIFIED
+1.0
+********************************************************************************
+** Boundary conditions and constraints
+********************************************************************************
+**
+*Equation
+ 2
+ TIP_LINE_AT, 3, 1., T_Node, 3, -1.
+ 2
+ TIP_LINE_AB, 3, 1., B_Node, 3, -1.
+*Boundary
+ TIP_LINE_AT, 1, 2, 0.
+ TIP_LINE_AB, 1, 2, 0.
+********************************************************************************
+** Amplitude functions
+********************************************************************************
+*Amplitude, name=Amp-Load, definition=SMOOTH STEP
+0.0, 0.0, <time_1>, <disp>
+********************************************************************************
+** Filter to halt analysis when damage grows into the coarse region
+*Filter, name=haltOnFailure, operator=MAX, limit=1e-20, halt
+********************************************************************************
+*Step, name=Load, nlgeom=YES
+*Dynamic, explicit
+, <time_1>
+*Variable mass scaling, dt=<time_inc>, type=below min, freq=1
+**
+*Boundary, type=DISPLACEMENT, amplitude=Amp-Load
+T_Node, 3, 3, 0.5
+B_Node, 3, 3, -0.5
+**
+*Output, history, freq=500
+*Energy Output
+ALLSE, ALLPD, ALLKE, ALLVD, ALLWK, ALLMW
+*Node Output, nset=T_Node
+RF3, U3
+**
+*Output, field, number interval=20
+*Node Output
+U,
+*Element Output
+S, EMSF
+*Element Output, elset=COH
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
+*Element Output, elset=COH_bridge
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
+**
+*End Step
+********************************************************************************
+*Step, name=Fatigue, nlgeom=YES
+*Dynamic, explicit
+, <time_2>
+*Variable mass scaling, dt=<time_inc>, type=below min, freq=1
+**
+** History output to halt analysis when damage grows into the coarse region
+*Output, history, frequency=500, filter=haltOnFailure
+*Element Output, elset=BACK_COH
+ SDV1
+**
+*Output, history, freq=1
+*Energy Output
+ALLSE, ALLPD, ALLKE, ALLVD, ALLWK, ALLMW
+*Energy Output, elset=COH
+ALLPD
+*Energy Output, elset=COH_bridge
+ALLPD
+*Node Output, nset=T_Node
+RF3, U3
+**
+*Output, field, number interval=200
+*Node Output
+U,
+*Element Output
+S,
+*Element Output, elset=COH
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
+*Element Output, elset=COH_bridge
+SDV1, SDV2, SDV3, SDV4, SDV5, SDV9, SDV11,
+**
+*End Step

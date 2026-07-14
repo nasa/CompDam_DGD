@@ -1,0 +1,106 @@
+**
+** IM7/8552, 134 g/m^2, 59.1% fiber volume fraction, 33% resin content
+** Hand layup, autoclave cure at 180 C
+** Units: N, mm, s
+** Nominal ply thickness: 0.131 mm (actual may be closer to 0.125 mm)
+** Nominal density: 1.57e-9 ton/mm^3
+**
+** References
+** 1. P. P. Camanho, P. Maimí, C. G. Dávila. Prediction of size effects in notched
+**    laminates using continuum damage mechanics. Compos Sci Technol 2007;
+**    67:2715–27.
+** 2. P. P. Camanho, M. A. Bessa, G. Catalanotti, M. Vogler, R. Rolfes. Modeling the
+**    inelastic deformation and fracture of polymer composites – Part II:
+**    Smeared crack model. Mech Mater 2013;59:36–49.
+** 5. G. Catalanotti, J. Xavier, and P. P. Camanho, Measurement of the
+**    compressive crack resistance curve of composites using the size effect
+**    law, Composites Part A: Applied Science and Manufacturing, vol. 56, pp.
+**    300–307, 2014, doi: 10.1016/j.compositesa.2013.10.017.
+** 8. G. Catalanotti, A. Arteiro, M. Hayati, and P. P. Camanho, Determination
+**    of the mode I crack resistance curve of polymer composites using the
+**    size-effect law, Engineering Fracture Mechanics, vol. 118, pp. 49–65,
+**    Mar. 2014, doi: 10.1016/j.engfracmech.2013.10.021.
+** 14.C. A. Rose, C. G. Dávila, and F. A. Leone, "Analysis methods for
+**    progressive damage of composite structures," Hampton, VA, NASA/TM–2013-
+**    218024, Jul. 2013.
+** 16.A. S. Kaddour and M. J. Hinton, "Input data for test cases used in
+**    benchmarking triaxial failure theories of composites," Journal of
+**    Composite Materials, vol. 46, no. 19–20, Art. no. 19–20, Sep. 2012,
+**    doi: 10.1177/0021998312449886.
+**
+** Notes
+** a. E1T = E1C (tensile and compressive moduli are equal)
+** b. E2T = E2C (tensile and compressive moduli are equal)
+** c. alpha0 is loosely based on test observations, ref 1.
+** d. Transverse isotropy is assumed
+** e. Coefficients of thermal expansion are not used in most tests, see
+**    `test_C3D8R_residualStress` for an example where they are used.
+**    The values for this material system are:
+**    alpha11 = -5.5e-6 /C, Ref. 1
+**    alpha22 = 25.8e-6 /C, Ref. 1, (assume alpha22 = alpha33)
+** f. Shear nonlinearity coefficients are not used in most tests, see
+**    `test_C3D8R_nonlinearShear` or `IM7-8552-C3D-25sv.inp` for examples
+**    where they are used.
+**    The values for this material system are:
+**    alpha_PL = 4.06e-9, Ref. 14 and 16
+**    n_PL = 5.4, Ref. 14 and 16
+** g. fXT, fGXT, fXC, fGXC calculated by fitting the expression for G_R^NL
+**    from reference 17 to the R-curve reported in references 8 and 5,
+**    respectively.
+** h. Longitudinal elastic nonlinearity (fiber nonlinearity) is not used in
+**    most tests, see `test_C3D8R_fiberCompression_BL_FN` for an example where
+**    it is used.
+** i. w_kb is only required for FKT. See `IM7-8552-C3D-25sv.inp` for examples
+**    where it is used.
+** j. T_sf is only required for estimating thermal strain when a nonzero
+**    reference temperature is desired. See `test_C3D8R_residualStress` for an
+**    example where it is used. For this material system, T_sf = 155 C
+** k. mu = {0, 0.3}, both are assumed values
+*Material, name=IM7-8552
+*Density
+ <density>,
+*User material, constants=40
+** feature flags, 2,   thickness, 4, 5, 6, 7, 8
+ <feature_flags>,  , <thickness>,  ,  ,  ,  ,  ,
+**
+**  9         10        11        12        13        14        15        16
+**  E1,       E2,       G12,      nu12,     nu23,     YT,       SL        GYT
+**  Ref. 1    Ref. 1    Ref. 1    Ref. 1    Ref. 2    Ref. 1    Ref. 1    Ref. 1
+    171420.0, 9080.0,   5290.0,   0.32,     0.52,     62.3,     92.30,    0.277,
+**
+**  17        18        19        20        21        22        23        24
+**  GSL,      eta_BK,   YC,       alpha0    E3,       G13,      G23,      nu13,
+**  Ref. 1    Ref. 2    Ref. 1    Note c    Note d    Note d    Note d    Note d
+    0.788,    1.634,    199.8,    0.925,      ,          ,         ,          ,
+**
+**  25        26        27        28        29        30        31        32
+**  alpha11,  alpha22,  alpha_PL, n_PL,     XT,       fXT,      GXT,      fGXT,
+**  Note e    Note e    Note f    Note f    Ref. 1    Note g    Ref. 8    Note g
+           ,         ,          ,     ,     2326.2,   0.63,     205.0,    0.469,
+**
+**  33        34        35        36        37        38        39        40
+**  XC,       fXC,      GXC,      fGXC,     cl,       w_kb,     T_sf,     mu
+**  Ref. 2    Note g    Ref. 5    Note g    Note h    Note i    Note j    Note k
+    1200.1,   0.614,    61.0,     0.432,      ,           ,         ,     <mu>
+*Depvar
+  19,
+  1, CDM_d2
+  2, CDM_Fb1
+  3, CDM_Fb2
+  4, CDM_Fb3
+  5, CDM_B
+  6, CDM_Lc1
+  7, CDM_Lc2
+  8, CDM_Lc3
+  9, CDM_FIm
+ 10, CDM_alpha
+ 11, CDM_STATUS
+ 12, CDM_Plas12
+ 13, CDM_Inel12
+ 14, CDM_FIfT
+ 15, CDM_slide1
+ 16, CDM_slide2
+ 17, CDM_FIfC
+ 18, CDM_d1T
+ 19, CDM_d1C
+*Characteristic Length, definition=USER, components=3

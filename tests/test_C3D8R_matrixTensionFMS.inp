@@ -1,0 +1,108 @@
+*Heading
+ Single element test for matrix tension, with fixed mass scaling (FMS)
+**
+*Parameter
+ lengthx = 0.1
+ lengthy = 0.15
+ lengthz = 0.2
+ displacement = 2.
+** Material definition
+ feature_flags = 100000
+ mu = 0
+ density = 1.57e-09
+ thickness = 0
+**
+** NODES
+**
+*NODE, NSET=GLOBAL
+      1,            0.,             0.,             0.
+      2,      <lengthx>,            0.,             0.
+      3,      <lengthx>,      <lengthy>,            0.
+      4,            0.,       <lengthy>,            0.
+      5,            0.,             0.,      <lengthz>
+      6,      <lengthx>,            0.,      <lengthz>
+      7,      <lengthx>,      <lengthy>,     <lengthz>
+      8,            0.,       <lengthy>,     <lengthz>
+*NSET, NSET=X+
+  2, 3, 6, 7
+*NSET, NSET=X-
+  1, 4, 5, 8
+*NSET, NSET=Y+
+  3, 4, 7, 8
+*NSET, NSET=Y-
+  1, 2, 5, 6
+*NSET, NSET=Z+
+  5, 6, 7, 8
+*NSET, NSET=Z-
+  1, 2, 3, 4
+**
+** ELEMENTS
+**
+*ELEMENT, TYPE=C3D8R, ELSET=ALL_ELEMS
+  1, 1, 2, 3, 4, 5, 6, 7, 8
+**
+** PROPERTIES
+**
+*SOLID SECTION, ELSET=ALL_ELEMS, MATERIAL=IM7-8552
+**
+** MATERIALS
+**
+*Include, input=IM7-8552-C3D.inp
+**
+** INITIAL CONDITIONS
+**
+*Initial Conditions, Type=Solution
+ ALL_ELEMS,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0,       0.d0,  0.d0,     1,  0.d0,  0.d0,  0.d0,  0.d0,
+ 0.d0,       0.d0,  0.d0,  0.d0
+*BOUNDARY
+  Y-, 2, 2, 0
+  X-, 1, 1, 0
+  X+, 1, 1, 0
+  Z-, 3, 3, 0
+**
+** Equations for constraining keeping the 3-direction faces parallel
+*Equation
+ 2
+ 5, 3, 1., 6, 3, -1.
+ 2
+ 6, 3, 1., 7, 3, -1.
+ 2
+ 7, 3, 1., 8, 3, -1.
+**
+*Amplitude, name=LoadUp, definition=SMOOTH STEP
+0., 0., 0.1, 1.
+** STEP 1 - TENSION MECHANICAL CYCLE
+**
+*STEP, NLGEOM=YES
+*Dynamic, Explicit
+ , 0.1, ,
+*Fixed mass scaling, dt=5e-6, type=below min
+**
+** OUTPUT
+**
+*OUTPUT, FIELD
+*ELEMENT OUTPUT
+  SDV, S, LE, EMSF
+*Node Output
+ U, RF
+*OUTPUT, HISTORY, frequency=1
+*Energy Output
+ ALLIE, ALLKE, ALLPD, ALLSE, ALLWK, ALLMW, ALLVD
+*NODE OUTPUT, NSET=Y+
+ U
+*NODE OUTPUT, NSET=Y+
+ RF
+*ELEMENT OUTPUT, ELSET=ALL_ELEMS
+ SDV, S, LE, EMSF, EDT, EVOL, DENSITY
+** *ELEMENT OUTPUT, ELSET=ALL_ELEMS
+**  ELEN, ENER
+*Incrementation Output, variable=preselect
+*Integrated Output, ELSET=ALL_ELEMS
+MASS
+**
+** LOADING
+**
+*Boundary, AMPLITUDE=LoadUp
+ Y+, 2, 2, <displacement>
+*END STEP

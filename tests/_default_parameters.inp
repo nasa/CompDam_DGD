@@ -1,0 +1,124 @@
+**
+** CompDam parameters
+**
+** The next two cards define parameter tables for CompDam parameters
+** These should not be modified.
+*PARAMETER TABLE TYPE, NAME=KEY_FLOAT, parameters=2
+STRING
+FLOAT
+*PARAMETER TABLE TYPE, NAME=KEY_INT, parameters=2
+STRING
+INTEGER
+** Define the parameter "table collection" which can include two
+** tables: one for float parameters and one for integer parameters
+*TABLE COLLECTION, NAME=COMPDAM_PARAM
+** CompDam parameters with float values
+*PARAMETER TABLE, type=KEY_FLOAT, label=CDP_FLOAT
+** tol_DGD_f, tol_DGD/YT
+tol_DGD_f, 1.d-4
+**
+** minimum amount of damage dissipated per MD increment
+dGdGc_min, 1.d-12
+**
+** minimum accepted det(F_bulk)
+compLimit, 0.25d0
+**
+** penalty stiffness multiplier
+penStiffMult, 1.d3
+**
+** artificially slow rate of change of F_bulk
+cutback_amount, 0.5d0
+**
+** Tolerance for divergence of internal Newton Raphson loop
+tol_divergence, 1.d-6
+**
+** Maximum shear strain; when this value is exceeded, the element is deleted
+gamma_max, 4.d0
+**
+** Ratio of kink band size to element length at which to decompose the element
+kb_decompose_thres, 0.99d0
+**
+** Angle at which fiber failure occurs; no further plastic shear deformation allowed
+fkt_fiber_failure_angle, -1.d0
+**
+** Tolerance value used to determine if convergence has occurred in newton raphson loop
+schaefer_nr_tolerance, 1.d-6
+**
+** Time at which to kill analysis (for debugging purposes)
+debug_kill_at_total_time, -1.d0
+**
+** Initial fiber misalignment azimuthal average [degrees]
+fkt_init_misalignment_azi_mu, 0.d0
+**
+** Initial fiber misalignment azimuthal variance [degrees]
+fkt_init_misalignment_azi_sigma, 45.d0
+**
+** Initial fiber misalignment polar shape parameter [degrees]
+fkt_init_misalignment_polar_shape, 0.676d0
+**
+** Initial fiber misalignment polar standard deviation [degrees]
+fkt_init_misalignment_polar_scale, 2.25d0
+**
+** R ratio for cohesive fatigue model, sigma_min / sigma_max
+fatigue_R_ratio, 0.1d0
+**
+** Fatigue cycles per solution increment
+cycles_per_increment_init, 1.d-4
+**
+** Maximum fatigue cycles per solution increment
+cycles_per_increment_max, 1.d5
+**
+** Minimum fatigue cycles per solution increment
+cycles_per_increment_min, 1.d-5
+**
+** Percent change to fatigue cycles per solution increment when rate of energy dissipation is out-of-range
+cycles_per_increment_mod, 0.1d0
+**
+** thresholds for fatigue damage progression per solution increment in terms of percent fracture toughness
+fatigue_damage_min_threshold, 5.d-6
+fatigue_damage_max_threshold, 1.d-4
+**
+**
+** CompDam parameters with integer values
+** 0=False, 1=True
+*PARAMETER TABLE, type=KEY_INT, label=CDP_INT
+** Logger level
+** 1=errors only, 2=warnings, 3=info, 4=debug (very small models only)
+logLevel, 2
+**
+** 1=default (to log file)
+logFormat, 1
+**
+** DGD maximum number of cut-backs
+cutbacks_max, 4
+**
+** DGD maximum number of damage increments per solution increment
+MD_max, 1000
+**
+** DGD maximum number of equilibrium iterations
+EQ_max, 1000
+**
+** Set to true (1) to search for the matrix crack angle with maximum failure index
+alpha_search, 1
+**
+** increment, in degrees, for which the matrix failure criterion is evaluated
+alpha_inc, 10
+**
+** maximum matrix crack angle alpha, in degrees
+alpha_max, 60
+**
+** maximum number of Newton-Raphson loops before divergence is assumed
+schaefer_nr_counter_limit, 10000000
+**
+** Set to false (0) to trigger a warning, delete the element, and allow the analysis to continue when no converged solution can be found
+terminate_on_no_convergence, 1
+**
+** Set to true (1) to use the time as the seed for initial fiber misalignment to get different results for each realization
+fkt_random_seed, 0
+**
+** Step number for fatigue analysis
+fatigue_step, 100000
+**
+** Set to true (1) to check for constitutive snap-back
+check_for_snap_back, 0
+**

@@ -43,7 +43,6 @@ build/
 *.odb
 *.pac
 *.par
-*.pes
 *.pmg
 *.prt
 *.res
@@ -70,6 +69,10 @@ old/
 results/
 testOutput/
 archivedTestResults/
+
+# Examples
+examples/**/abaqus_v6.env
+examples/**/*cpus*pes
 
 # Sublime text
 *.sublime-project

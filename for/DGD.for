@@ -113,7 +113,7 @@ Contains
 
       ! Evaluate fiber tension failure criteria and damage variable
       If (m%fiberTenDam) Then
-        Call FiberTenDmg(eps, ndir, m%E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), m%cl, sv%rfT, sv%d1T, sv%d1C, sv%STATUS)
+        Call FiberTenDmg(eps, ndir, m%E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), m%cl, sv%rfT, sv%d1T, sv%d1C)
         Call log%debug('Computed fiber damage variable, d1T ' // trim(str(sv%d1T)))
 
         d1 = sv%d1T
@@ -206,7 +206,7 @@ Contains
         Call Plasticity(m, sv, p, ndir, nshr, eps, eps_old, enerPlasInc)
 
         If (m%fiberCompDamBL) Then
-          Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), m%cl, sv%rfT, sv%rfC, sv%d1T, sv%d1C, sv%STATUS)
+          Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), m%cl, sv%rfT, sv%rfC, sv%d1T, sv%d1C)
           Call log%debug('Computed fiber damage variable, d1C ' // trim(str(sv%d1C)))
 
           d1 = sv%d1C
@@ -325,10 +325,10 @@ Contains
           Else If (A == m%alpha0_deg) Then
             A = A + p%alpha_inc - MOD(A + p%alpha_inc, p%alpha_inc)
           ! Check to see if incrementing alpha would pass over -alpha0
-          Else If (A < -alpha0_deg .AND. A + p%alpha_inc > -alpha0_deg) Then
-            A = -alpha0_deg
+          Else If (A < -m%alpha0_deg .AND. A + p%alpha_inc > -m%alpha0_deg) Then
+            A = -m%alpha0_deg
           ! If already at -alpha0, increment to next nearest multiple of alpha_inc
-          Else If (A == -alpha0_deg) Then
+          Else If (A == -m%alpha0_deg) Then
             A = A + p%alpha_inc - MOD(A + p%alpha_inc, p%alpha_inc)
           Else
             A = A + p%alpha_inc
@@ -704,11 +704,11 @@ Contains
         !    Evaluate the CDM fiber failure criteria and damage variable:      !
         ! -------------------------------------------------------------------- !
         If (eps(1,1) >= zero) Then
-          If (m%fiberTenDam) Call FiberTenDmg(eps, ndir, m%E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), m%cl, rfT_temp, d1T_temp, d1C_temp, sv%STATUS)
+          If (m%fiberTenDam) Call FiberTenDmg(eps, ndir, m%E1, m%XT, m%GXT, m%fXT, m%fGXT, sv%Lc(1), m%cl, rfT_temp, d1T_temp, d1C_temp)
           d1 = d1T_temp
           d1C_temp = sv%d1C
         Else If (m%fiberCompDamBL) Then
-          Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), m%cl, rfT_temp, rfC_temp, d1T_temp, d1C_temp, sv%STATUS)
+          Call FiberCompDmg(eps, ndir, m%E1, m%XC, m%GXC, m%fXC, m%fGXC, sv%Lc(1), m%cl, rfT_temp, rfC_temp, d1T_temp, d1C_temp)
           d1 = d1C_temp
         End If
 
@@ -1069,7 +1069,7 @@ Contains
     End If
     If (m%accumulateDissipFractEnergy) Then
       sv%enerFracNew = sv%enerFracOld + enerFracInc   ! For debugging (not currently used)
-      enerInelas = enerInelas + enerFracInc/sv%Lc(2)/density_bulk
+      enerInelas = enerInelas + enerFracInc/sv%Lc(Q)/density_bulk
     End If
 
     ! Internal energy
@@ -1080,6 +1080,9 @@ Contains
       End Do
     End Do
     enerIntern = enerIntern/density_bulk
+    ! Add contribution of elastic energy in cohesive interface
+    T_coh(:) = cohesive_traction(delta_coh(:,Q), Pen(:), dmg_penalty)
+    enerIntern = enerIntern + DOT_PRODUCT(T_coh, delta_coh(:,Q)/sv%Lc(Q))/two/density_abq
     ! Add total dissipated (unrecoverable) energy
     enerIntern = enerIntern + enerInelas
 
@@ -1498,119 +1501,58 @@ Contains
   End Subroutine DGDKinkband
 
 
-  Function alpha0_DGD(m)
-    ! Determines the orientation of the angle alpha0 when subject to sigma22 = -Yc
-    !
-    ! The material input alpha0 is the orientation of the crack surface normal in the 2--3 plane
-    ! with respect to the material 2 direction for a crack caused by pure matrix compression.
-    ! alpha0 is the orientation of the resulting crack after the material has been unloaded, as it
-    ! would be measured in a tested specimen. This function calculates the orientation of the
-    ! crack normal defined by alpha0 when damage initiates due to pure compressive matrix loading.
+  Subroutine StiffFuncNL(m, ndir, nshr, d1, d2, d3, eps, stiff, sr)
+    ! Constructs the damaged orthotropic stiffness tensor accounting for damage state variables and recoverable 
+    ! pre-peak nonlinearities including Schapery and elastic fiber nonlinearity
 
-    Use forlog_Mod
-    Use matrixAlgUtil_Mod
-    Use stress_Mod
     Use matProp_Mod
+    Use schapery_mod
+    Use stress_Mod
 
     ! Arguments
     Type(matProps), intent(IN) :: m
-    ! Double Precision, Intent(IN) :: alpha0, E1, E2, E3, G12, G13, G23, v12, v13, v23, Yc
+    Integer, intent(IN) :: ndir, nshr
+    Double Precision, intent(IN) :: d1, d2, d3                       ! Damage state variables
+    Double Precision, intent(IN) :: eps(ndir,ndir)                   ! Green-Lagrange strain tensor
+    Double Precision, intent(OUT) :: stiff(ndir+nshr,ndir+nshr)      ! Stiffness tensor
+    Double Precision :: sr                                           ! Schapery state variable (no intent is specified so that zero can be used when Schapery is N/A)
 
     ! Locals
-    Double Precision :: E3, G13, v13, G23    ! For transverse isotropy assumption
-    Double Precision :: C(6,6)               ! 3-D Stiffness
-    Double Precision :: F(3)                 ! Represents diagonal of deformation gradient tensor
-    Double Precision :: Residual(3)          ! Residual vector
-    Double Precision :: tolerance
-    Double Precision :: err
-    Double Precision :: Jac(3,3)             ! Jacobian
-    Integer :: counter
-    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0
+    Double Precision :: E1
+    Double Precision, parameter :: zero=0.d0, one=1.d0, two=2.d0, four=4.d0
     ! -------------------------------------------------------------------- !
 
-    Call log%debug('Start of Function alpha0_DGD')
-
-    tolerance = 1.d-4  ! alphaLoop tolerance
-
-    ! Assume transverse isotropy if needed
-    If (m%E3 < one) Then
-      E3 = m%E2
+    If (m%Schapery) Then
+      sr = Schapery_damage(m, eps, sr)
     Else
-      E3 = m%E3
-    End If
-    If (m%G13 < one) Then
-      G13 = m%G12
-    Else
-      G13 = m%G13
-    End If
-    If (m%v13 == zero) Then
-      v13 = m%v12
-    Else
-      v13 = m%v13
-    End If
-    If (m%G23 < one) Then
-      G23 = m%E2/two/(one + m%v23)
-    Else
-      G23 = m%G23
+      sr = zero
     End If
 
-    ! Build the stiffness matrix
-    C = StiffFunc(6, m%E1, m%E2, E3, m%G12, G13, G23, m%v12, v13, m%v23, zero, zero, zero)
-
-    ! Make an initial guess
-    F = (/ one, one, one /)
-
-    ! -------------------------------------------------------------------- !
-    !    alphaLoop Loop and solution controls definition                   !
-    ! -------------------------------------------------------------------- !
-    counter = 0  ! Counter for alphaLoop
-    counter_max = 100
-
-    alphaLoop: Do  ! Loop to determine the F which corresponds to sigma22 = -Yc
-      counter = counter + 1
-      ! -------------------------------------------------------------------- !
-      !    Define the stress residual vector, R. R is equal to the           !
-      !    difference in stress between the cohesive interface and the bulk  !
-      !    stress projected onto the cohesive interface                      !
-      ! -------------------------------------------------------------------- !
-      Residual(1) = (C(1,1)*(F(1)*F(1) - one) + C(1,2)*(F(2)*F(2) - one) + C(1,3)*(F(3)*F(3) - one))/two
-      Residual(2) = (C(2,1)*(F(1)*F(1) - one) + C(2,2)*(F(2)*F(2) - one) + C(2,3)*(F(3)*F(3) - one))/two + m%Yc*F(1)*F(3)/F(2)
-      Residual(3) = (C(3,1)*(F(1)*F(1) - one) + C(3,2)*(F(2)*F(2) - one) + C(3,3)*(F(3)*F(3) - one))/two
-
-      ! Check for convergence
-      err = Length(Residual)
-
-      ! If converged,
-      If (err < tolerance) Then
-        alpha0_DGD = ATAN(F(2)/F(3)*TAN(m%alpha0))
-        EXIT alphaLoop
+    ! Elastic fiber nonlinearity
+    If (d1 > 0) Then
+      ! Use secant stiffness when fiber nonlinearity is enabled for traditional fiber CDM model
+      ! This is necessary since once damage occurs, the strains become large
+      If (m%cl > 0) Then
+        If (eps(1,1) < 0) Then
+          eps_0 = -(-m%E1+SQRT(m%E1**two-four*m%E1*m%cl*m%XC))/(two*m%E1*m%cl)
+          E1 = m%XC/eps_0
+        Else
+          eps_0 = (-m%E1+SQRT(m%E1**two+four*m%E1*m%cl*m%XT))/(two*m%E1*m%cl)
+          E1 = m%XT/eps_0
+        End If
+      Else
+        E1 = m%E1
       End If
-      IF (counter == counter_max) Call log%error('Function alpha0_DGD failed to converge')
+    Else
+      ! Fiber nonlinearity
+      E1 = m%E1*(one + m%cl*eps(1,1))
+    End If
 
-      ! Define the Jacobian matrix, J
-      Jac = zero
-
-      Jac(1,1) = C(1,1)*F(1)
-      Jac(1,2) = C(1,2)*F(2)
-      Jac(1,3) = C(1,3)*F(3)
-
-      Jac(2,1) = C(2,1)*F(1) + two*m%Yc*F(3)/F(2)
-      Jac(2,2) = C(2,2)*F(1) - two*m%Yc*F(3)*F(1)/(F(2)*F(2))
-      Jac(2,3) = C(2,3)*F(1) + two*m%Yc*F(1)/F(2)
-
-      Jac(3,1) = C(3,1)*F(1)
-      Jac(3,2) = C(3,2)*F(2)
-      Jac(3,3) = C(3,3)*F(3)
-
-      ! Calculate the new diagonal deformation gradient
-      F = F - MATMUL(MInverse(Jac), Residual)
-
-    End Do alphaLoop
-
-    Call log%info('alpha0_DGD: ' // trim(str(alpha0_DGD)))
+    ! Update stiffness matrix
+    stiff = StiffFunc(ndir+nshr, E1, m%E2*Schapery_reduction(sr, m%es), m%E3, m%G12*Schapery_reduction(sr, m%gs), m%G13, m%G23, m%v12, m%v13, m%v23, d1, d2, d3)
 
     Return
-  End Function alpha0_DGD
+  End Subroutine StiffFuncNL
 
 
   Subroutine writeDGDArgsToFile(m, p, sv, U, F, F_old, ndir, nshr, DT, density_abq, args, called_from)
