@@ -464,7 +464,7 @@ The positions correspond to the features as follows:
 For example, `101000` indicates that the model will run with matrix damage and fiber tension damage enabled; `120001` indicates that the model will run with matrix damage, in-plane shear nonlinearity using Schapery theory, and friction; and `200000` indicates that the material model is being applied to cohesive elements.
 
 ### Finite thickness cohesive elements
-The finite thickess cohesive formulation from [Sarrado et al. 2016](https://doi.org/10.1016/j.engfracmech.2016.03.020) can be activated by defining material properties `G13` and `G23` when the matrix damage feature flag = 2.
+The finite thickness cohesive formulation from [Sarrado et al. 2016](https://doi.org/10.1016/j.engfracmech.2016.03.020) can be activated by defining material properties `G13` and `G23` when the matrix damage feature flag = 2.
 In this case, CompDam assumes the cohesive elements have some finite thickness, and a simplified DGD routine is used to decompose the element deformation into bulk and crack components.
 Finite thickness cohesive elements are primarily intended for modeling cases where the elastic response of a ply interface is important, for example an adhesive layer.
 
@@ -605,6 +605,7 @@ This section includes a brief summary of each test implemented in the [`tests/`]
 <details>
 
 <summary>List of test models</summary>
+
 - *elastic_fiberTension*: Demonstrates the elastic response in the 1-direction under prescribed extension. The 1-direction stress-strain curve has the modulus E1.
 - *elastic_matrixTension*: Demonstrates the elastic response in the 2-direction under prescribed extension. The 2-direction stress-strain curve has the modulus E2.
 - *elastic_simpeShear12*: Demonstrates the elastic response in the 1-2 plane. The 1-2 plane stress-strain curve has the module G12.
@@ -661,7 +662,7 @@ In cohesive elements, the damage variable completely controls the stiffness of t
 
 ### Dynamic loading and cohesive elements
 For problems with dynamic loading, where it is critical to model accurately the dynamic structural response, some additional considerations are required.
-The use of cohesive elements introduces non-physical mass, since cohesive elements mass defined by their density with volume calculated from the constitutive thickess (not the modeled thickness).
+The use of cohesive elements introduces non-physical mass, since cohesive elements mass defined by their density with volume calculated from the constitutive thickness (not the modeled thickness).
 Therefore, zero-thickness cohesive interface layers can add substantial mass to laminate, which influences the structural response.
 This issue can be mitigated with two different strategies: finite-thickness cohesive elements or prescribed constitutive thickness.
 
@@ -675,38 +676,32 @@ See [test_COH3D8_thick_normal.inp](tests/test_COH3D8_thick_normal.inp) or [test_
 #### Constitutive thickness for dynamic problems
 Since cohesive element density $\rho$ and constitutive thickness $t_c$ are numerical inputs with limited physical meaning, and they mainly impact the time incrementation in the explicit analysis, the user may select values that are beneficial for time incrementation.
 
-<details>
-
-<summary>Click to expand</summary>
-
 The following expressions for $\rho$ and $t_c$ can be derived
-$$
+```math
 \rho = \frac{1}{E'} \left(\frac{m}{A_c\Delta t} \right)^2
-$$
-$$
+```
+```math
 t_{c} = \frac{A_c\Delta t^2 E'}{m}
-$$
+```
 which allows the user to choose desired mass $m$ and time increment $\Delta t$ values. $A_c$ is the cross-sectional area and $E'$ is the effective modulus 
-$$
-E'/t = \frac{(K_1+K_3)}{2} + \frac{3K_2}{4}
-$$
+```math
+\frac{E'}{t} = \frac{K_1 + K_3}{2} + \frac{3K_2}{4}
+```
 used to estimate the dilatational wave speed and $t$ is a unit thickness. $K_1, K_3, K_2$ are the penalty stiffnesses for shear in L and T and the normal direction. $K_2$ is the input material property #21 and
-$$
-K_1 = K_2G_{Ic}S_L^2/(G_{IIc}Y_T^2)
-$$
-$$
-K_3 = K_2G_{Ic}S_T^2/(G_{IIc}Y_T^2)
-$$
-$$
-S_T = Y_C*cos(\alpha_0)*(sin(\alpha_0) + cos(\alpha_0)/tan(2\alpha_0))
-$$
+```math
+K_1 = \frac{K_2 G_{Ic} S_L^2}{G_{IIc} Y_T^2}
+```
+```math
+K_3 = \frac{K_2 G_{Ic} S_T^2}{G_{IIc} Y_T^2}
+```
+```math
+S_T = Y_C\cos(\alpha_0)\left(\sin(\alpha_0) + \frac{\cos(\alpha_0)}{\tan(2\alpha_0)}\right)
+```
 The expression for $E'$ is only valid when `effmod` is used.
 The values for $m$ and $\Delta t$ can be selected based on the values of adjacent continuum elements.
 See [test_COH3D8_normal_effmod.inp](tests/test_COH3D8_normal_effmod.inp) for an example of these calculations.
 
 In cases with high penalty stiffness (note this can be caused by low values of YT), numerical instability can occur when $t_{c} \ne 1$, and so a warning is issued by CompDam whenever $t_{c} \ne 1$ is specified.
-
-</details>
 
 ## Resources for developers
 - [Advanced debugging](advanced-debugging.md)

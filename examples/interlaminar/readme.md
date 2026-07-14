@@ -8,18 +8,18 @@ This directory contains example models of a double cantilever beam (DCB) specime
 The example models represent a single interface facture using either cohesive elements (COH3D8) or continuum elements (C3D8R).
 
 The load-displacement result can be model analytically using the [modified beam theory (MBT)](https://journals.sagepub.com/doi/10.1243/03093247V244207). These expressions can be evaluated for several $a$ from $a=a_0$ to a relevant final crack length. Note that this formulation is one dimensional and so some small deviation from the 3D results is expected.
-$$
+```math
 P=\sqrt{\frac{G_cbE_{11}I}{(a+\chi H)^2}}
-$$
-$$
+```
+```math
 \delta = \frac{2P(a+\chi H)^3}{3E_{11}I}
-$$
-$$
+```
+```math
 \chi = \sqrt{\frac{E_{11}}{11G_{13}}\left(3-2\left(\frac{\Gamma}{1+\Gamma}\right)^2\right)}
-$$
-$$
+```
+```math
 \Gamma = 1.18\frac{\sqrt{E_{11}E_{22}}}{G_{13}}
-$$
+```
 
 ## Geometry, mesh, and boundary conditions
 The model geometry is illustrated in the figure below, which shows the deformed geometry. The specimen has an overall length `TL` and initial crack length `CL`$=a_0$.
